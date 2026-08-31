@@ -378,7 +378,15 @@ return;
 
 }
 
-filtered.forEach((deal,index)=>{
+const bestPrices = {};
+
+filtered.forEach(deal => {
+  const key = `${deal.product}_${deal.sizeMl}`;
+
+  if (bestPrices[key] === undefined || deal.offerPrice < bestPrices[key]) {
+    bestPrices[key] = deal.offerPrice;
+  }
+});.forEach((deal,index)=>{
 
 const literPrice=deal.offerPrice/(deal.sizeMl/1000);
 
@@ -402,10 +410,9 @@ ${deal.brand} · ${deal.sizeMl} ml
 
 </div>
 
-${index===0 && sort.value==="price"
+${deal.offerPrice === bestPrices[`${deal.product}_${deal.sizeMl}`]
 ? `<span class="badge">BESTER PREIS</span>`
 : ""}
-
 </div>
 
 <div class="store">
