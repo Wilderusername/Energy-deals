@@ -379,7 +379,7 @@ return;
 
 filtered.forEach((deal,index)=>{
 
-const literPrice=deal.price/(deal.size/1000);
+const literPrice=deal.offerPrice/(deal.sizeM1/1000);
 
 const card=document.createElement("article");
 
@@ -396,7 +396,7 @@ ${deal.product}
 </div>
 
 <div class="brandtxt">
-${deal.brand} · ${deal.size} ml
+${deal.brand} · ${deal.sizeM1} ml
 </div>
 
 </div>
@@ -413,15 +413,14 @@ ${index===0 && sort.value==="price"
 </div>
 
 <div class="meta">
-📅 ${deal.date}
-</div>
+📅 ${deal.validFrom} – ${deal.validUntil}
 
 <div class="bottom">
 
 <div>
 
 <div class="price">
-${deal.price.toFixed(2).replace(".",",")} €
+${deal.offerPrice.toFixed(2).replace(".",",")} €
 </div>
 
 <div class="unit">
