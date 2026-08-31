@@ -386,7 +386,8 @@ filtered.forEach(deal => {
   if (bestPrices[key] === undefined || deal.offerPrice < bestPrices[key]) {
     bestPrices[key] = deal.offerPrice;
   }
-filtered.forEach((deal,index)=>{
+  });
+  filtered.forEach((deal,index)=>{
 const literPrice=deal.offerPrice/(deal.sizeMl/1000);
 
 const card=document.createElement("article");
