@@ -329,10 +329,27 @@ let deals = [];
 
 fetch("deals.json")
   .then(response => response.json())
-  .then(data => {
-    deals = data;
+ .then(data => {
+
+    const products = Object.fromEntries(
+        data.products.map(product => [product.id, product])
+    );
+
+    deals = data.deals.map(deal => {
+
+        const product = products[deal.productId];
+
+        return {
+            ...deal,
+            product: product.name,
+            brand: product.brand,
+            sizeMl: product.sizeMl
+        };
+
+    });
+
     render();
-  })
+})
   .catch(error => {
     console.error("Fehler beim Laden der Angebote:", error);
 
