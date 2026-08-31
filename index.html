@@ -327,6 +327,13 @@ const count=document.getElementById("count");
 
 let selectedBrand="Alle";
 
+function formatDateRange(from, until) {
+    const start = from.split("-");
+    const end = until.split("-");
+
+    return `${start[2]}.${start[1]}. – ${end[2]}.${end[1]}.${end[0]}`;
+}
+
 function render(){
 
 let filtered=[...deals];
@@ -421,8 +428,7 @@ ${deal.offerPrice === bestPrices[`${deal.product}_${deal.sizeMl}`]
 </div>
 
 <div class="meta">
-📅 ${deal.validFrom.split("-").reverse().join(".")} – ${deal.validUntil.split("-").reverse().join(".")}
-<div class="bottom">
+📅 ${formatDateRange(deal.validFrom, deal.validUntil)}<div class="bottom">
 
 <div>
 
