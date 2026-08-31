@@ -1,0 +1,62 @@
+[
+  {
+    "product": "Rockstar Energy Original",
+    "brand": "Rockstar",
+    "size": 500,
+    "price": 0.79,
+    "store": "Kaufland",
+    "distance": "4,3 km",
+    "date": "31.08.–02.09.2026",
+    "link": "rockstar.html"
+  },
+  {
+    "product": "Monster Energy",
+    "brand": "Monster",
+    "size": 500,
+    "price": 0.89,
+    "store": "Lidl",
+    "distance": "2,4 km",
+    "date": "31.08.–05.09.2026",
+    "link": "monster.html"
+  },
+  {
+    "product": "Red Bull Energy Drink",
+    "brand": "Red Bull",
+    "size": 250,
+    "price": 0.99,
+    "store": "EDEKA",
+    "distance": "2,1 km",
+    "date": "31.08.–05.09.2026",
+    "link": "red-bull.html"
+  },
+  {
+    "product": "GÖNRGY",
+    "brand": "GÖNRGY",
+    "size": 500,
+    "price": 0.99,
+    "store": "Penny",
+    "distance": "1,8 km",
+    "date": "31.08.–05.09.2026",
+    "link": "gonrgy.html"
+  },
+  {
+    "product": "Carabao Original",
+    "brand": "Carabao",
+    "size": 330,
+    "price": 0.99,
+    "store": "REWE",
+    "distance": "2,5 km",
+    "date": "31.08.–05.09.2026",
+    "link": "carabao.html"
+  },
+  {
+    "product": "Red Bull Energy Drink",
+    "brand": "Red Bull",
+    "size": 250,
+    "price": 1.49,
+    "store": "Netto",
+    "distance": "1,2 km",
+    "date": "31.08.–05.09.2026",
+    "link": "red-bull.html"
+  }
+]
