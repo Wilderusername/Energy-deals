@@ -230,7 +230,11 @@ margin-top:10px
 
 .saving-percent{
     color:#047857;
+    background:#ecfdf5;
     font-weight:800;
+    padding:3px 7px;
+    border-radius:6px;
+    font-size:10px;
 }
 .note{font-size:10.5px;
 line-height:1.45;
@@ -461,7 +465,7 @@ ${deal.offerPrice === bestPrices[`${deal.product}_${deal.sizeMl}`]
     </span>
 
     <span class="saving-percent">
-      ${Math.round((1 - deal.offerPrice / deal.regularPrice) * 100)} % günstiger
+     ${Math.round((1 - deal.offerPrice / deal.regularPrice) * 100)} % GÜNSTIGER
     </span>
   </div>
 </div>
