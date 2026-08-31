@@ -215,8 +215,9 @@ text-align:center;
 color:#6b7280;
 margin-top:10px
 }
-
-.note{
+.saving{margin-top:4px;font-size:11px}
+.old-price{text-decoration:line-through;color:#9ca3af;margin-right:6px}
+.saving-percent{color:#047857;font-weight:800}.note{
 font-size:10.5px;
 line-height:1.45;
 color:#9ca3af;
@@ -419,18 +420,25 @@ ${index===0 && sort.value==="price"
 
 <div>
 
-<div class="price">
-${deal.offerPrice.toFixed(2).replace(".",",")} €
-</div>
-
-<div class="unit">
-${literPrice.toFixed(2).replace(".",",")} €/Liter
-</div>
-
-</div>
-
 <div>
+  <div class="price">
+    ${deal.offerPrice.toFixed(2).replace(".",",")} €
+  </div>
 
+  <div class="unit">
+    ${(deal.offerPrice / (deal.sizeMl / 1000)).toFixed(2).replace(".",",")} €/Liter
+  </div>
+
+  <div class="saving">
+    <span class="old-price">
+      ${deal.regularPrice.toFixed(2).replace(".",",")} €
+    </span>
+
+    <span class="saving-percent">
+      ${Math.round((1 - deal.offerPrice / deal.regularPrice) * 100)} % günstiger
+    </span>
+  </div>
+</div>
 <a class="btn" href="${deal.link}">
 ♡
 </a>
