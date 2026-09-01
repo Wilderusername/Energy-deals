@@ -3,59 +3,185 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#111827">
-<title>Energy Deals</title>
+<meta name="theme-color" content="#2a1607">
+<title>EnergyBoost — Prototyp</title>
+
+<script>
+(function(){
+  try{
+    var t = localStorage.getItem("canspot-theme") || "system";
+    var resolved = t==="system"
+      ? (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+      : t;
+    document.documentElement.setAttribute("data-theme", resolved);
+  }catch(e){}
+})();
+</script>
 
 <style>
+:root{
+--accent:#f97316;
+--accent-dark:#c2410c;
+--accent-light:#fff7ed;
+--badge-bg:#fff7ed;
+--badge-text:#c2410c;
+--success-bg:#ecfdf5;
+--success-text:#047857;
+--danger-bg:#fee2e2;
+--danger-text:#dc2626;
+--bg:#f3f4f6;
+--app-bg:#f7f8fa;
+--surface:#ffffff;
+--surface-2:#f9fafb;
+--surface-3:#f1f3f5;
+--border:#e5e7eb;
+--border-soft:#f1f3f5;
+--text:#111827;
+--text-muted:#6b7280;
+--text-faint:#9ca3af;
+--track:#e5e7eb;
+color-scheme:light
+}
+
+:root[data-theme="dark"]{
+--badge-bg:#3a2410;
+--badge-text:#fdba74;
+--success-bg:#062e22;
+--success-text:#34d399;
+--danger-bg:#3a1414;
+--danger-text:#f87171;
+--bg:#101216;
+--app-bg:#15181d;
+--surface:#1c2028;
+--surface-2:#20242c;
+--surface-3:#282d36;
+--border:#333944;
+--border-soft:#282d36;
+--text:#f3f4f6;
+--text-muted:#9aa1ac;
+--text-faint:#6b7280;
+--track:#333944;
+color-scheme:dark
+}
+
 *{box-sizing:border-box}
+
+.icon{
+width:1em;
+height:1em;
+display:inline-block;
+vertical-align:-0.15em;
+fill:none;
+stroke:currentColor;
+stroke-width:2;
+stroke-linecap:round;
+stroke-linejoin:round;
+flex-shrink:0
+}
+.icon.filled{fill:currentColor;stroke:none}
+.icon-xs{width:11px;height:11px}
+.icon-sm{width:13px;height:13px}
+.icon-md{width:16px;height:16px}
+.icon-lg{width:20px;height:20px}
+.icon-xl{width:32px;height:32px}
 
 body{
 margin:0;
-background:#f3f4f6;
-color:#111827;
-font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
+background:var(--bg);
+color:var(--text);
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+-webkit-tap-highlight-color:transparent;
+transition:background .2s ease,color .2s ease
 }
 
 .app{
 max-width:560px;
 margin:auto;
 min-height:100vh;
-background:#f7f8fa
+background:var(--app-bg);
+position:relative;
+overflow:hidden;
+transition:background .2s ease
 }
 
+/* ---------- HERO ---------- */
+
 .hero{
-background:#111827;
+background:linear-gradient(160deg,#191008 0%,#2b1608 55%,#9a3412 100%);
 color:#fff;
-padding:22px 18px 20px;
+padding:20px 18px 20px;
 border-radius:0 0 28px 28px
 }
 
 .top{
 display:flex;
 justify-content:space-between;
-align-items:center
+align-items:center;
+gap:8px
 }
 
 .brand{
-font-size:14px;
+font-size:24px;
 font-weight:900;
-letter-spacing:.08em
+letter-spacing:.01em;
+display:inline-flex;
+align-items:center;
+gap:6px
+}
+.brand .icon{color:var(--accent)}
+
+.top-actions{
+display:flex;
+gap:8px
 }
 
-.loc{
-background:#273244;
+.iconbtn{
+background:#3a2110;
 color:#fff;
 border:0;
 border-radius:12px;
-padding:9px 11px;
-text-decoration:none
+width:38px;
+height:38px;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:15px;
+cursor:pointer;
+position:relative
+}
+
+.iconbtn .dot{
+position:absolute;
+top:6px;
+right:6px;
+width:7px;
+height:7px;
+border-radius:50%;
+background:var(--accent);
+border:2px solid #2b1608
+}
+
+.loc{
+background:#3a2110;
+color:#fff;
+border:0;
+border-radius:12px;
+padding:9px 12px;
+text-decoration:none;
+font-size:13px;
+font-weight:600;
+cursor:pointer;
+display:flex;
+align-items:center;
+gap:6px
 }
 
 .headline{
-font-size:29px;
-line-height:1.08;
-font-weight:900;
-margin:20px 0 6px
+font-size:15px;
+line-height:1.3;
+font-weight:700;
+opacity:.85;
+margin:18px 0 4px
 }
 
 .sub{
@@ -65,8 +191,8 @@ opacity:.7
 
 .search{
 margin-top:17px;
-background:#fff;
-color:#6b7280;
+background:var(--surface);
+color:var(--text-muted);
 border-radius:15px;
 display:flex;
 align-items:center;
@@ -78,29 +204,37 @@ width:100%;
 border:0;
 outline:0;
 padding:14px 9px;
-font-size:16px
+font-size:16px;
+background:transparent
 }
+
+/* ---------- TABS / CONTROLS ---------- */
 
 .tabs{
 display:flex;
 gap:8px;
 overflow:auto;
-padding:14px 18px 5px
+padding:14px 18px 5px;
+scrollbar-width:none
 }
+.tabs::-webkit-scrollbar{display:none}
 
 .chip{
 border:0;
-background:#fff;
+background:var(--surface);
 padding:9px 13px;
 border-radius:999px;
 white-space:nowrap;
 text-decoration:none;
-color:#111827;
-cursor:pointer
+color:var(--text);
+cursor:pointer;
+font-size:13px;
+font-weight:600;
+transition:background .15s,color .15s
 }
 
 .chip.on{
-background:#111827;
+background:var(--accent-dark);
 color:#fff
 }
 
@@ -110,41 +244,80 @@ gap:8px;
 padding:10px 18px 5px
 }
 
+.filter-btn{
+flex:0 0 auto;
+border:0;
+background:var(--surface);
+color:var(--text);
+border-radius:12px;
+width:44px;
+padding:0;
+font-size:16px;
+cursor:pointer;
+position:relative;
+display:flex;
+align-items:center;
+justify-content:center
+}
+
 select{
 flex:1;
 border:0;
-background:#fff;
+background:var(--surface);
 border-radius:12px;
 padding:11px;
 font-size:13px;
-color:#111827
+color:var(--text)
 }
 
 main{
-padding:8px 18px 35px
+padding:8px 18px 100px
 }
 
 .status{
 margin:12px 0;
-background:#fff;
+background:var(--surface);
 border-radius:15px;
 padding:13px;
 font-size:12px;
-color:#4b5563
+color:var(--text-muted);
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:8px
 }
 
-.card{
-background:#fff;
-border-radius:18px;
-padding:16px;
-margin:10px 0;
-box-shadow:0 3px 14px #0000000b
+.status-edit{
+border:0;
+background:var(--surface-3);
+color:var(--text);
+font-size:11px;
+font-weight:700;
+padding:6px 9px;
+border-radius:8px;
+cursor:pointer;
+white-space:nowrap
 }
+
+/* ---------- CARDS ---------- */
+
+.card{
+background:var(--surface);
+border-radius:18px;
+padding:14px;
+margin:8px 0;
+box-shadow:0 3px 14px #0000000b;
+transition:background .2s ease
+}
+.card.expired{opacity:.6}
+.card.expired .price,
+.card.expired .product{color:var(--text-faint)}
 
 .line{
 display:flex;
 justify-content:space-between;
-gap:10px
+gap:10px;
+align-items:flex-start
 }
 
 .product{
@@ -154,37 +327,103 @@ font-weight:850
 
 .brandtxt,.meta{
 font-size:12px;
-color:#6b7280;
+color:var(--text-muted);
 margin-top:3px
 }
 
-.badge{
-background:#ecfdf5;
-color:#047857;
+.badge-best{
+border:0;
+background:var(--badge-bg);
+color:var(--badge-text);
 font-size:10px;
 font-weight:900;
-padding:6px 8px;
+padding:7px 9px;
 border-radius:9px;
-height:max-content
+height:max-content;
+cursor:pointer;
+white-space:nowrap;
+display:flex;
+align-items:center;
+gap:4px;
+transition:transform .1s
 }
+.badge-best:active{transform:scale(.95)}
 
 .store{
 font-weight:750;
 font-size:13px;
-margin-top:13px
+margin-top:10px;
+display:flex;
+align-items:center;
+gap:7px
+}
+
+.store-logo{
+width:44px;
+height:44px;
+object-fit:contain;
+border-radius:11px;
+background:var(--surface);
+border:1px solid var(--border-soft);
+padding:3px;
+flex-shrink:0
 }
 
 .distance{
 font-size:12px;
-color:#6b7280;
+color:var(--text-muted);
 font-weight:500
+}
+
+.meta-row{
+display:flex;
+align-items:center;
+justify-content:space-between;
+margin-top:6px
+}
+
+.history-link{
+border:0;
+background:var(--badge-bg);
+color:var(--badge-text);
+font-size:11.5px;
+font-weight:800;
+padding:7px 11px;
+border-radius:999px;
+cursor:pointer;
+display:flex;
+align-items:center;
+gap:4px;
+flex-shrink:0
 }
 
 .bottom{
 display:flex;
 justify-content:space-between;
 align-items:end;
-margin-top:13px
+margin-top:10px
+}
+
+.thumb-price{
+display:flex;
+align-items:center;
+gap:11px
+}
+
+.thumb{
+width:46px;
+height:46px;
+border-radius:12px;
+object-fit:contain;
+background:var(--surface-2);
+border:1px solid var(--border-soft);
+padding:4px;
+flex-shrink:0
+}
+
+.thumb.thumb-fallback{
+object-fit:cover;
+padding:0
 }
 
 .price{
@@ -194,65 +433,1261 @@ font-weight:900
 
 .unit{
 font-size:11px;
-color:#6b7280
+color:var(--text-muted)
+}
+
+.actions{
+display:flex;
+gap:8px
 }
 
 .btn{
-display:inline-block;
+display:inline-flex;
+align-items:center;
+justify-content:center;
+gap:6px;
 border:0;
-background:#f1f3f5;
+background:var(--surface-3);
 border-radius:11px;
 padding:9px 10px;
 text-decoration:none;
-color:#111827
+color:var(--text);
+cursor:pointer;
+font-size:14px
+}
+.btn:disabled{opacity:.5;cursor:default}
+
+.btn.fav.active{
+background:var(--danger-bg);
+color:var(--danger-text)
+}
+.btn.fav.active .icon{fill:currentColor;stroke:none}
+
+.btn.primary{
+background:var(--accent-dark);
+color:#fff;
+font-size:12.5px;
+font-weight:700;
+padding:9px 13px;
+gap:6px
 }
 
 .empty{
-background:#fff;
+background:var(--surface);
 border-radius:18px;
 padding:25px;
 text-align:center;
-color:#6b7280;
+color:var(--text-muted);
 margin-top:10px
 }
+
 .saving{
-    margin-top:4px;
-    font-size:11px;
-    display:flex;
-    align-items:center;
-    gap:6px;
+margin-top:4px;
+font-size:11px;
+display:flex;
+align-items:center;
+gap:6px
 }
 
 .old-price{
-    text-decoration:line-through;
-    color:#9ca3af;
+text-decoration:line-through;
+color:var(--text-faint)
 }
 
 .saving-percent{
-    color:#047857;
-    background:#ecfdf5;
-    font-weight:800;
-    padding:3px 7px;
-    border-radius:6px;
-    font-size:10px;
+color:var(--success-text);
+background:var(--success-bg);
+font-weight:800;
+padding:3px 7px;
+border-radius:6px;
+font-size:10px
 }
-.note{font-size:10.5px;
+
+.note{
+font-size:10.5px;
 line-height:1.45;
-color:#9ca3af;
+color:var(--text-faint);
 margin-top:16px
+}
+
+/* ---------- SHEET / MODAL OVERLAY ---------- */
+
+.overlay{
+position:fixed;
+inset:0;
+background:#00000066;
+z-index:40;
+display:flex;
+align-items:flex-end;
+justify-content:center;
+opacity:0;
+pointer-events:none;
+transition:opacity .2s
+}
+
+.overlay.open{
+opacity:1;
+pointer-events:auto
+}
+
+.sheet{
+width:100%;
+max-width:560px;
+background:var(--surface);
+border-radius:22px 22px 0 0;
+padding:10px 20px 26px;
+transform:translateY(100%);
+transition:transform .25s cubic-bezier(.32,.72,0,1),background .2s ease;
+max-height:86vh;
+overflow:auto
+}
+
+#locOverlay .sheet,
+#filterOverlay .sheet{
+padding:0;
+display:flex;
+flex-direction:column;
+overflow:hidden
+}
+#locOverlay .sheet-scroll,
+#filterOverlay .sheet-scroll{
+overflow:auto;
+flex:1;
+min-height:0;
+padding:10px 20px 20px
+}
+#locOverlay .sheet-footer,
+#filterOverlay .sheet-footer{
+flex-shrink:0;
+padding:12px 20px calc(12px + env(safe-area-inset-bottom));
+border-top:1px solid var(--border-soft);
+background:var(--surface)
+}
+#locOverlay .sheet-footer .sheet-btn,
+#filterOverlay .sheet-footer .sheet-btn{margin-top:0}
+
+.sheet-title-row{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:10px;
+padding-right:52px
+}
+.sheet-title-row h2{margin:0}
+.sheet-reset-link{
+border:0;
+background:none;
+color:var(--accent-dark);
+font-size:12.5px;
+font-weight:700;
+cursor:pointer;
+padding:0;
+font-family:inherit;
+flex-shrink:0
+}
+
+.geo-btn{
+width:100%;
+display:flex;
+align-items:center;
+justify-content:center;
+gap:8px;
+margin-top:10px;
+border:1px dashed var(--border);
+background:none;
+color:var(--accent-dark);
+border-radius:12px;
+padding:11px;
+font-size:13px;
+font-weight:700;
+cursor:pointer;
+font-family:inherit
+}
+
+.sort-btn{
+flex:1;
+display:flex;
+align-items:center;
+gap:8px;
+border:0;
+background:var(--surface);
+border-radius:12px;
+padding:11px;
+font-size:13px;
+font-weight:600;
+color:var(--text);
+cursor:pointer;
+font-family:inherit;
+min-width:0
+}
+.sort-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.sort-row{
+width:100%;
+display:flex;
+align-items:center;
+justify-content:space-between;
+border:0;
+background:none;
+padding:14px 2px;
+border-bottom:1px solid var(--border-soft);
+font-size:14px;
+font-weight:700;
+color:var(--text);
+cursor:pointer;
+font-family:inherit;
+text-align:left
+}
+.sort-row:last-child{border-bottom:0}
+.sort-row .sort-check{color:var(--accent-dark);opacity:0}
+.sort-row.active .sort-check{opacity:1}
+
+.overlay.open .sheet{
+transform:translateY(0)
+}
+
+.handle{
+width:38px;
+height:4px;
+background:var(--border);
+border-radius:99px;
+margin:6px auto 14px
+}
+
+.sheet h2{
+font-size:18px;
+margin:0 0 4px;
+font-weight:900
+}
+
+.sheet .desc{
+font-size:12.5px;
+color:var(--text-muted);
+margin-bottom:18px
+}
+
+.sheet-close{
+position:absolute;
+top:14px;
+right:16px;
+border:0;
+background:var(--surface-3);
+color:var(--text);
+border-radius:10px;
+width:30px;
+height:30px;
+font-size:14px;
+cursor:pointer;
+z-index:2
+}
+
+.sheet-close-back{
+right:auto;
+left:16px
+}
+
+.sheet-inner{position:relative}
+
+/* location sheet */
+
+.field-label{
+font-size:12px;
+font-weight:800;
+color:var(--text);
+margin:16px 0 8px;
+display:flex;
+justify-content:space-between
+}
+
+.plz-input{
+width:100%;
+border:1px solid var(--border);
+background:var(--surface-2);
+color:var(--text);
+border-radius:12px;
+padding:12px 13px;
+font-size:15px;
+outline:0
+}
+
+.switch-row{
+display:flex;
+align-items:center;
+justify-content:space-between;
+background:var(--surface-2);
+border-radius:14px;
+padding:13px 14px;
+margin-top:16px
+}
+
+.switch-row .txt b{display:block;font-size:13.5px}
+.switch-row .txt span{font-size:11.5px;color:var(--text-muted)}
+
+.switch{
+position:relative;
+width:44px;
+height:26px;
+flex-shrink:0
+}
+.switch input{opacity:0;width:0;height:0}
+.switch .track{
+position:absolute;inset:0;
+background:var(--track);
+border-radius:99px;
+transition:background .18s;
+cursor:pointer
+}
+.switch .track:before{
+content:"";
+position:absolute;
+width:20px;height:20px;
+left:3px;top:3px;
+background:#fff;
+border-radius:50%;
+transition:transform .18s;
+box-shadow:0 1px 3px #0002
+}
+.switch input:checked + .track{background:var(--accent-dark)}
+.switch input:checked + .track:before{transform:translateX(18px)}
+
+.radius-box{
+margin-top:18px;
+transition:opacity .2s
+}
+.radius-box.disabled{opacity:.35;pointer-events:none}
+
+.radius-val{
+font-size:26px;
+font-weight:900;
+text-align:center;
+margin-bottom:4px
+}
+.radius-val span{font-size:14px;font-weight:700;color:var(--text-muted)}
+
+input[type=range]{
+width:100%;
+-webkit-appearance:none;
+height:6px;
+border-radius:99px;
+background:var(--track);
+outline:0
+}
+input[type=range]::-webkit-slider-thumb{
+-webkit-appearance:none;
+width:24px;height:24px;
+border-radius:50%;
+background:var(--accent-dark);
+border:4px solid #fff;
+box-shadow:0 1px 6px #00000040;
+cursor:pointer;
+margin-top:-9px
+}
+input[type=range]::-moz-range-thumb{
+width:24px;height:24px;
+border-radius:50%;
+background:var(--accent-dark);
+border:4px solid #fff;
+box-shadow:0 1px 6px #00000040;
+cursor:pointer
+}
+input[type=range]::-webkit-slider-runnable-track{
+height:6px;border-radius:99px;background:var(--track)
+}
+
+.range-labels{
+display:flex;
+justify-content:space-between;
+font-size:11px;
+color:var(--text-faint);
+margin-top:6px
+}
+
+.sheet-btn{
+width:100%;
+margin-top:22px;
+background:var(--accent-dark);
+color:#fff;
+border:0;
+border-radius:14px;
+padding:15px;
+font-size:14.5px;
+font-weight:800;
+cursor:pointer
+}
+.sheet-btn.disabled-cta,
+.btn.disabled-cta{
+background:var(--surface-3);
+color:var(--text-faint);
+cursor:default
+}
+
+/* notification sheet */
+
+.fav-row{
+display:flex;
+align-items:center;
+gap:10px;
+padding:10px 0;
+border-bottom:1px solid var(--border-soft)
+}
+.fav-row:last-child{border-bottom:0}
+.fav-row .fav-emoji{
+width:34px;height:34px;
+border-radius:10px;
+background:var(--surface-2);
+border:1px solid var(--border-soft);
+object-fit:contain;
+padding:3px;
+flex-shrink:0
+}
+.fav-row .fav-txt{flex:1}
+.fav-row .fav-txt b{display:block;font-size:13px}
+.fav-row .fav-txt span{font-size:11px;color:var(--text-muted)}
+
+.fav-empty{
+font-size:12px;
+color:var(--text-faint);
+text-align:center;
+padding:18px 0
+}
+
+/* price history modal */
+
+.hist-head{
+display:flex;
+justify-content:space-between;
+align-items:flex-start;
+margin-bottom:6px
+}
+.hist-head .hp{font-size:22px;font-weight:900}
+.hist-head .hlabel{font-size:11px;color:var(--text-muted)}
+
+.legend{
+display:flex;
+gap:14px;
+font-size:11px;
+color:var(--text-muted);
+margin:10px 0 4px
+}
+.legend .dotline{
+display:inline-flex;align-items:center;gap:5px
+}
+.legend .sw{width:9px;height:9px;border-radius:50%}
+
+.chart-wrap{
+background:var(--surface-2);
+border-radius:16px;
+padding:14px 10px 6px;
+margin-top:8px
+}
+
+.chart-summary{
+display:flex;
+gap:10px;
+margin-top:14px
+}
+.chart-summary .box{
+flex:1;
+background:var(--surface-2);
+border-radius:12px;
+padding:11px;
+text-align:center
+}
+.chart-summary .box b{display:block;font-size:15px}
+.chart-summary .box span{font-size:10.5px;color:var(--text-muted)}
+.chart-summary .box.low b{color:var(--success-text)}
+
+/* ---------- PROFILE / MEIN BEREICH ---------- */
+
+.profile-head{
+display:flex;
+align-items:center;
+gap:12px;
+margin-top:6px
+}
+
+.profile-avatar{
+width:52px;
+height:52px;
+border-radius:50%;
+background:var(--accent-dark);
+color:#fff;
+display:flex;
+align-items:center;
+justify-content:center;
+font-weight:900;
+font-size:17px;
+flex-shrink:0
+}
+
+.profile-fields{
+flex:1;
+display:flex;
+flex-direction:column;
+gap:6px;
+min-width:0
+}
+
+.profile-input{
+border:1px solid var(--border);
+background:var(--surface-2);
+color:var(--text);
+border-radius:10px;
+padding:8px 10px;
+font-size:13.5px;
+font-weight:700;
+outline:0;
+width:100%;
+font-family:inherit
+}
+
+.profile-input-sub{
+font-size:12px;
+font-weight:500;
+color:var(--text-muted)
+}
+
+.theme-switch{
+display:flex;
+background:var(--surface-2);
+border-radius:14px;
+padding:4px;
+gap:4px
+}
+
+.theme-option{
+flex:1;
+border:0;
+background:transparent;
+padding:10px 4px;
+border-radius:10px;
+font-size:17px;
+color:var(--text-muted);
+cursor:pointer;
+display:flex;
+flex-direction:column;
+align-items:center;
+gap:3px
+}
+.theme-option span{font-size:11px;font-weight:700}
+.theme-option.on{background:var(--surface);color:var(--text);box-shadow:0 1px 4px #00000014}
+
+.profile-row{
+display:flex;
+align-items:center;
+gap:12px;
+background:var(--surface-2);
+border-radius:14px;
+padding:13px 14px;
+margin-top:12px;
+cursor:pointer;
+border:0;
+width:100%;
+text-align:left;
+font-family:inherit
+}
+.profile-row-icon{font-size:18px;width:26px;text-align:center;flex-shrink:0}
+.profile-row-txt{flex:1;min-width:0}
+.profile-row-txt b{display:block;font-size:13.5px;color:var(--text)}
+.profile-row-txt span{font-size:11.5px;color:var(--text-muted)}
+.profile-row-arrow{font-size:18px;color:var(--text-faint)}
+
+.profile-action{
+width:100%;
+text-align:left;
+border:0;
+background:var(--surface-2);
+color:var(--text);
+border-radius:12px;
+padding:13px 14px;
+font-size:13.5px;
+font-weight:700;
+cursor:pointer;
+margin-top:10px;
+display:flex;
+align-items:center;
+gap:8px;
+font-family:inherit
+}
+.profile-action-danger{color:var(--danger-text)}
+
+.profile-legal{
+display:flex;
+flex-wrap:wrap;
+gap:14px;
+margin-top:20px;
+padding-top:16px;
+border-top:1px solid var(--border-soft)
+}
+.profile-legal a{font-size:11.5px;color:var(--text-muted);text-decoration:none}
+
+.profile-version{
+font-size:10.5px;
+color:var(--text-faint);
+text-align:center;
+margin-top:16px
+}
+
+.toast{
+position:fixed;
+left:50%;
+bottom:24px;
+transform:translateX(-50%) translateY(20px);
+background:#111827;
+color:#fff;
+padding:12px 18px;
+border-radius:12px;
+font-size:13px;
+font-weight:600;
+opacity:0;
+pointer-events:none;
+transition:opacity .25s,transform .25s;
+z-index:60;
+box-shadow:0 8px 24px #00000030;
+max-width:80%;
+text-align:center
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ---------- VIEW TOGGLE ---------- */
+
+.view-toggle{
+display:flex;
+gap:8px;
+margin:2px 0 4px
+}
+.view-btn{
+flex:1;
+border:0;
+background:var(--surface);
+color:var(--text-muted);
+padding:10px;
+border-radius:12px;
+font-size:12.5px;
+font-weight:700;
+cursor:pointer
+}
+.view-btn.on{
+background:var(--accent-dark);
+color:#fff
+}
+
+/* ---------- MAP VIEW ---------- */
+
+.map-view{
+background:var(--surface);
+border-radius:18px;
+padding:16px;
+margin:10px 0
+}
+.map-canvas{
+position:relative;
+width:100%;
+aspect-ratio:1/1;
+max-width:300px;
+margin:0 auto;
+border-radius:50%;
+background:radial-gradient(circle,var(--surface-2) 0%,var(--surface-2) 60%,var(--border-soft) 100%);
+border:1px solid var(--border-soft)
+}
+.map-ring{
+position:absolute;
+border:1px dashed var(--border);
+border-radius:50%;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%)
+}
+.map-user{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+width:14px;
+height:14px;
+border-radius:50%;
+background:var(--accent);
+border:3px solid var(--surface);
+box-shadow:0 0 0 3px var(--accent-dark);
+z-index:2
+}
+.map-user-label{
+position:absolute;
+top:calc(50% + 12px);
+left:50%;
+transform:translateX(-50%);
+font-size:10px;
+font-weight:800;
+color:var(--text-muted);
+white-space:nowrap;
+z-index:2
+}
+.map-pin{
+position:absolute;
+transform:translate(-50%,-50%);
+cursor:pointer;
+display:flex;
+flex-direction:column;
+align-items:center;
+gap:3px;
+z-index:3;
+border:0;
+background:none;
+padding:0
+}
+.map-pin .pin-logo{
+width:30px;
+height:30px;
+border-radius:50%;
+background:var(--surface);
+border:2px solid var(--accent-dark);
+overflow:hidden;
+display:flex;
+align-items:center;
+justify-content:center;
+box-shadow:0 2px 6px #00000030
+}
+.map-pin .pin-logo img{width:100%;height:100%;object-fit:contain;padding:3px}
+.map-pin .pin-price{
+font-size:10px;
+font-weight:900;
+color:#fff;
+background:var(--accent-dark);
+padding:2px 7px;
+border-radius:999px;
+white-space:nowrap;
+box-shadow:0 1px 4px #00000030
+}
+.map-pin.selected .pin-logo{border-color:var(--accent)}
+.map-pin.selected .pin-price{background:var(--accent)}
+.map-legend{
+text-align:center;
+font-size:11px;
+color:var(--text-muted);
+margin-top:12px
+}
+.map-popover{
+margin-top:14px;
+background:var(--surface-2);
+border-radius:14px;
+padding:14px;
+display:flex;
+align-items:center;
+gap:12px
+}
+.map-popover-txt{flex:1;min-width:0}
+.map-popover-txt b{display:block;font-size:14px}
+.map-popover-txt span{font-size:12px;color:var(--text-muted)}
+
+/* ---------- BOTTOM NAVIGATION ---------- */
+
+.bottomnav{
+position:fixed;
+left:50%;
+bottom:0;
+transform:translateX(-50%);
+width:100%;
+max-width:560px;
+background:var(--surface);
+border-top:1px solid var(--border-soft);
+display:flex;
+padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+z-index:45;
+box-shadow:0 -4px 16px #00000010
+}
+.navitem{
+flex:1;
+border:0;
+background:none;
+display:flex;
+flex-direction:column;
+align-items:center;
+gap:3px;
+padding:6px 2px;
+font-size:10.5px;
+font-weight:700;
+color:var(--text-faint);
+cursor:pointer;
+border-radius:12px;
+position:relative;
+font-family:inherit
+}
+.navitem .navicon{font-size:19px;line-height:1}
+.navitem .navicon svg{width:22px;height:22px;display:block;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.navitem.active{color:var(--accent-dark)}
+
+.dot-badge{
+position:absolute;
+width:7px;
+height:7px;
+border-radius:50%;
+background:var(--accent);
+border:2px solid var(--surface);
+display:none
+}
+.dot-badge.show{display:block}
+.navitem .dot-badge{top:2px;right:26%}
+
+/* ---------- DEAL CARD: BADGES & TRUST ---------- */
+
+.badges-row{
+display:flex;
+flex-wrap:wrap;
+gap:6px;
+margin-top:6px
+}
+.info-badge{
+font-size:10px;
+font-weight:800;
+padding:5px 8px;
+border-radius:7px;
+display:inline-flex;
+align-items:center;
+gap:4px;
+white-space:nowrap
+}
+.info-badge.gold{background:var(--badge-bg);color:var(--badge-text)}
+.info-badge.urgent{background:var(--danger-bg);color:var(--danger-text)}
+.info-badge.green{background:var(--success-bg);color:var(--success-text)}
+.info-badge.expired{background:var(--surface-3);color:var(--text-faint)}
+
+.event-row{
+display:flex;
+align-items:center;
+gap:10px;
+padding:9px 0;
+border-bottom:1px solid var(--border-soft);
+font-size:12.5px;
+font-weight:600
+}
+.event-row .icon{flex-shrink:0}
+
+.connection-banner{
+margin:12px 0 0;
+background:var(--danger-bg);
+color:var(--danger-text);
+border-radius:12px;
+padding:11px 13px;
+font-size:12px;
+font-weight:600;
+display:flex;
+align-items:center;
+gap:8px
+}
+
+.trust-line{
+font-size:9.5px;
+color:var(--text-faint);
+margin-top:6px;
+display:flex;
+align-items:center;
+gap:4px;
+opacity:.85
+}
+
+/* ---------- DETAIL SHEET (PRODUKTDETAILS) ---------- */
+
+.detail-hero{
+position:relative;
+background:var(--surface-2);
+border-radius:18px;
+padding:20px;
+display:flex;
+align-items:center;
+justify-content:center;
+margin-top:4px
+}
+.detail-img{
+width:140px;
+height:140px;
+object-fit:contain
+}
+.detail-hero-actions{
+position:absolute;
+top:12px;
+right:12px;
+display:flex;
+gap:8px
+}
+
+.detail-badges{
+display:flex;
+flex-wrap:wrap;
+gap:6px;
+margin:12px 0 4px
+}
+
+.store-row{
+display:flex;
+align-items:center;
+gap:10px;
+background:var(--surface-2);
+border-radius:12px;
+padding:10px 12px;
+margin-top:8px
+}
+.store-row-logo{
+width:32px;
+height:32px;
+border-radius:8px;
+object-fit:contain;
+background:var(--surface);
+border:1px solid var(--border-soft);
+padding:2px;
+flex-shrink:0
+}
+.store-row-txt{flex:1;min-width:0}
+.store-row-txt b{display:block;font-size:13px}
+.store-row-txt span{font-size:11px;color:var(--text-muted)}
+.store-row-price{font-size:14px;font-weight:900;flex-shrink:0}
+.store-row-link{
+font-size:11px;
+font-weight:700;
+color:#fff;
+background:var(--accent-dark);
+padding:7px 10px;
+border-radius:9px;
+text-decoration:none;
+border:0;
+cursor:pointer;
+font-family:inherit;
+flex-shrink:0
+}
+
+.alert-box{
+background:var(--surface-2);
+border-radius:14px;
+padding:14px;
+margin-top:8px
+}
+.alert-input-row{
+display:flex;
+align-items:center;
+gap:8px;
+margin-top:10px
+}
+.alert-input-row input{
+border:1px solid var(--border);
+background:var(--surface);
+color:var(--text);
+border-radius:10px;
+padding:10px 11px;
+font-size:14px;
+width:90px;
+outline:0;
+font-family:inherit
+}
+.alert-input-row .btn.primary{flex:1;padding:11px 13px;border-radius:10px}
+.alert-active{
+margin-top:10px;
+font-size:12px;
+color:var(--success-text);
+font-weight:700;
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:8px
+}
+.alert-active button{
+border:0;
+background:none;
+color:var(--text-faint);
+font-size:11px;
+text-decoration:underline;
+cursor:pointer;
+font-family:inherit
+}
+
+/* ---------- PROFILE: AVATAR EDIT & LABELS ---------- */
+
+.profile-avatar-wrap{position:relative;flex-shrink:0}
+.profile-avatar{background-size:cover;background-position:center}
+.avatar-edit-badge{
+position:absolute;
+bottom:-2px;
+right:-2px;
+width:22px;
+height:22px;
+border-radius:50%;
+background:var(--surface);
+border:2px solid var(--surface);
+box-shadow:0 1px 4px #00000030;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:11px;
+cursor:pointer;
+padding:0
+}
+.field-mini-label{
+font-size:10px;
+font-weight:800;
+color:var(--text-faint);
+text-transform:uppercase;
+letter-spacing:.04em;
+margin-bottom:2px
+}
+.field-block{margin-bottom:10px}
+.field-view{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:8px;
+background:var(--surface-2);
+border-radius:10px;
+padding:9px 10px
+}
+.field-view span{
+font-size:13.5px;
+font-weight:700;
+overflow:hidden;
+text-overflow:ellipsis;
+white-space:nowrap
+}
+.field-edit-btn{
+border:0;
+background:none;
+color:var(--text-faint);
+cursor:pointer;
+padding:4px;
+flex-shrink:0;
+display:flex
+}
+.field-edit-row{
+display:flex;
+gap:8px;
+margin-top:6px
+}
+.field-edit-row .profile-input{flex:1}
+.field-edit-row .btn{flex-shrink:0;padding:9px 14px}
+.avatar-remove-link{
+font-size:11px;
+color:var(--text-muted);
+text-decoration:underline;
+background:none;
+border:0;
+cursor:pointer;
+padding:0;
+margin-top:6px;
+font-family:inherit
+}
+
+.notif-hint{
+margin-top:14px;
+background:var(--badge-bg);
+color:var(--badge-text);
+border-radius:12px;
+padding:11px 13px;
+font-size:12px;
+font-weight:600;
+display:none;
+align-items:center;
+gap:8px
+}
+.notif-hint.show{display:flex}
+
+/* ---------- ALARME-TAB ---------- */
+
+.alert-card .line{align-items:center}
+.alert-compare{
+display:flex;
+gap:8px;
+margin-top:10px
+}
+.alert-compare-box{
+flex:1;
+background:var(--surface-2);
+border-radius:12px;
+padding:10px;
+text-align:center
+}
+.alert-compare-box span{display:block;font-size:10.5px;color:var(--text-muted);margin-bottom:2px}
+.alert-compare-box b{font-size:15px}
+.alert-compare-box.reached{background:var(--success-bg)}
+.alert-compare-box.reached b{color:var(--success-text)}
+.alert-card-actions{
+display:flex;
+gap:8px;
+margin-top:10px
+}
+.alert-card-actions .btn{flex:1}
+
+/* ---------- FILTER-CHIPS / ZÄHLER ---------- */
+
+.filter-chip-row{display:flex;gap:8px;flex-wrap:wrap}
+
+.count-badge{
+position:absolute;
+top:-6px;
+right:-6px;
+min-width:18px;
+height:18px;
+padding:0 4px;
+border-radius:999px;
+background:var(--accent);
+color:#fff;
+font-size:10px;
+font-weight:800;
+display:none;
+align-items:center;
+justify-content:center;
+border:2px solid var(--surface)
+}
+.count-badge.show{display:flex}
+
+/* ---------- KARTE: LOGO, ÖFFNUNG, PREIS ---------- */
+
+.store{align-items:center}
+.store-sub{
+font-size:10.5px;
+color:var(--text-muted);
+font-weight:500;
+margin-top:2px;
+display:flex;
+align-items:center;
+gap:5px
+}
+
+.open-dot{
+width:6px;
+height:6px;
+border-radius:50%;
+background:var(--text-faint);
+display:inline-block;
+flex-shrink:0
+}
+.open-dot.open{background:var(--success-text)}
+
+.price-line{display:flex;align-items:baseline;gap:6px}
+.pfand-note{font-size:11px;font-weight:700;color:var(--text-muted)}
+
+.avg-context{
+font-size:10.5px;
+color:var(--success-text);
+font-weight:700;
+margin-top:4px
+}
+
+/* ---------- PREISVERLAUF: ZEITRAUM & TIEFSTPREIS ---------- */
+
+.alltime-low{text-align:right}
+.alltime-low span{display:block;font-size:10px;color:var(--text-muted)}
+.alltime-low b{font-size:15px;color:var(--success-text)}
+
+.range-chips{display:flex;gap:8px;margin:12px 0}
+.range-chip{flex:1;text-align:center}
+
+/* ---------- HÄNDLER-DETAILANSICHT ---------- */
+
+.store-detail-head{
+display:flex;
+align-items:center;
+gap:14px;
+margin-top:6px
+}
+.store-detail-logo{
+width:56px;
+height:56px;
+border-radius:14px;
+object-fit:contain;
+background:var(--surface-2);
+border:1px solid var(--border-soft);
+padding:6px;
+flex-shrink:0
+}
+.open-status{
+display:flex;
+align-items:center;
+gap:6px;
+font-size:12px;
+color:var(--text-muted);
+font-weight:600;
+margin-top:4px
+}
+
+.store-detail-price-box{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:10px;
+background:var(--surface-2);
+border-radius:14px;
+padding:12px 14px
+}
+
+/* ---------- SKELETON LOADING ---------- */
+
+.skeleton-card{
+background:var(--surface);
+border-radius:18px;
+padding:14px;
+margin:8px 0
+}
+.skeleton-line{
+background:var(--surface-3);
+border-radius:8px;
+height:14px;
+animation:skeleton-pulse 1.1s ease-in-out infinite
+}
+@keyframes skeleton-pulse{
+0%,100%{opacity:.55}
+50%{opacity:1}
 }
 </style>
 </head>
 
 <body>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+<symbol id="i-bolt" viewBox="0 0 24 24"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+<symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-7.58 7-12A7 7 0 105 9c0 4.42 7 12 7 12z"/><circle cx="12" cy="9" r="2.3"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></symbol>
+<symbol id="i-bell-off" viewBox="0 0 24 24"><path d="M18 8a6 6 0 00-9.3-5"/><path d="M6.3 6.3C6.1 6.8 6 7.4 6 8c0 7-3 9-3 9h14"/><path d="M18.5 17c.3-.6.5-1.3.5-2 0-1-3-3-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/><line x1="3" y1="3" x2="21" y2="21"/></symbol>
+<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/></symbol>
+<symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.5 8.4 2 4.5 6 4c2.2-.3 4 1 6 3 2-2 3.8-3.3 6-3 4 .5 5.5 4.4 4 7.7C19.5 16.4 12 21 12 21z"/></symbol>
+<symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7 4h10v4a5 5 0 01-10 0V4z"/><path d="M7 5H4.5A2.5 2.5 0 007 9.5M17 5h2.5A2.5 2.5 0 0117 9.5"/><path d="M12 13v4"/><path d="M8 21h8"/><path d="M8.5 21c0-2 1.3-3 3.5-3s3.5 1 3.5 3"/></symbol>
+<symbol id="i-medal" viewBox="0 0 24 24"><circle cx="12" cy="15" r="6"/><path d="M9 10 6.2 3.2M15 10l2.8-6.8"/><path d="M12 12l1.1 2.3 2.5.3-1.8 1.8.4 2.5-2.2-1.2-2.2 1.2.4-2.5-1.8-1.8 2.5-.3z"/></symbol>
+<symbol id="i-hourglass" viewBox="0 0 24 24"><path d="M6 3h12M6 21h12"/><path d="M7 3c0 5 5 6 5 9s-5 4-5 9M17 3c0 5-5 6-5 9s5 4 5 9"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="M12 2H4v8l10 10 8-8L12 2z"/><circle cx="7.5" cy="7.5" r="1.1"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></symbol>
+<symbol id="i-trend" viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 6"/><polyline points="15 6 21 6 21 12"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+<symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4V8z"/><circle cx="12" cy="13" r="3.3"/></symbol>
+<symbol id="i-pencil" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4 12.5-12.5z"/></symbol>
+<symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.3"/><path d="M12 2v2.2M12 19.8V22M4.2 4.2l1.5 1.5M18.3 18.3l1.5 1.5M2 12h2.2M19.8 12H22M4.2 19.8l1.5-1.5M18.3 5.7l1.5-1.5"/></symbol>
+<symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8.5 8.5 0 119.5 4a7 7 0 0010.5 10.5z"/></symbol>
+<symbol id="i-monitor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><line x1="8" y1="20" x2="16" y2="20"/><line x1="12" y1="16" x2="12" y2="20"/></symbol>
+<symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></symbol>
+<symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.1"/></symbol>
+<symbol id="i-celebrate" viewBox="0 0 24 24"><path d="M12 2v3M5 5l1.8 1.8M19 5l-1.8 1.8M3 12h3M18 12h3"/><path d="M6 21l9-4-4-9c-3 1-6 4-6 8 0 2 .4 3.6 1 5z"/></symbol>
+<symbol id="i-filter" viewBox="0 0 24 24"><polygon points="4 4 20 4 14 12 14 19 10 21 10 12 4 4"/></symbol>
+<symbol id="i-map" viewBox="0 0 24 24"><polygon points="3 6 9 4 15 6 21 4 21 18 15 20 9 18 3 20"/><line x1="9" y1="4" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="20"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/><circle cx="4.5" cy="6" r="1.2"/><circle cx="4.5" cy="12" r="1.2"/><circle cx="4.5" cy="18" r="1.2"/></symbol>
+<symbol id="i-external" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="8 7 17 7 17 16"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></symbol>
+<symbol id="i-arrow-left" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
+<symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.6" x2="15.4" y2="6.4"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.6"/></symbol>
+<symbol id="i-wifi-off" viewBox="0 0 24 24"><line x1="2" y1="2" x2="22" y2="22"/><path d="M8.5 16.5a5 5 0 017 0"/><path d="M5 12.5a10 10 0 013.3-2.2"/><path d="M19 12.5a10 10 0 00-2.3-1.9"/><path d="M2 8.8a15 15 0 014.2-2.9"/><path d="M22 8.8a15 15 0 00-8-4.4"/><line x1="12" y1="20" x2="12.01" y2="20"/></symbol>
+<symbol id="i-chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
+<symbol id="i-sort" viewBox="0 0 24 24"><line x1="4" y1="7" x2="14" y2="7"/><line x1="4" y1="12" x2="11" y2="12"/><line x1="4" y1="17" x2="8" y2="17"/><polyline points="17 5 17 19"/><polyline points="14 16 17 19 20 16"/></symbol>
+</defs>
+</svg>
+
+
 <div class="app">
 
 <header class="hero">
 
 <div class="top">
-<div class="brand">⚡ ENERGY DEALS</div>
-<a class="loc" href="location.html">📍 59821</a>
+<div class="brand"><svg class="icon filled icon-lg"><use href="#i-bolt"/></svg> CANSPOT</div>
+<div class="top-actions">
+<button class="iconbtn" id="profileBtn" aria-label="Mein Bereich"><svg class="icon icon-lg"><use href="#i-user"/></svg></button>
+<button class="iconbtn" id="notifBtn" aria-label="Benachrichtigungen"><svg class="icon icon-lg"><use href="#i-bell"/></svg><span class="dot" id="notifDot"></span></button>
+<button class="loc" id="locBtn"><svg class="icon icon-sm"><use href="#i-pin"/></svg> <span id="locLabel">59821 · 10 km</span></button>
+</div>
 </div>
 
 <div class="headline">
@@ -265,30 +1700,211 @@ Aktuelle Energy-Drink-Angebote in deiner Nähe
 </div>
 
 <div class="search">
-🔎
-<input
-type="search"
-id="search"
-placeholder="Energy Drink, Marke oder Händler..."
->
+<svg class="icon icon-lg"><use href="#i-search"/></svg>
+<input type="search" id="search" placeholder="Energy Drink, Marke oder Händler...">
 </div>
 
 </header>
 
 <nav class="tabs">
-
 <button class="chip on" data-brand="Alle">Alle</button>
 <button class="chip" data-brand="Red Bull">Red Bull</button>
 <button class="chip" data-brand="Monster">Monster</button>
 <button class="chip" data-brand="Rockstar">Rockstar</button>
 <button class="chip" data-brand="GÖNRGY">GÖNRGY</button>
 <button class="chip" data-brand="Carabao">Carabao</button>
-
+<button class="chip" data-brand="Effect Energy">Effect Energy</button>
+<button class="chip" data-brand="28 Black">28 Black</button>
 </nav>
 
 <div class="controls">
+<select id="sort" style="display:none">
+<option value="price">Günstigster Preis</option>
+<option value="liter">Günstigster €/Liter</option>
+<option value="distance">Nächster Händler</option>
+<option value="saving">Beste Ersparnis</option>
+<option value="ending">Endet bald</option>
+</select>
 
-<select id="storeFilter">
+<button class="sort-btn" id="sortBtn">
+<svg class="icon icon-md"><use href="#i-sort"/></svg>
+<span id="sortBtnLabel">Günstigster Preis</span>
+<svg class="icon icon-sm" style="margin-left:auto"><use href="#i-chevron-down"/></svg>
+</button>
+
+<button class="filter-btn" id="filterBtn" aria-label="Weitere Filter"><svg class="icon icon-lg"><use href="#i-filter"/></svg><span class="count-badge" id="filterCount">0</span></button>
+</div>
+
+<main>
+
+<div class="connection-banner" id="connectionBanner" style="display:none">
+<svg class="icon icon-sm"><use href="#i-wifi-off"/></svg>
+Du bist offline. Angebote werden möglicherweise nicht aktuell angezeigt.
+</div>
+
+<div class="status">
+<span id="statusText"><svg class="icon icon-sm"><use href="#i-pin"/></svg> <b>59821 Arnsberg</b> · Radius 10 km · <span id="count">0</span> Angebote</span>
+<button class="status-edit" id="statusEdit">Ändern</button>
+</div>
+
+<div class="view-toggle">
+<button class="view-btn on" data-view="list"><svg class="icon icon-md"><use href="#i-list"/></svg> Liste</button>
+<button class="view-btn" data-view="map"><svg class="icon icon-md"><use href="#i-map"/></svg> Karte</button>
+</div>
+
+<div id="deals"></div>
+<div id="mapView" class="map-view" style="display:none"></div>
+<div id="alertsView" style="display:none"></div>
+
+<div class="note">
+Demo-Daten. Die Angebote dienen aktuell nur zur Demonstration der Funktionen.
+Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/Händler-Websites eingebunden (Hotlink, keine eigene Kopie) und dienen ausschließlich der Produkt- bzw. Händler-Identifikation. Alle Marken- und Logorechte liegen bei den jeweiligen Unternehmen.
+</div>
+
+</main>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<nav class="bottomnav">
+<button class="navitem active" id="navHome" data-nav="home">
+<span class="navicon"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg></span>Start
+</button>
+<button class="navitem" id="navSearch" data-nav="search">
+<span class="navicon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>Suche
+</button>
+<button class="navitem" id="navFav" data-nav="fav">
+<span class="navicon"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.5 8.4 2 4.5 6 4c2.2-.3 4 1 6 3 2-2 3.8-3.3 6-3 4 .5 5.5 4.4 4 7.7C19.5 16.4 12 21 12 21z"/></svg></span>Favoriten
+</button>
+<button class="navitem" id="navAlerts" data-nav="alerts">
+<span class="navicon"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg></span>Alarme
+<span class="dot-badge" id="navAlertsDot"></span>
+</button>
+<button class="navitem" id="navProfile" data-nav="profile">
+<span class="navicon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/></svg></span>Mein Bereich
+</button>
+</nav>
+
+<!-- LOCATION / UMKREIS SHEET -->
+<div class="overlay" id="locOverlay">
+<div class="sheet">
+<div class="sheet-scroll">
+<div class="sheet-inner">
+<button class="sheet-close" data-close="locOverlay"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
+<div class="handle"></div>
+<h2>Standort &amp; Umkreis</h2>
+<div class="desc">Lege fest, wo nach Angeboten gesucht werden soll.</div>
+
+<div class="field-label">PLZ oder Ort</div>
+<input class="plz-input" id="plzInput" type="text" value="59821 Arnsberg" placeholder="z. B. 59821 Arnsberg">
+
+<button class="geo-btn" id="useGeoBtn">
+<svg class="icon icon-md"><use href="#i-pin"/></svg> Aktuellen Standort verwenden
+</button>
+
+<div class="switch-row">
+<div class="txt">
+<b>Ganz Deutschland durchsuchen</b>
+<span>Umkreis-Regler wird ignoriert</span>
+</div>
+<label class="switch">
+<input type="checkbox" id="germanyToggle">
+<span class="track"></span>
+</label>
+</div>
+
+<div class="radius-box" id="radiusBox">
+<div class="field-label" style="margin-top:20px">Umkreis</div>
+<div class="radius-val"><span id="radiusValue">10</span> <span>km</span></div>
+<input type="range" id="radiusSlider" min="1" max="200" value="10">
+<div class="range-labels"><span>1 km</span><span>200 km</span></div>
+</div>
+</div>
+</div>
+<div class="sheet-footer">
+<button class="sheet-btn" data-close="locOverlay">Aktualisieren</button>
+</div>
+</div>
+</div>
+
+<!-- NOTIFICATIONS SHEET -->
+<div class="overlay" id="notifOverlay">
+<div class="sheet">
+<div class="sheet-inner">
+<button class="sheet-close" data-close="notifOverlay"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
+<div class="handle"></div>
+<h2>Push-Benachrichtigungen</h2>
+<div class="desc">Wir informieren dich automatisch, sobald sich etwas tut.</div>
+
+<div class="switch-row">
+<div class="txt">
+<b>Günstigster Preis</b>
+<span>Alarm bei neuem Bestpreis in deinem Umkreis</span>
+</div>
+<label class="switch">
+<input type="checkbox" id="notifBest" checked>
+<span class="track"></span>
+</label>
+</div>
+
+<div class="switch-row">
+<div class="txt">
+<b>Preisalarm für Favoriten</b>
+<span>Wenn ein Favorit günstiger wird oder wieder im Angebot ist</span>
+</div>
+<label class="switch">
+<input type="checkbox" id="notifFav" checked>
+<span class="track"></span>
+</label>
+</div>
+
+<div class="switch-row">
+<div class="txt">
+<b>Angebote in der Nähe</b>
+<span>Neue Deals in deinem gewählten Umkreis</span>
+</div>
+<label class="switch">
+<input type="checkbox" id="notifNearby" checked>
+<span class="track"></span>
+</label>
+</div>
+
+<div class="switch-row">
+<div class="txt">
+<b>Wöchentliche Zusammenfassung</b>
+<span>Jeden Montag die besten Deals der Woche</span>
+</div>
+<label class="switch">
+<input type="checkbox" id="notifWeekly">
+<span class="track"></span>
+</label>
+</div>
+
+<div class="notif-hint" id="notifEmptyHint"><svg class="icon icon-sm"><use href="#i-bell-off"/></svg> Du erhältst aktuell keine Benachrichtigungen. Aktiviere mindestens eine Option, um informiert zu bleiben.</div>
+
+<div class="field-label">Deine Favoriten</div>
+<div id="favList"></div>
+
+<button class="sheet-btn" data-close="notifOverlay">Speichern</button>
+</div>
+</div>
+</div>
+
+<!-- WEITERE FILTER SHEET -->
+<div class="overlay" id="filterOverlay">
+<div class="sheet">
+<div class="sheet-scroll">
+<div class="sheet-inner">
+<button class="sheet-close" data-close="filterOverlay"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
+<div class="handle"></div>
+<div class="sheet-title-row">
+<h2>Weitere Filter</h2>
+<button class="sheet-reset-link" id="filterResetBtn">Zurücksetzen</button>
+</div>
+<div class="desc">Grenze die Angebote noch genauer ein.</div>
+
+<select id="storeFilter" style="display:none">
 <option value="Alle">Alle Händler</option>
 <option value="Kaufland">Kaufland</option>
 <option value="Lidl">Lidl</option>
@@ -298,236 +1914,2200 @@ placeholder="Energy Drink, Marke oder Händler..."
 <option value="Netto">Netto</option>
 </select>
 
-<select id="sort">
-<option value="price">Günstigster Preis</option>
-<option value="liter">Günstigster €/Liter</option>
+<div class="field-label">Umkreis</div>
+<div class="filter-chip-row">
+<button class="chip" data-radius="5">5 km</button>
+<button class="chip on" data-radius="10">10 km</button>
+<button class="chip" data-radius="25">25 km</button>
+<button class="chip" data-radius="50">50 km</button>
+<button class="chip" data-radius="de">Ganz DE</button>
+</div>
+
+<div class="field-label" style="margin-top:20px">Händler</div>
+<div class="filter-chip-row">
+<button class="chip on" data-store="Alle">Alle</button>
+<button class="chip" data-store="Kaufland">Kaufland</button>
+<button class="chip" data-store="Lidl">Lidl</button>
+<button class="chip" data-store="EDEKA">EDEKA</button>
+<button class="chip" data-store="Penny">Penny</button>
+<button class="chip" data-store="REWE">REWE</button>
+<button class="chip" data-store="Netto">Netto</button>
+</div>
+
+<div class="field-label" style="margin-top:20px">Verpackung</div>
+<div class="filter-chip-row">
+<button class="chip on" data-pack="Alle">Alle</button>
+<button class="chip" data-pack="Dose">Dose</button>
+<button class="chip" data-pack="Flasche">Flasche</button>
+</div>
+
+<div class="field-label" style="margin-top:20px">Volumen</div>
+<div class="filter-chip-row">
+<button class="chip on" data-size="Alle">Alle</button>
+<button class="chip" data-size="250">250 ml</button>
+<button class="chip" data-size="330">330 ml</button>
+<button class="chip" data-size="500">500 ml</button>
+</div>
+
+<div class="field-label" style="margin-top:20px">Angebotszeitraum</div>
+<select id="filterPeriod">
+<option value="Alle">Alle Angebote</option>
+<option value="soon">Läuft bald ab (≤ 3 Tage)</option>
+<option value="new">Neu (seit ≤ 3 Tagen)</option>
 </select>
 
+<div class="switch-row" style="margin-top:20px">
+<div class="txt">
+<b>Nur verfügbare Angebote</b>
+<span>Abgelaufene Angebote ausblenden</span>
+</div>
+<label class="switch">
+<input type="checkbox" id="filterHideExpired" checked>
+<span class="track"></span>
+</label>
 </div>
 
-<main>
-
-<div class="status">
-📍 <b>59821 Arnsberg</b> · Radius 10 km ·
-<span id="count">6</span> Angebote
+<div class="switch-row">
+<div class="txt">
+<b>Ohne Pfand</b>
+<span>Aktuell haben alle Dosen-Angebote 0,25 € Pfand</span>
+</div>
+<label class="switch">
+<input type="checkbox" id="filterNoPfand">
+<span class="track"></span>
+</label>
 </div>
 
-<div id="deals"></div>
-
-<div class="note">
-Demo-Daten. Die Angebote dienen aktuell nur zur Demonstration der Funktionen.
+</div>
+</div>
+<div class="sheet-footer">
+<button class="sheet-btn" data-close="filterOverlay">Anwenden</button>
+</div>
+</div>
 </div>
 
-</main>
+<!-- SORTIERUNG SHEET -->
+<div class="overlay" id="sortOverlay">
+<div class="sheet">
+<div class="sheet-inner">
+<button class="sheet-close" data-close="sortOverlay"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
+<div class="handle"></div>
+<h2>Sortierung</h2>
+<div class="desc">Wähle, wie die Angebote sortiert werden.</div>
 
+<button class="sort-row" data-sort="price">
+<span>Günstigster Preis</span>
+<svg class="icon icon-md sort-check"><use href="#i-check"/></svg>
+</button>
+<button class="sort-row" data-sort="liter">
+<span>Günstigster €/Liter</span>
+<svg class="icon icon-md sort-check"><use href="#i-check"/></svg>
+</button>
+<button class="sort-row" data-sort="distance">
+<span>Nächster Händler</span>
+<svg class="icon icon-md sort-check"><use href="#i-check"/></svg>
+</button>
+<button class="sort-row" data-sort="saving">
+<span>Beste Ersparnis</span>
+<svg class="icon icon-md sort-check"><use href="#i-check"/></svg>
+</button>
+<button class="sort-row" data-sort="ending">
+<span>Endet bald</span>
+<svg class="icon icon-md sort-check"><use href="#i-check"/></svg>
+</button>
+</div>
+</div>
+</div>
+
+<!-- PROFILE / MEIN BEREICH SHEET -->
+<div class="overlay" id="profileOverlay">
+<div class="sheet">
+<div class="sheet-inner">
+<button class="sheet-close" data-close="profileOverlay"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
+<div class="handle"></div>
+<h2>Mein Bereich</h2>
+<div class="desc">Deine Daten, Einstellungen und dein Konto.</div>
+
+<div class="profile-head">
+<div class="profile-avatar-wrap">
+<div class="profile-avatar" id="profileAvatar">MM</div>
+<button class="avatar-edit-badge" id="avatarEditBtn" aria-label="Profilbild ändern"><svg class="icon icon-xs"><use href="#i-camera"/></svg></button>
+<input type="file" accept="image/*" id="avatarFileInput" style="display:none">
+</div>
+<div class="profile-fields">
+<div class="field-block" id="nameBlock">
+<div class="field-mini-label">Name</div>
+<div class="field-view">
+<span id="profileNameText">Max Mustermann</span>
+<button class="field-edit-btn" data-edit="name" aria-label="Name bearbeiten"><svg class="icon icon-sm"><use href="#i-pencil"/></svg></button>
+</div>
+<div class="field-edit-row" id="nameEditRow" style="display:none">
+<input class="profile-input" id="profileName" type="text" value="Max Mustermann" placeholder="Dein Name">
+<button class="btn primary field-save-btn" data-save="name">Speichern</button>
+</div>
+</div>
+<div class="field-block" id="emailBlock">
+<div class="field-mini-label">E-Mail-Adresse</div>
+<div class="field-view">
+<span id="profileEmailText">max.mustermann@example.com</span>
+<button class="field-edit-btn" data-edit="email" aria-label="E-Mail bearbeiten"><svg class="icon icon-sm"><use href="#i-pencil"/></svg></button>
+</div>
+<div class="field-edit-row" id="emailEditRow" style="display:none">
+<input class="profile-input" id="profileEmail" type="email" value="max.mustermann@example.com" placeholder="E-Mail-Adresse">
+<button class="btn primary field-save-btn" data-save="email">Speichern</button>
+</div>
+</div>
+<button class="avatar-remove-link" id="avatarRemoveBtn" style="display:none">Profilbild entfernen</button>
+</div>
+</div>
+
+<div class="field-label" style="margin-top:22px">Erscheinungsbild</div>
+<div class="theme-switch">
+<button class="theme-option" data-theme="light"><svg class="icon icon-lg"><use href="#i-sun"/></svg><span>Hell</span></button>
+<button class="theme-option" data-theme="dark"><svg class="icon icon-lg"><use href="#i-moon"/></svg><span>Dunkel</span></button>
+<button class="theme-option" data-theme="system"><svg class="icon icon-lg"><use href="#i-monitor"/></svg><span>System</span></button>
+</div>
+
+<button class="profile-row" id="profileLocRow" data-open="locOverlay">
+<div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-pin"/></svg></div>
+<div class="profile-row-txt">
+<b>Standort &amp; Umkreis</b>
+<span id="profileLocSummary">59821 Arnsberg · 10 km</span>
+</div>
+<div class="profile-row-arrow">›</div>
+</button>
+
+<button class="profile-row" id="profileNotifRow" data-open="notifOverlay">
+<div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-bell"/></svg></div>
+<div class="profile-row-txt">
+<b>Push-Benachrichtigungen</b>
+<span id="profileNotifSummary">Bestpreis- &amp; Favoriten-Alarm an</span>
+</div>
+<div class="profile-row-arrow">›</div>
+</button>
+
+<div class="field-label" style="margin-top:22px"><span>Meine Favoriten (<span id="profileFavCount">0</span>)</span></div>
+<div id="profileFavList"></div>
+
+<div class="field-label" style="margin-top:22px"><span>Meine Preisalarme (<span id="profileAlertCount">0</span>)</span></div>
+<div id="profileAlertList"></div>
+
+<div class="field-label" style="margin-top:22px">Konto</div>
+<button class="profile-action" id="logoutBtn"><svg class="icon icon-md"><use href="#i-logout"/></svg> Abmelden</button>
+<button class="profile-action profile-action-danger" id="deleteAccountBtn"><svg class="icon icon-md"><use href="#i-trash"/></svg> Konto löschen</button>
+
+<div class="profile-legal">
+<a href="#">Impressum</a>
+<a href="#">Datenschutz</a>
+<a href="#">Nutzungsbedingungen</a>
+</div>
+
+<div class="profile-version">CanSpot Demo-Prototyp · Version 1.0.0</div>
+
+</div>
+</div>
+</div>
+
+<!-- PRODUKTDETAILS / PRICE HISTORY MODAL -->
+<div class="overlay" id="histOverlay">
+<div class="sheet">
+<div class="sheet-inner">
+<button class="sheet-close sheet-close-back" data-close="histOverlay" aria-label="Zurück"><svg class="icon icon-md"><use href="#i-arrow-left"/></svg></button>
+<div class="handle"></div>
+
+<div class="detail-hero">
+<img class="detail-img" id="detailImg" src="" alt="">
+<div class="detail-hero-actions">
+<button class="btn" id="detailShareBtn" aria-label="Angebot teilen"><svg class="icon icon-md"><use href="#i-share"/></svg></button>
+<button class="btn fav" id="detailFavBtn"><svg class="icon icon-md"><use href="#i-heart"/></svg></button>
+</div>
+</div>
+
+<h2 id="histTitle">Preisverlauf</h2>
+<div class="desc" id="histSub">Letzte 30 Tage</div>
+
+<div class="detail-badges" id="detailBadges"></div>
+
+<div class="trust-line" id="detailTrust"></div>
+
+<div class="hist-head">
+<div>
+<div class="hp" id="histCurrent">–</div>
+<div class="hlabel">aktueller Preis</div>
+</div>
+<div class="alltime-low">
+<span id="histAllTimeLowLabel">Bisheriger Tiefstpreis</span>
+<b id="histAllTimeLow">–</b>
+</div>
+</div>
+
+<div class="range-chips">
+<button class="chip range-chip" data-range="7">7 Tage</button>
+<button class="chip range-chip on" data-range="30">30 Tage</button>
+<button class="chip range-chip" data-range="90">90 Tage</button>
+</div>
+
+<div class="legend">
+<span class="dotline"><span class="sw" style="background:#c2410c"></span>Preis</span>
+<span class="dotline"><span class="sw" style="background:#047857"></span>günstigster Preis</span>
+</div>
+
+<div class="chart-wrap">
+<svg id="histChart" viewBox="0 0 300 140" width="100%" height="140" preserveAspectRatio="none"></svg>
+</div>
+
+<div class="chart-summary">
+<div class="box low"><b id="histLow">–</b><span>Tiefstpreis</span></div>
+<div class="box"><b id="histHigh">–</b><span>Höchstpreis</span></div>
+<div class="box"><b id="histAvg">–</b><span>Ø Preis</span></div>
+</div>
+
+<div class="field-label" style="margin-top:22px">Angebotsdauer</div>
+<div class="meta" id="detailValidity" style="font-size:13px">–</div>
+
+<div class="field-label" style="margin-top:22px">Weitere Händler</div>
+<div id="detailStores"></div>
+
+<div class="field-label" style="margin-top:22px">Preisalarm</div>
+<div class="alert-box">
+<div class="desc" style="margin-bottom:0">Benachrichtige mich, wenn der Preis fällt unter</div>
+<div class="alert-input-row">
+<input type="number" step="0.01" min="0" id="alertPriceInput">
+<span>€</span>
+<button class="btn primary" id="alertSetBtn">Alarm setzen</button>
+</div>
+<div class="alert-active" id="alertActiveMsg" style="display:none"></div>
+</div>
+
+<a class="sheet-btn" id="detailCtaBtn" href="#" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none">Zum besten Angebot <svg class="icon icon-md"><use href="#i-external"/></svg></a>
+
+</div>
+</div>
+</div>
+
+<!-- HÄNDLER-DETAILANSICHT -->
+<div class="overlay" id="storeDetailOverlay">
+<div class="sheet">
+<div class="sheet-inner">
+<button class="sheet-close" data-close="storeDetailOverlay"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
+<div class="handle"></div>
+
+<div class="store-detail-head">
+<img class="store-detail-logo" id="storeDetailLogo" src="" alt="">
+<div>
+<h2 id="storeDetailName" style="margin:0">–</h2>
+<div class="open-status" id="storeDetailOpenStatus"><span class="open-dot"></span>–</div>
+</div>
+</div>
+
+<div class="field-label" style="margin-top:20px">Adresse</div>
+<div class="meta" id="storeDetailAddress" style="font-size:13px">–</div>
+
+<div class="field-label" style="margin-top:20px">Öffnungszeiten</div>
+<div class="meta" id="storeDetailHours" style="font-size:13px">–</div>
+
+<div class="field-label" style="margin-top:20px">Dieses Angebot</div>
+<div class="store-detail-price-box">
+<div>
+<div class="product" id="storeDetailProduct">–</div>
+<div class="brandtxt" id="storeDetailProductMeta">–</div>
+</div>
+<div class="price" id="storeDetailPrice">–</div>
+</div>
+
+<a class="sheet-btn" id="storeDetailRouteBtn" href="#" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none">
+<svg class="icon icon-md"><use href="#i-pin"/></svg> Route starten
+</a>
+<a class="sheet-btn" id="storeDetailOnlineBtn" href="#" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;background:var(--surface-3);color:var(--text);margin-top:10px">
+<svg class="icon icon-md"><use href="#i-external"/></svg> Angebot online öffnen
+</a>
+
+</div>
+</div>
 </div>
 
 <script>
 
-let deals = [];
+/* ---------------- DEMO DATA (ersetzt deals.json) ---------------- */
 
+/* Produktbilder sind per Hotlink auf die offiziellen Hersteller-Websites verlinkt
+   (kein Download/keine Kopie der Dateien) — ausschließlich zur Produkt-
+   identifikation in diesem privaten Demo-Prototyp. Für einen öffentlichen/
+   produktiven Einsatz bitte lizenzierte bzw. selbst gehostete Bilder verwenden. */
 
-fetch("deals.json")
-  .then(response => response.json())
- .then(data => {
+const products = [
+  {id:"p1", name:"Red Bull Energy Drink",        brand:"Red Bull", sizeMl:250,
+    img:"https://www.redbull.com/energydrink/v1/resources/storyblok/images/f/287059/870x2200/9153a98907/de_ed_250ml_energy-drink_country_rgb_initi5-311_cold_closed_front_com_25.png/m/200x0"},
+  {id:"p2", name:"Red Bull Sugarfree",           brand:"Red Bull", sizeMl:250,
+    img:"https://www.redbull.com/energydrink/v1/resources/storyblok/images/f/287059/528x1348/afe59ffa52/de_sf_250ml_sugarfree_country_rgb__cold_closed_front_com_full.png/m/200x0"},
+  {id:"p3", name:"Monster Energy Ultra",         brand:"Monster",  sizeMl:500,
+    img:"https://web-assests.monsterenergy.com/mnst/62e227e2-0e77-46d6-a989-35838a1f0981.png"},
+  {id:"p4", name:"Monster Energy Classic",       brand:"Monster",  sizeMl:500,
+    img:"https://web-assests.monsterenergy.com/mnst/c2c19b9e-6989-4f47-9375-017c7c1101f8.png"},
+  {id:"p5", name:"Rockstar Energy Original",     brand:"Rockstar", sizeMl:500,
+    img:"https://www.rockstarenergy.com/cdn/shop/files/1720545676-original_d4e37562-d26e-4fc8-a3b9-e9df99785b21.png?v=1761060858&width=300"},
+  {id:"p6", name:"GÖNRGY Raspberry Cheesecake",  brand:"GÖNRGY",   sizeMl:500,
+    img:"https://goenrgy.de/cdn/shop/files/Goenrgy_RaspberryCheesecake_500ml_1.png?v=1751890542&width=300"},
+  {id:"p7", name:"Carabao Energy Drink",         brand:"Carabao",  sizeMl:330,
+    img:"https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Carabao_Daeng.png/250px-Carabao_Daeng.png"},
 
-    const products = Object.fromEntries(
-        data.products.map(product => [product.id, product])
-    );
+  {id:"p8", name:"Red Bull Zero",                     brand:"Red Bull",     sizeMl:250,
+    img:"https://www.redbull.com/energydrink/v1/resources/storyblok/images/f/287059/528x1348/4f77700c69/de_zr_250ml_ac_zero_country_rgb_packrq-3017_cold_closed_front_com_full.png/m/200x0"},
+  {id:"p9", name:"Red Bull Red Edition (Wassermelone)", brand:"Red Bull",   sizeMl:250,
+    img:"https://www.redbull.com/energydrink/v1/resources/storyblok/images/f/287059/528x1348/f78543afad/qa_wm_250ml_the-red-edition_country_rgb_do239038_cold_closed_front_com_full.png/m/200x0"},
+  {id:"p10", name:"Red Bull Blue Edition (Heidelbeere)", brand:"Red Bull",  sizeMl:250,
+    img:"https://www.redbull.com/energydrink/v1/resources/storyblok/images/f/287059/528x1348/fb99a4bab3/de_bl_250ml_the-blue-edition_country_rgb_do242282_cold_closed_front_com_full.png/m/200x0"},
+  {id:"p11", name:"Monster Ultra Zero",           brand:"Monster",  sizeMl:500,
+    img:"https://web-assests.monsterenergy.com/mnst/5587a01b-3c83-42f7-a741-b29a1d534409.png"},
+  {id:"p12", name:"Monster Mango Loco",           brand:"Monster",  sizeMl:500,
+    img:"https://web-assests.monsterenergy.com/mnst/bcbf7fc0-05e9-4d0d-933c-30eabf9ca620.png"},
+  {id:"p13", name:"Monster Pipeline Punch",       brand:"Monster",  sizeMl:500,
+    img:"https://web-assests.monsterenergy.com/mnst/6aa8ff45-fcd8-4c9d-b2b2-d15a69a1d465.png"},
+  {id:"p14", name:"Monster Ultra Watermelon",     brand:"Monster",  sizeMl:500,
+    img:"https://web-assests.monsterenergy.com/mnst/1cb31b0a-fd8d-42b4-8e3b-e9fcb0f6bb80.png"},
+  {id:"p16", name:"Rockstar Punched Guava",       brand:"Rockstar", sizeMl:500,
+    img:"https://images.openfoodfacts.org/images/products/406/080/016/0126/front_de.68.400.jpg"},
+  {id:"p17", name:"Carabao Green Apple Sugar Free", brand:"Carabao", sizeMl:330,
+    img:"https://images.openfoodfacts.org/images/products/885/579/000/0783/front_en.3.400.jpg"},
+  {id:"p18", name:"GÖNRGY Black Acai",            brand:"GÖNRGY",   sizeMl:500,
+    img:"https://goenrgy.de/cdn/shop/files/BlackAcai_Vorderseite.png?v=1740045389&width=533"},
+  {id:"p19", name:"GÖNRGY Erdbeere Aprikose",     brand:"GÖNRGY",   sizeMl:500,
+    img:"https://goenrgy.de/cdn/shop/files/ErdbeereAprikose_Vorderseite.png?v=1740045206&width=533"},
+  {id:"p20", name:"GÖNRGY Tropical Exotic",       brand:"GÖNRGY",   sizeMl:500,
+    img:"https://goenrgy.de/cdn/shop/files/Gonrgy_TropicalExotik_Frontal_500ml_Drops.webp?v=1755877197&width=300"},
+  {id:"p21", name:"effect Classic Energy",        brand:"Effect Energy", sizeMl:250,
+    img:"https://www.effect-energy.com/wp-content/uploads/2020/10/effect_can-025l_CLASSIC_RGB.png"},
+  {id:"p22", name:"effect Gazoz",                 brand:"Effect Energy", sizeMl:330,
+    img:"https://www.effect-energy.com/wp-content/uploads/2025/08/effect_can-330ml_FLAVOURED_GAZOZ.png"},
+  {id:"p23", name:"effect Zero Sugarfree",        brand:"Effect Energy", sizeMl:330,
+    img:"https://www.effect-energy.com/wp-content/uploads/2020/10/effect_can-033l_ZERO_RGB.png"},
+  {id:"p24", name:"effect Guava Massive",         brand:"Effect Energy", sizeMl:330,
+    img:"https://www.effect-energy.com/wp-content/uploads/2023/01/effect_can-330ml_FLAVOURED_GUAVA-MASSIVE.png"},
+  {id:"p25", name:"28 Black Açaí",                brand:"28 Black", sizeMl:250,
+    img:"https://www.28black.com/wp-content/uploads/2025/07/acai.png"},
+  {id:"p26", name:"28 Black Açaí Zero",           brand:"28 Black", sizeMl:250,
+    img:"https://www.28black.com/wp-content/uploads/2025/07/Acai-Zero.png"},
+  {id:"p27", name:"28 Black Sour Cherry",         brand:"28 Black", sizeMl:250,
+    img:"https://www.28black.com/wp-content/uploads/2025/07/Sour-Cherry.png"},
+  {id:"p28", name:"28 Black Waldmeister",         brand:"28 Black", sizeMl:250,
+    img:"https://www.28black.com/wp-content/uploads/2025/07/Waldmeister-1.png"}
+];
 
-    deals = data.deals.map(deal => {
+const FALLBACK_IMG = "data:image/svg+xml," + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60">'+
+  '<rect width="60" height="60" rx="14" fill="#fff7ed"/>'+
+  '<path d="M32.5 15 20 33h9l-2 12 14.5-19h-9l2-11z" fill="#c2410c"/></svg>'
+);
 
-        const product = products[deal.productId];
+/* Händler-Logos: Hotlink auf die offiziellen Marken-Websites (kein Download),
+   ausschließlich zur Wiedererkennung des jeweiligen Händlers in diesem Demo-Prototyp. */
+const storeLogos = {
+  "Kaufland": "https://static.cdn.kaufland.de/static/common/dist/img/logos/kaufland-logo-social.png",
+  "Lidl":     "https://www.lidl.de/cdn/assets/logos/1.0.1/lidl-logo-shop-cdn.svg",
+  "EDEKA":    "https://www.edeka.de/_assets/images/logo-bb726ef35371bb015ca029e58b5998a4.webp?vsn=d",
+  "Penny":    "https://cdn.penny.de/dam/jcr:2e83a678-da13-47e7-b336-ead20bfb3446/PENNY_DEL_DEB_Logo.svg",
+  "REWE":     "https://www.rewe.de/icons/apple-touch-icon.png",
+  "Netto":    "https://www.netto-online.de/INTERSHOP/static/WFS/Plus-NettoDE-Site/-/-/de_DE./images/netto-logo.svg"
+};
 
-        return {
-            ...deal,
-            product: product.name,
-            brand: product.brand,
-            sizeMl: product.sizeMl
-        };
+const STORE_FALLBACK_IMG = "data:image/svg+xml," + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">'+
+  '<rect width="40" height="40" rx="9" fill="#f1f3f5"/>'+
+  '<g fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+
+  '<path d="M11 15l1.5-7h15l1.5 7"/><path d="M12 15v10h16V15"/><path d="M17 25v-6h6v6"/>'+
+  '</g></svg>'
+);
 
+/* Demo-Filialdaten je Händler (fiktive, aber plausible Adresse/Öffnungszeiten
+   für diesen privaten Prototyp — keine echten Filialdaten). */
+const storeBranches = {
+  "Kaufland": {address:"Ruhrstraße 22, 59821 Arnsberg", open:7,   close:22, closedSun:true,  geo:"51.4013,8.0658"},
+  "Lidl":     {address:"Hauptstraße 45, 59821 Arnsberg", open:8,   close:21, closedSun:true,  geo:"51.3968,8.0602"},
+  "EDEKA":    {address:"Bahnhofstraße 10, 59821 Arnsberg", open:7.5, close:20, closedSun:true, geo:"51.4022,8.0714"},
+  "Penny":    {address:"Neheimer Straße 5, 59821 Arnsberg", open:8,   close:20, closedSun:true, geo:"51.3945,8.0781"},
+  "REWE":     {address:"Clemens-August-Straße 8, 59821 Arnsberg", open:7, close:21, closedSun:true, geo:"51.4001,8.0655"},
+  "Netto":    {address:"Alter Marktplatz 3, 59821 Arnsberg", open:8,   close:20, closedSun:true, geo:"51.3982,8.0699"}
+};
+
+function formatHours(b){
+  const fmt = n => Number.isInteger(n) ? `${n}:00` : `${Math.floor(n)}:30`;
+  return `Mo–Sa ${fmt(b.open)}–${fmt(b.close)} Uhr${b.closedSun ? " · So geschlossen" : ""}`;
+}
+
+function isStoreOpenNow(b){
+  const now = new Date();
+  const day = now.getDay();
+  const hour = now.getHours() + now.getMinutes()/60;
+  if(day===0 && b.closedSun) return false;
+  return hour >= b.open && hour < b.close;
+}
+
+function routeMinutes(km){
+  return Math.max(1, Math.round(km * 2.3));
+}
+
+function getPackaging(){ return "Dose"; } /* aktuell sind alle Angebote Dosen */
+
+const rawDeals = [
+  {id:"d1",  productId:"p1", store:"Kaufland", regularPrice:1.29, offerPrice:0.89, distanceKm:1.4, validFrom:"2026-08-28", validUntil:"2026-09-10", link:"#"},
+  {id:"d2",  productId:"p1", store:"Lidl",      regularPrice:1.25, offerPrice:0.99, distanceKm:3.1, validFrom:"2026-08-25", validUntil:"2026-09-03", link:"#"},
+  {id:"d3",  productId:"p2", store:"REWE",      regularPrice:1.35, offerPrice:0.95, distanceKm:2.2, validFrom:"2026-08-28", validUntil:"2026-09-10", link:"#"},
+  {id:"d4",  productId:"p3", store:"EDEKA",     regularPrice:1.99, offerPrice:1.39, distanceKm:4.6, validFrom:"2026-08-26", validUntil:"2026-09-08", link:"#"},
+  {id:"d5",  productId:"p3", store:"Penny",     regularPrice:1.89, offerPrice:1.49, distanceKm:6.3, validFrom:"2026-08-28", validUntil:"2026-09-10", link:"#"},
+  {id:"d6",  productId:"p4", store:"Netto",     regularPrice:1.79, offerPrice:1.29, distanceKm:5.0, validFrom:"2026-08-29", validUntil:"2026-09-11", link:"#"},
+  {id:"d7",  productId:"p5", store:"Kaufland",  regularPrice:1.69, offerPrice:1.19, distanceKm:1.4, validFrom:"2026-08-25", validUntil:"2026-09-07", link:"#"},
+  {id:"d8",  productId:"p6", store:"Lidl",      regularPrice:1.49, offerPrice:0.99, distanceKm:3.1, validFrom:"2026-08-28", validUntil:"2026-09-10", link:"#"},
+  {id:"d9",  productId:"p7", store:"REWE",      regularPrice:1.59, offerPrice:1.19, distanceKm:2.2, validFrom:"2026-08-27", validUntil:"2026-09-09", link:"#"},
+  {id:"d10", productId:"p2", store:"Penny",     regularPrice:1.35, offerPrice:1.05, distanceKm:6.3, validFrom:"2026-08-28", validUntil:"2026-09-10", link:"#"}
+];
+
+/* Preise/Angebote für die zusätzlichen Sorten (p8–p28) je Händler generieren,
+   damit jede Sorte in 2 Läden auftaucht — gleiche Entfernungen wie oben je Händler */
+const storeMeta = {
+  Kaufland:{distanceKm:1.4}, Lidl:{distanceKm:3.1}, EDEKA:{distanceKm:4.6},
+  Penny:{distanceKm:6.3}, REWE:{distanceKm:2.2}, Netto:{distanceKm:5.0}
+};
+
+const dateRanges = [
+  ["2026-08-28","2026-09-10"], ["2026-08-25","2026-09-07"],
+  ["2026-08-26","2026-09-08"], ["2026-08-29","2026-09-11"],
+  ["2026-08-27","2026-09-09"]
+];
+
+function priceForSize(sizeMl){
+  if(sizeMl===250) return {reg:1.29, off:0.95};
+  if(sizeMl===330) return {reg:1.59, off:1.19};
+  return {reg:1.79, off:1.29};
+}
+
+const newProductIds = ["p8","p9","p10","p11","p12","p13","p14","p16","p17",
+  "p18","p19","p20","p21","p22","p23","p24","p25","p26","p27","p28"];
+const storeCycle = ["Kaufland","REWE","Lidl","Penny","EDEKA","Netto"];
+
+let dealNum = 11;
+newProductIds.forEach((pid,i)=>{
+  const product = products.find(p=>p.id===pid);
+  const base = priceForSize(product.sizeMl);
+  const stores = [storeCycle[i%6], storeCycle[(i+2)%6]];
+  stores.forEach((store,j)=>{
+    const jitter = j*0.06;
+    const [validFrom,validUntil] = dateRanges[dealNum % dateRanges.length];
+    rawDeals.push({
+      id:"d"+dealNum, productId:pid, store,
+      regularPrice:+(base.reg+jitter).toFixed(2),
+      offerPrice:+(base.off+jitter*0.6).toFixed(2),
+      distanceKm:storeMeta[store].distanceKm,
+      validFrom, validUntil, link:"#"
     });
+    dealNum++;
+  });
+});
 
-    render();
-})
-  .catch(error => {
-    console.error("Fehler beim Laden der Angebote:", error);
+/* synthetische tägliche Preisverlaufs-Daten (90 Tage) je Angebot.
+   Index 0 = vor 90 Tagen, letzter Index = heute (aktueller Preis). */
+const HISTORY_DAYS = 90;
+function genHistory(currentOffer, regular){
+  const points=[];
+  for(let i=0;i<HISTORY_DAYS;i++){
+    const progress = i/(HISTORY_DAYS-1);
+    const target = regular - (regular-currentOffer)*progress;
+    const jitter = (Math.sin(i*0.6)+Math.random()*0.5-0.25)*0.05;
+    const p = Math.max(currentOffer*0.88, target + jitter);
+    points.push(+p.toFixed(2));
+  }
+  points[points.length-1] = +currentOffer.toFixed(2);
+  return points;
+}
 
-    
-  });const dealsContainer=document.getElementById("deals");
-const search=document.getElementById("search");
-const storeFilter=document.getElementById("storeFilter");
-const sort=document.getElementById("sort");
-const count=document.getElementById("count");
+function hashStr(s){
+  let h = 0;
+  for(let i=0;i<s.length;i++){ h = (h*31 + s.charCodeAt(i)) >>> 0; }
+  return h;
+}
 
-let selectedBrand="Alle";
+let deals = rawDeals.map(d=>{
+  const product = products.find(p=>p.id===d.productId);
+  return {
+    ...d,
+    product: product.name,
+    brand: product.brand,
+    sizeMl: product.sizeMl,
+    img: product.img,
+    history: genHistory(d.offerPrice, d.regularPrice),
+    checkedMinutesAgo: 3 + (hashStr(d.id) % 118)
+  };
+});
 
-function formatDateRange(from, until) {
-    const start = from.split("-");
-    const end = until.split("-");
+/* Fixes "heute"-Datum für die Demo, damit Gültigkeits-/Alarm-Logik unabhängig
+   vom tatsächlichen Aufrufdatum konsistent zu den Demo-Angeboten bleibt. */
+const DEMO_TODAY = new Date("2026-09-01T00:00:00");
 
-    return `${start[2]}.${start[1]}. – ${end[2]}.${end[1]}.${end[0]}`;
+function daysUntil(dateStr){
+  const target = new Date(dateStr + "T00:00:00");
+  return Math.round((target - DEMO_TODAY) / 86400000);
+}
+
+function timeAgoLabel(min){
+  if(min < 60) return `vor ${min} Min.`;
+  const h = Math.floor(min/60);
+  const rest = min % 60;
+  return rest ? `vor ${h} Std. ${rest} Min.` : `vor ${h} Std.`;
+}
+
+/* ---------------- STATE ---------------- */
+
+let selectedBrand = "Alle";
+
+const DEFAULT_FAVORITES = ["p2","p6"];
+let favorites;
+try{
+  const storedFavs = localStorage.getItem("canspot-favorites");
+  favorites = new Set(storedFavs===null ? DEFAULT_FAVORITES : JSON.parse(storedFavs));
+}catch(e){ favorites = new Set(DEFAULT_FAVORITES); }
+function saveFavorites(){ localStorage.setItem("canspot-favorites", JSON.stringify([...favorites])); }
+
+const DEFAULT_LOCATION_LABEL = "59821 Arnsberg";
+let locationLabel = DEFAULT_LOCATION_LABEL;
+let searchWide = false;
+let radiusKm = 10;
+try{
+  const storedLocation = JSON.parse(localStorage.getItem("canspot-location") || "null");
+  if(storedLocation){
+    if(typeof storedLocation.label==="string" && storedLocation.label.trim()) locationLabel = storedLocation.label.trim();
+    if(typeof storedLocation.radiusKm==="number") radiusKm = storedLocation.radiusKm;
+    if(typeof storedLocation.searchWide==="boolean") searchWide = storedLocation.searchWide;
+  }
+}catch(e){}
+function saveLocation(){
+  localStorage.setItem("canspot-location", JSON.stringify({label: locationLabel, radiusKm, searchWide}));
+}
+
+let viewFavoritesOnly = false;
+let viewMode = "list";
+let selectedMapStore = null;
+let currentDetailDealId = null;
+let hideExpired = true;
+let noPfandOnly = false;
+let sizeFilter = "Alle";
+let packagingFilter = "Alle";
+let periodFilter = "Alle";
+let chartRangeDays = 30;
+
+const PFAND = 0.25;
+function getPfand(){ return PFAND; } /* alle Dosen-Energy-Drinks in DE haben Einwegpfand */
+
+let priceAlerts = {};
+try{ priceAlerts = JSON.parse(localStorage.getItem("canspot-alerts") || "{}"); }catch(e){ priceAlerts = {}; }
+function savePriceAlerts(){ localStorage.setItem("canspot-alerts", JSON.stringify(priceAlerts)); }
+
+const dealsContainer = document.getElementById("deals");
+const mapView = document.getElementById("mapView");
+const search = document.getElementById("search");
+const storeFilter = document.getElementById("storeFilter");
+const sort = document.getElementById("sort");
+const count = document.getElementById("count");
+
+function formatDateRange(from, until){
+  const start = from.split("-");
+  const end = until.split("-");
+  return `${start[2]}.${start[1]}. – ${end[2]}.${end[1]}.${end[0]}`;
+}
+
+function euro(n){ return n.toFixed(2).replace(".",","); }
+
+/* ---------------- RENDER DEALS ---------------- */
+
+function buildBadges(deal, isFav, favLiterMin){
+  const daysLeft = daysUntil(deal.validUntil);
+  if(daysLeft < 0){
+    return `<span class="info-badge expired"><svg class="icon icon-xs"><use href="#i-x"/></svg> Angebot abgelaufen</span>`;
+  }
+  const badges = [];
+  const histMin = Math.min(...deal.history.slice(-30));
+  if(deal.offerPrice <= histMin + 0.001){
+    badges.push(`<span class="info-badge gold"><svg class="icon icon-xs"><use href="#i-medal"/></svg> Tiefstpreis der letzten 30 Tage</span>`);
+  }
+  if(daysLeft >= 0 && daysLeft <= 3){
+    const label = daysLeft===0 ? "Läuft heute ab" : daysLeft===1 ? "Nur noch 1 Tag gültig" : `Nur noch ${daysLeft} Tage gültig`;
+    badges.push(`<span class="info-badge urgent"><svg class="icon icon-xs"><use href="#i-hourglass"/></svg> ${label}</span>`);
+  }
+  if(!isFav && favLiterMin !== Infinity){
+    const literPrice = deal.offerPrice / (deal.sizeMl/1000);
+    const diff = favLiterMin - literPrice;
+    if(diff > 0.01){
+      badges.push(`<span class="info-badge green"><svg class="icon icon-xs"><use href="#i-tag"/></svg> ${euro(diff)} €/L günstiger als dein Favorit</span>`);
+    }
+  }
+  return badges.join("");
 }
 
 function render(){
 
-let filtered=[...deals];
+  let filtered = [...deals];
+  const searchText = search.value.toLowerCase().trim();
 
-const searchText=search.value.toLowerCase().trim();
-
-if(selectedBrand!=="Alle"){
-filtered=filtered.filter(deal=>deal.brand===selectedBrand);
-}
-
-if(storeFilter.value!=="Alle"){
-filtered=filtered.filter(deal=>deal.store===storeFilter.value);
-}
-
-if(searchText){
-filtered=filtered.filter(deal=>
-deal.product.toLowerCase().includes(searchText) ||
-deal.brand.toLowerCase().includes(searchText) ||
-deal.store.toLowerCase().includes(searchText)
-);
-}
-
-if(sort.value==="price"){
-filtered.sort((a,b)=>a.price-b.price);
-}
-
-if(sort.value==="liter"){
-filtered.sort((a,b)=>
-(a.price/(a.size/1000))-
-(b.price/(b.size/1000))
-);
-}
-
-count.textContent=filtered.length;
-
-dealsContainer.innerHTML="";
-
-if(filtered.length===0){
-
-dealsContainer.innerHTML=`
-<div class="empty">
-🔎<br><br>
-<b>Keine Angebote gefunden.</b><br>
-Versuche einen anderen Suchbegriff oder Filter.
-</div>
-`;
-
-return;
-
-}
-
-const bestPrices = {};
-
-filtered.forEach(deal => {
-  const key = `${deal.product}_${deal.sizeMl}`;
-
-  if (bestPrices[key] === undefined || deal.offerPrice < bestPrices[key]) {
-    bestPrices[key] = deal.offerPrice;
+  if(viewFavoritesOnly){
+    filtered = filtered.filter(d=>favorites.has(d.productId));
   }
+  if(selectedBrand !== "Alle"){
+    filtered = filtered.filter(d=>d.brand===selectedBrand);
+  }
+  if(storeFilter.value !== "Alle"){
+    filtered = filtered.filter(d=>d.store===storeFilter.value);
+  }
+  if(searchText){
+    filtered = filtered.filter(d=>
+      d.product.toLowerCase().includes(searchText) ||
+      d.brand.toLowerCase().includes(searchText) ||
+      d.store.toLowerCase().includes(searchText)
+    );
+  }
+  if(!searchWide){
+    filtered = filtered.filter(d=>d.distanceKm <= radiusKm);
+  }
+  if(hideExpired){
+    filtered = filtered.filter(d=>daysUntil(d.validUntil) >= 0);
+  }
+  if(noPfandOnly){
+    filtered = filtered.filter(d=>getPfand()===0);
+  }
+  if(sizeFilter !== "Alle"){
+    filtered = filtered.filter(d=>String(d.sizeMl)===sizeFilter);
+  }
+  if(packagingFilter !== "Alle"){
+    filtered = filtered.filter(d=>getPackaging()===packagingFilter);
+  }
+  if(periodFilter==="soon"){
+    filtered = filtered.filter(d=>{ const dl=daysUntil(d.validUntil); return dl>=0 && dl<=3; });
+  } else if(periodFilter==="new"){
+    filtered = filtered.filter(d=>{ const df=daysUntil(d.validFrom)*-1; return df>=0 && df<=3; });
+  }
+
+  if(sort.value==="price"){
+    filtered.sort((a,b)=>a.offerPrice-b.offerPrice);
+  } else if(sort.value==="liter"){
+    filtered.sort((a,b)=>
+      (a.offerPrice/(a.sizeMl/1000)) - (b.offerPrice/(b.sizeMl/1000))
+    );
+  } else if(sort.value==="distance"){
+    filtered.sort((a,b)=>a.distanceKm-b.distanceKm);
+  } else if(sort.value==="saving"){
+    filtered.sort((a,b)=>
+      (1 - b.offerPrice/b.regularPrice) - (1 - a.offerPrice/a.regularPrice)
+    );
+  } else if(sort.value==="ending"){
+    filtered.sort((a,b)=> new Date(a.validUntil) - new Date(b.validUntil));
+  }
+
+  count.textContent = filtered.length;
+
+  let favLiterMin = Infinity;
+  deals.forEach(d=>{
+    if(favorites.has(d.productId)){
+      const lp = d.offerPrice / (d.sizeMl/1000);
+      if(lp < favLiterMin) favLiterMin = lp;
+    }
   });
-  filtered.forEach((deal,index)=>{
-const literPrice=deal.offerPrice/(deal.sizeMl/1000);
 
-const card=document.createElement("article");
+  dealsContainer.style.display = viewMode==="list" ? "block" : "none";
+  mapView.style.display = viewMode==="map" ? "block" : "none";
 
-card.className="card";
+  dealsContainer.innerHTML = "";
 
-card.innerHTML=`
+  if(filtered.length===0){
+    let radiusExpansionCount = null;
+    if(!viewFavoritesOnly && !searchWide){
+      radiusExpansionCount = deals.filter(d=>{
+        if(viewFavoritesOnly && !favorites.has(d.productId)) return false;
+        if(selectedBrand!=="Alle" && d.brand!==selectedBrand) return false;
+        if(storeFilter.value!=="Alle" && d.store!==storeFilter.value) return false;
+        if(searchText && !(d.product.toLowerCase().includes(searchText) || d.brand.toLowerCase().includes(searchText) || d.store.toLowerCase().includes(searchText))) return false;
+        if(hideExpired && daysUntil(d.validUntil)<0) return false;
+        if(noPfandOnly && getPfand()!==0) return false;
+        if(sizeFilter!=="Alle" && String(d.sizeMl)!==sizeFilter) return false;
+        if(packagingFilter!=="Alle" && getPackaging()!==packagingFilter) return false;
+        if(periodFilter==="soon"){ const dl=daysUntil(d.validUntil); if(!(dl>=0 && dl<=3)) return false; }
+        if(periodFilter==="new"){ const df=daysUntil(d.validFrom)*-1; if(!(df>=0 && df<=3)) return false; }
+        return true;
+      }).length;
+    }
 
-<div class="line">
+    dealsContainer.innerHTML = viewFavoritesOnly ? `
+      <div class="empty">
+        <svg class="icon icon-xl"><use href="#i-heart"/></svg><br><br>
+        <b>Noch keine Favoriten.</b><br>
+        Tippe bei einem Angebot auf <svg class="icon icon-xs"><use href="#i-heart"/></svg>, um es hier zu sammeln.
+        <br><br>
+        <button class="btn primary" data-reset="fav" style="display:inline-flex">Alle Angebote ansehen</button>
+      </div>` : radiusExpansionCount ? `
+      <div class="empty">
+        <svg class="icon icon-xl"><use href="#i-pin"/></svg><br><br>
+        <b>Keine Angebote in deinem Umkreis.</b><br>
+        Aber ${radiusExpansionCount} Angebot${radiusExpansionCount===1?"":"e"} deutschlandweit${radiusExpansionCount===1?" wartet":" warten"} auf dich.
+        <br><br>
+        <button class="btn primary" data-expand-radius style="display:inline-flex">Deutschlandweit suchen</button>
+      </div>` : `
+      <div class="empty">
+        <svg class="icon icon-xl"><use href="#i-search"/></svg><br><br>
+        <b>Keine Angebote gefunden.</b><br>
+        Versuche einen anderen Suchbegriff, Filter oder größeren Umkreis.
+        <br><br>
+        <button class="btn primary" data-reset="filters" style="display:inline-flex">Filter zurücksetzen</button>
+      </div>`;
+  } else {
 
-<div>
+    let globalBestId = null, globalBestPrice = Infinity;
+    filtered.forEach(d=>{
+      if(daysUntil(d.validUntil) >= 0 && d.offerPrice < globalBestPrice){ globalBestPrice = d.offerPrice; globalBestId = d.id; }
+    });
 
-<div class="product">
-${deal.product}
-</div>
+    filtered.forEach(deal=>{
+      const isBest = deal.id === globalBestId;
+      const isFav = favorites.has(deal.productId);
+      const literPrice = deal.offerPrice / (deal.sizeMl/1000);
+      const savingPct = Math.round((1 - deal.offerPrice/deal.regularPrice) * 100);
+      const badges = buildBadges(deal, isFav, favLiterMin);
+      const pfand = getPfand();
+      const branch = storeBranches[deal.store];
+      const openNow = branch ? isStoreOpenNow(branch) : null;
+      const avgHist = deal.history.reduce((a,b)=>a+b,0)/deal.history.length;
+      const avgDiff = avgHist - deal.offerPrice;
+      const isExpired = daysUntil(deal.validUntil) < 0;
 
-<div class="brandtxt">
-${deal.brand} · ${deal.sizeMl} ml
-</div>
+      const card = document.createElement("article");
+      card.className = "card" + (isExpired ? " expired" : "");
+      card.dataset.id = deal.id;
 
-</div>
+      card.innerHTML = `
+        <div class="line">
+          <div>
+            <div class="product">${deal.product}</div>
+            <div class="brandtxt">${deal.brand} · ${deal.sizeMl} ml</div>
+          </div>
+          ${isBest ? `<button class="badge-best" data-link="${deal.link}"><svg class="icon icon-xs"><use href="#i-trophy"/></svg> BESTER PREIS</button>` : ""}
+        </div>
 
-${deal.offerPrice === bestPrices[`${deal.product}_${deal.sizeMl}`]
-? `<span class="badge">BESTER PREIS</span>`
-: ""}
-</div>
+        <div class="store">
+          <img class="store-logo" src="${storeLogos[deal.store] || STORE_FALLBACK_IMG}" alt="${deal.store}" loading="lazy" referrerpolicy="no-referrer">
+          <div>
+            <div>${deal.store} <span class="distance">· ${deal.distanceKm} km</span></div>
+            <div class="store-sub">${routeMinutes(deal.distanceKm)} Min. Route${openNow===null ? "" : `<span class="open-dot ${openNow?"open":""}"></span>${openNow?"Jetzt geöffnet":"Geschlossen"}`}</div>
+          </div>
+        </div>
 
-<div class="store">
-🏪 ${deal.store}
-<span class="distance">· ${deal.distanceKm} Km</span>
-</div>
+        <div class="meta-row">
+          <div class="meta"><svg class="icon icon-xs"><use href="#i-calendar"/></svg> ${formatDateRange(deal.validFrom, deal.validUntil)}</div>
+          <button class="history-link" data-hist="${deal.id}"><svg class="icon icon-sm"><use href="#i-trend"/></svg> Preisverlauf</button>
+        </div>
 
-<div class="meta">
-📅 ${formatDateRange(deal.validFrom, deal.validUntil)}<div class="bottom">
+        ${badges ? `<div class="badges-row">${badges}</div>` : ""}
 
-<div>
+        <div class="bottom">
+          <div class="thumb-price">
+            <img class="thumb" src="${deal.img}" alt="${deal.product}" loading="lazy" referrerpolicy="no-referrer">
+            <div>
+              <div class="price-line">
+                <span class="price">${euro(deal.offerPrice)} €</span>
+                <span class="pfand-note">+ ${euro(pfand)} € Pfand</span>
+              </div>
+              <div class="unit">${euro(literPrice)} €/L · Gesamt an der Kasse: ${euro(deal.offerPrice+pfand)} €</div>
+              <div class="saving">
+                <span class="old-price">${euro(deal.regularPrice)} €</span>
+                <span class="saving-percent">${savingPct}% GÜNSTIGER</span>
+              </div>
+              ${avgDiff > 0.05 ? `<div class="avg-context">${euro(avgDiff)} € unter Ø Preis (${euro(avgHist)} €)</div>` : ""}
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn fav ${isFav ? "active":""}" data-fav="${deal.productId}"><svg class="icon icon-md"><use href="#i-heart"/></svg></button>
+            ${isExpired
+              ? `<button class="btn disabled-cta" disabled>Abgelaufen</button>`
+              : `<button class="btn primary" data-store-detail="${deal.id}">Zum Angebot <svg class="icon icon-sm"><use href="#i-external"/></svg></button>`}
+          </div>
+        </div>
 
-<div>
-  <div class="price">
-    ${deal.offerPrice.toFixed(2).replace(".",",")} €
-  </div>
+        <div class="trust-line"><svg class="icon icon-xs"><use href="#i-check"/></svg> Preis geprüft ${timeAgoLabel(deal.checkedMinutesAgo)} · direkt bei ${deal.store}</div>
+      `;
 
-  <div class="unit">
-    ${(deal.offerPrice / (deal.sizeMl / 1000)).toFixed(2).replace(".",",")} €/Liter
-  </div>
+      card.querySelector(".thumb").addEventListener("error", function(){
+        this.src = FALLBACK_IMG;
+        this.classList.add("thumb-fallback");
+      }, {once:true});
 
-  <div class="saving">
-    <span class="old-price">
-      ${deal.regularPrice.toFixed(2).replace(".",",")} €
-    </span>
+      card.querySelector(".store-logo").addEventListener("error", function(){
+        this.src = STORE_FALLBACK_IMG;
+      }, {once:true});
 
-    <span class="saving-percent">
-     ${Math.round((1 - deal.offerPrice / deal.regularPrice) * 100)} % GÜNSTIGER
-    </span>
-  </div>
-</div>
-<a class="btn" href="${deal.link}">
-♡
-</a>
+      dealsContainer.appendChild(card);
+    });
+  }
 
-<a class="btn" href="${deal.link}">
-↗
-</a>
-
-</div>
-
-</div>
-
-`;
-
-dealsContainer.appendChild(card);
-
-});
-
+  renderMap(filtered);
 }
 
-document.querySelectorAll(".chip").forEach(button=>{
+/* ---------------- STATUS BAR ---------------- */
 
-button.addEventListener("click",()=>{
+function updateStatus(){
+  const statusText = document.getElementById("statusText");
+  const locLabel = document.getElementById("locLabel");
+  if(searchWide){
+    statusText.innerHTML = `<svg class="icon icon-sm"><use href="#i-pin"/></svg> <b>Ganz Deutschland</b> · ${count.textContent} Angebote`;
+    locLabel.textContent = "Deutschland";
+  } else {
+    statusText.innerHTML = `<svg class="icon icon-sm"><use href="#i-pin"/></svg> <b>${locationLabel}</b> · Radius ${radiusKm} km · <span id="count">${count.textContent}</span> Angebote`;
+    locLabel.textContent = `${locationLabel.split(" ")[0]} · ${radiusKm} km`;
+  }
+  saveLocation();
+}
 
-document.querySelectorAll(".chip")
-.forEach(b=>b.classList.remove("on"));
+/* ---------------- BRAND CHIPS / FILTERS ---------------- */
 
-button.classList.add("on");
-
-selectedBrand=button.dataset.brand;
-
-render();
-
+document.querySelectorAll(".tabs .chip").forEach(button=>{
+  button.addEventListener("click",()=>{
+    document.querySelectorAll(".tabs .chip").forEach(b=>b.classList.remove("on"));
+    button.classList.add("on");
+    selectedBrand = button.dataset.brand;
+    render();
+    updateStatus();
+  });
 });
 
+search.addEventListener("input",()=>{render();updateStatus();});
+storeFilter.addEventListener("change",()=>{render();updateStatus();});
+sort.addEventListener("change",()=>{render();updateStatus();});
+
+/* ---------------- SORTIERUNG (CUSTOM SHEET) ---------------- */
+
+const sortLabels = {
+  price: "Günstigster Preis",
+  liter: "Günstigster €/Liter",
+  distance: "Nächster Händler",
+  saving: "Beste Ersparnis",
+  ending: "Endet bald"
+};
+
+function syncSortUI(){
+  document.getElementById("sortBtnLabel").textContent = sortLabels[sort.value] || "Sortierung";
+  document.querySelectorAll(".sort-row").forEach(row=>{
+    row.classList.toggle("active", row.dataset.sort===sort.value);
+  });
+}
+
+document.getElementById("sortBtn").addEventListener("click", ()=>{
+  syncSortUI();
+  openSheet("sortOverlay");
 });
 
-search.addEventListener("input",render);
-storeFilter.addEventListener("change",render);
-sort.addEventListener("change",render);
+document.querySelectorAll(".sort-row").forEach(row=>{
+  row.addEventListener("click", ()=>{
+    sort.value = row.dataset.sort;
+    syncSortUI();
+    render();
+    updateStatus();
+    closeSheet("sortOverlay");
+  });
+});
 
+syncSortUI();
 
+/* ---------------- DEAL CARD ACTIONS (favorite / history / best-price) ---------------- */
+
+dealsContainer.addEventListener("click",(e)=>{
+  const favBtn = e.target.closest("[data-fav]");
+  if(favBtn){
+    const pid = favBtn.dataset.fav;
+    const wasFav = favorites.has(pid);
+    if(wasFav) favorites.delete(pid); else favorites.add(pid);
+    saveFavorites();
+    render();
+    renderFavList();
+    const product = products.find(p=>p.id===pid);
+    const label = product ? product.name : "Produkt";
+    showToast(wasFav ? `${label} aus Favoriten entfernt` : `${label} zu Favoriten hinzugefügt`);
+    return;
+  }
+  const histBtn = e.target.closest("[data-hist]");
+  if(histBtn){
+    openHistory(histBtn.dataset.hist);
+    return;
+  }
+  const bestBtn = e.target.closest(".badge-best");
+  if(bestBtn){
+    window.open(bestBtn.dataset.link || "#", "_blank");
+    return;
+  }
+  const resetBtn = e.target.closest("[data-reset]");
+  if(resetBtn){
+    if(resetBtn.dataset.reset==="fav"){
+      viewFavoritesOnly = false;
+      setActiveNav("home");
+    } else {
+      search.value = "";
+      selectedBrand = "Alle";
+      document.querySelectorAll(".tabs .chip").forEach(b=>b.classList.remove("on"));
+      const allChip = document.querySelector('.tabs .chip[data-brand="Alle"]');
+      if(allChip) allChip.classList.add("on");
+      sort.value = "price";
+      resetExtraFilters();
+    }
+    render();
+    updateStatus();
+    return;
+  }
+  const expandBtn = e.target.closest("[data-expand-radius]");
+  if(expandBtn){
+    searchWide = true;
+    germanyToggle.checked = true;
+    radiusBox.classList.add("disabled");
+    syncRadiusChips();
+    render();
+    updateStatus();
+    updateFilterCount();
+    return;
+  }
+  const storeDetailBtn = e.target.closest("[data-store-detail]");
+  if(storeDetailBtn){
+    openStoreDetail(storeDetailBtn.dataset.storeDetail);
+    return;
+  }
+  if(e.target.closest("a") || e.target.closest(".btn.primary")){
+    return;
+  }
+  const card = e.target.closest(".card");
+  if(card && card.dataset.id){
+    openHistory(card.dataset.id);
+  }
+});
+
+/* ---------------- LISTE / KARTE UMSCHALTEN ---------------- */
+
+document.querySelectorAll(".view-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".view-btn").forEach(b=>b.classList.remove("on"));
+    btn.classList.add("on");
+    viewMode = btn.dataset.view;
+    render();
+  });
+});
+
+function renderMap(filtered){
+  if(filtered.length===0){
+    mapView.innerHTML = `<div class="empty" style="margin-top:0"><svg class="icon icon-xl"><use href="#i-map"/></svg><br><br>Keine Angebote für die Kartenansicht in diesem Filter.</div>`;
+    return;
+  }
+
+  const byStore = {};
+  filtered.forEach(d=>{
+    if(!byStore[d.store]){
+      byStore[d.store] = {store:d.store, distanceKm:d.distanceKm, count:0, minPrice:Infinity};
+    }
+    byStore[d.store].count++;
+    if(d.offerPrice < byStore[d.store].minPrice) byStore[d.store].minPrice = d.offerPrice;
+  });
+
+  const stores = Object.values(byStore);
+  const maxDist = Math.max(...stores.map(s=>s.distanceKm), radiusKm, 1);
+
+  const rings = [0.25,0.5,0.75,1].map(f=>
+    `<div class="map-ring" style="width:${f*90}%;height:${f*90}%"></div>`
+  ).join("");
+
+  const pins = stores.map(s=>{
+    const angle = (hashStr(s.store) % 360) * Math.PI/180;
+    const r = Math.min(s.distanceKm/maxDist, 0.92) * 45;
+    const x = 50 + r*Math.cos(angle);
+    const y = 50 + r*Math.sin(angle);
+    const selected = selectedMapStore===s.store;
+    return `<button class="map-pin ${selected?"selected":""}" style="left:${x}%;top:${y}%" data-store="${s.store}">
+      <span class="pin-logo"><img src="${storeLogos[s.store] || STORE_FALLBACK_IMG}" alt="${s.store}" referrerpolicy="no-referrer"></span>
+      <span class="pin-price">${euro(s.minPrice)} €</span>
+    </button>`;
+  }).join("");
+
+  mapView.innerHTML = `
+    <div class="map-canvas">
+      ${rings}
+      ${pins}
+      <div class="map-user"></div>
+      <div class="map-user-label">Du</div>
+    </div>
+    <div class="map-legend">Pin-Preis = günstigstes Angebot bei diesem Händler · antippen für Details</div>
+    <div id="mapPopoverWrap"></div>
+  `;
+
+  mapView.querySelectorAll(".pin-logo img").forEach(img=>{
+    img.addEventListener("error", function(){ this.src = STORE_FALLBACK_IMG; }, {once:true});
+  });
+
+  mapView.querySelectorAll(".map-pin").forEach(pin=>{
+    pin.addEventListener("click", ()=>{
+      selectedMapStore = pin.dataset.store;
+      mapView.querySelectorAll(".map-pin").forEach(p=>p.classList.toggle("selected", p.dataset.store===selectedMapStore));
+      showMapPopover(byStore[selectedMapStore]);
+    });
+  });
+
+  if(selectedMapStore && byStore[selectedMapStore]){
+    showMapPopover(byStore[selectedMapStore]);
+  }
+}
+
+function showMapPopover(storeInfo){
+  const wrap = document.getElementById("mapPopoverWrap");
+  if(!wrap || !storeInfo) return;
+  wrap.innerHTML = `
+    <div class="map-popover">
+      <img class="store-row-logo" src="${storeLogos[storeInfo.store] || STORE_FALLBACK_IMG}" alt="${storeInfo.store}" referrerpolicy="no-referrer">
+      <div class="map-popover-txt">
+        <b>${storeInfo.store}</b>
+        <span>${storeInfo.count} Angebot${storeInfo.count===1?"":"e"} · ab ${euro(storeInfo.minPrice)} € · ${storeInfo.distanceKm} km entfernt</span>
+      </div>
+      <button class="btn primary" data-jump-store="${storeInfo.store}">Ansehen</button>
+    </div>
+  `;
+  wrap.querySelector("[data-jump-store]").addEventListener("click", ()=>{
+    storeFilter.value = storeInfo.store;
+    syncStoreChips();
+    updateFilterCount();
+    viewMode = "list";
+    document.querySelectorAll(".view-btn").forEach(b=>b.classList.toggle("on", b.dataset.view==="list"));
+    render();
+    updateStatus();
+  });
+}
+
+/* ---------------- WEITERE FILTER ---------------- */
+
+const filterCountEl = document.getElementById("filterCount");
+const filterPeriod = document.getElementById("filterPeriod");
+
+function updateFilterCount(){
+  let n = 0;
+  if(storeFilter.value !== "Alle") n++;
+  if(sizeFilter !== "Alle") n++;
+  if(packagingFilter !== "Alle") n++;
+  if(periodFilter !== "Alle") n++;
+  if(noPfandOnly) n++;
+  if(!hideExpired) n++;
+  if(searchWide || radiusKm !== 10) n++;
+  filterCountEl.textContent = n;
+  filterCountEl.classList.toggle("show", n>0);
+}
+
+function syncStoreChips(){
+  document.querySelectorAll(".chip[data-store]").forEach(b=>b.classList.toggle("on", b.dataset.store===storeFilter.value));
+}
+
+function syncRadiusChips(){
+  document.querySelectorAll(".chip[data-radius]").forEach(b=>{
+    const active = searchWide ? b.dataset.radius==="de" : (b.dataset.radius!=="de" && +b.dataset.radius===radiusKm);
+    b.classList.toggle("on", active);
+  });
+}
+
+function resetExtraFilters(){
+  hideExpired = true;
+  noPfandOnly = false;
+  sizeFilter = "Alle";
+  packagingFilter = "Alle";
+  periodFilter = "Alle";
+  radiusKm = 10;
+  searchWide = false;
+  storeFilter.value = "Alle";
+
+  document.getElementById("filterHideExpired").checked = true;
+  document.getElementById("filterNoPfand").checked = false;
+  filterPeriod.value = "Alle";
+  document.querySelectorAll(".chip[data-size]").forEach(b=>b.classList.toggle("on", b.dataset.size==="Alle"));
+  document.querySelectorAll(".chip[data-pack]").forEach(b=>b.classList.toggle("on", b.dataset.pack==="Alle"));
+  germanyToggle.checked = false;
+  radiusSlider.value = 10;
+  radiusValue.textContent = 10;
+  radiusBox.classList.remove("disabled");
+  syncRadiusChips();
+  syncStoreChips();
+  updateFilterCount();
+}
+
+document.getElementById("filterBtn").addEventListener("click", ()=>{
+  syncRadiusChips();
+  syncStoreChips();
+  openSheet("filterOverlay");
+});
+
+document.getElementById("filterHideExpired").addEventListener("change",(e)=>{
+  hideExpired = e.target.checked;
+  render();
+  updateStatus();
+  updateFilterCount();
+});
+
+document.getElementById("filterNoPfand").addEventListener("change",(e)=>{
+  noPfandOnly = e.target.checked;
+  render();
+  updateStatus();
+  updateFilterCount();
+});
+
+filterPeriod.addEventListener("change",()=>{
+  periodFilter = filterPeriod.value;
+  render();
+  updateStatus();
+  updateFilterCount();
+});
+
+document.querySelectorAll(".chip[data-size]").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".chip[data-size]").forEach(b=>b.classList.remove("on"));
+    btn.classList.add("on");
+    sizeFilter = btn.dataset.size;
+    render();
+    updateStatus();
+    updateFilterCount();
+  });
+});
+
+document.querySelectorAll(".chip[data-pack]").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".chip[data-pack]").forEach(b=>b.classList.remove("on"));
+    btn.classList.add("on");
+    packagingFilter = btn.dataset.pack;
+    render();
+    updateStatus();
+    updateFilterCount();
+  });
+});
+
+document.querySelectorAll(".chip[data-store]").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    storeFilter.value = btn.dataset.store;
+    syncStoreChips();
+    render();
+    updateStatus();
+    updateFilterCount();
+  });
+});
+
+document.querySelectorAll(".chip[data-radius]").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    if(btn.dataset.radius==="de"){
+      searchWide = true;
+      germanyToggle.checked = true;
+      radiusBox.classList.add("disabled");
+    } else {
+      searchWide = false;
+      radiusKm = +btn.dataset.radius;
+      germanyToggle.checked = false;
+      radiusBox.classList.remove("disabled");
+      radiusSlider.value = radiusKm;
+      radiusValue.textContent = radiusKm;
+    }
+    syncRadiusChips();
+    render();
+    updateStatus();
+    updateFilterCount();
+    refreshProfileSummaries();
+  });
+});
+
+document.getElementById("filterResetBtn").addEventListener("click", ()=>{
+  resetExtraFilters();
+  render();
+  updateStatus();
+});
+
+updateFilterCount();
+
+/* ---------------- BOTTOM-NAVIGATION ---------------- */
+
+function setActiveNav(name){
+  document.querySelectorAll(".navitem").forEach(n=>n.classList.toggle("active", n.dataset.nav===name));
+}
+
+function closeAllSheets(){
+  document.querySelectorAll(".overlay.open").forEach(ov=>closeSheet(ov.id));
+}
+
+const tabsNav = document.querySelector("nav.tabs");
+const controlsEl = document.querySelector(".controls");
+const statusEl = document.querySelector(".status");
+const viewToggleEl = document.querySelector(".view-toggle");
+const alertsView = document.getElementById("alertsView");
+
+function showDealsView(){
+  tabsNav.style.display = "flex";
+  controlsEl.style.display = "flex";
+  statusEl.style.display = "flex";
+  viewToggleEl.style.display = "flex";
+  alertsView.style.display = "none";
+  render();
+}
+
+function showAlertsView(){
+  tabsNav.style.display = "none";
+  controlsEl.style.display = "none";
+  statusEl.style.display = "none";
+  viewToggleEl.style.display = "none";
+  dealsContainer.style.display = "none";
+  mapView.style.display = "none";
+  alertsView.style.display = "block";
+  renderAlertsView();
+}
+
+document.getElementById("navHome").addEventListener("click", ()=>{
+  closeAllSheets();
+  viewFavoritesOnly = false;
+  showDealsView();
+  setActiveNav("home");
+  updateStatus();
+  window.scrollTo({top:0, behavior:"smooth"});
+});
+
+document.getElementById("navSearch").addEventListener("click", ()=>{
+  closeAllSheets();
+  viewFavoritesOnly = false;
+  showDealsView();
+  setActiveNav("home");
+  updateStatus();
+  window.scrollTo({top:0, behavior:"smooth"});
+  search.focus();
+});
+
+document.getElementById("navFav").addEventListener("click", ()=>{
+  closeAllSheets();
+  viewFavoritesOnly = true;
+  showDealsView();
+  setActiveNav("fav");
+  updateStatus();
+  window.scrollTo({top:0, behavior:"smooth"});
+});
+
+document.getElementById("navAlerts").addEventListener("click", ()=>{
+  closeAllSheets();
+  showAlertsView();
+  setActiveNav("alerts");
+  window.scrollTo({top:0, behavior:"smooth"});
+});
+
+document.getElementById("navProfile").addEventListener("click", ()=>{
+  closeAllSheets();
+  openProfile();
+  setActiveNav("profile");
+});
+
+/* ---------------- ALARME-TAB ---------------- */
+
+const navAlertsDot = document.getElementById("navAlertsDot");
+
+function updateAlertsDot(){
+  const hasActive = Object.values(priceAlerts).some(a=>a.enabled);
+  navAlertsDot.classList.toggle("show", hasActive);
+}
+
+function computeFavoriteEvents(){
+  const events = [];
+  favorites.forEach(pid=>{
+    const product = products.find(p=>p.id===pid);
+    if(!product) return;
+    const candidateDeals = deals.filter(d=>d.productId===pid);
+    if(candidateDeals.length===0){
+      events.push({icon:"i-x", cls:"expired", text:`${product.name} ist aktuell bei keinem Händler im Angebot.`});
+      return;
+    }
+    const best = candidateDeals.reduce((a,b)=>a.offerPrice<b.offerPrice?a:b);
+    const daysLeft = daysUntil(best.validUntil);
+    if(daysLeft>=0 && daysLeft<=3){
+      const when = daysLeft===0 ? "heute" : daysLeft===1 ? "morgen" : `in ${daysLeft} Tagen`;
+      events.push({icon:"i-hourglass", cls:"urgent", text:`${product.name} läuft ${when} ab.`});
+    }
+    const avg = best.history.reduce((a,b)=>a+b,0)/best.history.length;
+    if(avg - best.offerPrice > 0.15){
+      events.push({icon:"i-tag", cls:"green", text:`${product.name} ist gerade ${euro(avg-best.offerPrice)} € günstiger als im Schnitt.`});
+    }
+  });
+  return events.slice(0,4);
+}
+
+function renderAlertsView(){
+  const entries = Object.keys(priceAlerts).map(pid=>{
+    const product = products.find(p=>p.id===pid);
+    if(!product) return null;
+    const alert = priceAlerts[pid];
+    const candidateDeals = deals.filter(d=>d.productId===pid);
+    const currentBest = candidateDeals.length ? Math.min(...candidateDeals.map(d=>d.offerPrice)) : null;
+    return {product, alert, currentBest};
+  }).filter(Boolean);
+
+  const events = computeFavoriteEvents();
+  const eventsHtml = events.length===0 ? "" : `
+    <div class="field-label">Hinweise für dich</div>
+    ${events.map(ev=>`
+      <div class="event-row"><svg class="icon icon-sm info-badge ${ev.cls}" style="padding:6px;border-radius:8px"><use href="#${ev.icon}"/></svg><span>${ev.text}</span></div>
+    `).join("")}
+  `;
+
+  if(entries.length===0){
+    alertsView.innerHTML = eventsHtml + `
+      <div class="empty">
+        <svg class="icon icon-xl"><use href="#i-target"/></svg><br><br>
+        <b>Noch keine Preisalarme.</b><br>
+        Öffne ein Angebot und lege im Produktdetail einen Wunschpreis fest.
+        <br><br>
+        <button class="btn primary" data-alert-tohome style="display:inline-flex">Angebote entdecken</button>
+      </div>`;
+    return;
+  }
+
+  alertsView.innerHTML = eventsHtml + entries.map(e=>{
+    const unavailable = e.currentBest === null;
+    const reached = !unavailable && e.currentBest <= e.alert.target + 0.001;
+    return `
+      <article class="card alert-card">
+        <div class="line">
+          <div class="thumb-price">
+            <img class="thumb" src="${e.product.img}" alt="${e.product.name}" loading="lazy" referrerpolicy="no-referrer">
+            <div>
+              <div class="product">${e.product.name}</div>
+              <div class="brandtxt">${e.product.brand} · ${e.product.sizeMl} ml</div>
+            </div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" data-alert-toggle="${e.product.id}" ${e.alert.enabled ? "checked" : ""}>
+            <span class="track"></span>
+          </label>
+        </div>
+        <div class="alert-compare">
+          <div class="alert-compare-box">
+            <span>Zielpreis</span>
+            <b>${euro(e.alert.target)} €</b>
+          </div>
+          <div class="alert-compare-box ${reached ? "reached" : ""}">
+            <span>Aktueller Preis</span>
+            <b>${unavailable ? "–" : euro(e.currentBest)+" €"}</b>
+          </div>
+        </div>
+        ${reached ? `<div class="info-badge green" style="margin-top:10px"><svg class="icon icon-xs"><use href="#i-celebrate"/></svg> Zielpreis erreicht!</div>` : ""}
+        ${unavailable ? `<div class="info-badge expired" style="margin-top:10px"><svg class="icon icon-xs"><use href="#i-x"/></svg> Aktuell nicht verfügbar</div>` : ""}
+        <div class="alert-card-actions">
+          <button class="btn" data-alert-open="${e.product.id}" ${unavailable ? "disabled" : ""}>Angebote ansehen</button>
+          <button class="btn" data-alert-delete="${e.product.id}"><svg class="icon icon-sm"><use href="#i-trash"/></svg> Löschen</button>
+        </div>
+      </article>
+    `;
+  }).join("");
+
+  alertsView.querySelectorAll(".thumb").forEach(img=>{
+    img.addEventListener("error", function(){
+      this.src = FALLBACK_IMG;
+      this.classList.add("thumb-fallback");
+    }, {once:true});
+  });
+}
+
+alertsView.addEventListener("click", (e)=>{
+  const delBtn = e.target.closest("[data-alert-delete]");
+  if(delBtn){
+    delete priceAlerts[delBtn.dataset.alertDelete];
+    savePriceAlerts();
+    renderAlertsView();
+    updateAlertsDot();
+    showToast("Preisalarm gelöscht.");
+    return;
+  }
+  const openBtn = e.target.closest("[data-alert-open]");
+  if(openBtn){
+    const pid = openBtn.dataset.alertOpen;
+    const firstDeal = deals.filter(d=>d.productId===pid).sort((a,b)=>a.offerPrice-b.offerPrice)[0];
+    if(firstDeal){
+      viewFavoritesOnly = false;
+      showDealsView();
+      setActiveNav("home");
+      updateStatus();
+      openHistory(firstDeal.id);
+    }
+    return;
+  }
+  const homeBtn = e.target.closest("[data-alert-tohome]");
+  if(homeBtn){
+    showDealsView();
+    setActiveNav("home");
+    updateStatus();
+    return;
+  }
+});
+
+alertsView.addEventListener("change", (e)=>{
+  const toggle = e.target.closest("[data-alert-toggle]");
+  if(toggle){
+    const pid = toggle.dataset.alertToggle;
+    if(priceAlerts[pid]){
+      priceAlerts[pid].enabled = toggle.checked;
+      savePriceAlerts();
+      updateAlertsDot();
+      renderAlertsView();
+    }
+  }
+});
+
+/* ---------------- SHEETS: open / close ---------------- */
+
+const bottomNavEl = document.querySelector(".bottomnav");
+
+function updateBottomNavVisibility(){
+  const anyOpen = document.querySelectorAll(".overlay.open").length > 0;
+  bottomNavEl.style.display = anyOpen ? "none" : "flex";
+}
+
+function openSheet(id){
+  document.getElementById(id).classList.add("open");
+  updateBottomNavVisibility();
+}
+function closeSheet(id){
+  document.getElementById(id).classList.remove("open");
+  updateBottomNavVisibility();
+  if(id==="profileOverlay"){
+    const profileTab = document.querySelector('.navitem[data-nav="profile"]');
+    if(profileTab && profileTab.classList.contains("active")) setActiveNav("home");
+  }
+}
+
+document.querySelectorAll("[data-close]").forEach(el=>{
+  el.addEventListener("click", ()=>closeSheet(el.dataset.close));
+});
+document.querySelectorAll(".overlay").forEach(ov=>{
+  ov.addEventListener("click",(e)=>{ if(e.target===ov) closeSheet(ov.id); });
+});
+
+document.getElementById("locBtn").addEventListener("click",()=>openSheet("locOverlay"));
+document.getElementById("statusEdit").addEventListener("click",()=>openSheet("locOverlay"));
+document.getElementById("notifBtn").addEventListener("click",()=>openSheet("notifOverlay"));
+
+/* ---------------- PROFILE / MEIN BEREICH ---------------- */
+
+document.getElementById("profileBtn").addEventListener("click", openProfile);
+
+function openProfile(){
+  refreshProfileSummaries();
+  updateProfileFavList();
+  updateProfileAlertList();
+  openSheet("profileOverlay");
+}
+
+function refreshProfileSummaries(){
+  const locSummary = document.getElementById("profileLocSummary");
+  locSummary.textContent = searchWide ? "Ganz Deutschland" : `${locationLabel} · ${radiusKm} km`;
+
+  const onCount = ["notifBest","notifFav","notifNearby","notifWeekly"]
+    .filter(id=>document.getElementById(id).checked).length;
+  const notifSummary = document.getElementById("profileNotifSummary");
+  if(onCount===0) notifSummary.textContent = "Alle Benachrichtigungen aus";
+  else if(onCount===4) notifSummary.textContent = "Alle Benachrichtigungen an";
+  else notifSummary.textContent = `${onCount} von 4 Benachrichtigungen an`;
+}
+
+function updateProfileAlertList(){
+  const list = document.getElementById("profileAlertList");
+  const countEl = document.getElementById("profileAlertCount");
+  const entries = Object.keys(priceAlerts)
+    .map(pid=>({product: products.find(p=>p.id===pid), alert: priceAlerts[pid]}))
+    .filter(e=>e.product);
+  countEl.textContent = entries.length;
+
+  if(entries.length===0){
+    list.innerHTML = `<div class="fav-empty">Noch keine Preisalarme. Lege im Produktdetail einen Wunschpreis fest.</div>`;
+    return;
+  }
+
+  list.innerHTML = entries.map(e=>`
+    <div class="fav-row">
+      <img class="fav-emoji" src="${e.product.img}" alt="${e.product.name}" loading="lazy" referrerpolicy="no-referrer">
+      <div class="fav-txt">
+        <b>${e.product.name}</b>
+        <span>Alarm bei ${euro(e.alert.target)} €${e.alert.enabled ? "" : " · pausiert"}</span>
+      </div>
+      <button class="avatar-remove-link" data-remove-profile-alert="${e.product.id}">entfernen</button>
+    </div>
+  `).join("");
+
+  list.querySelectorAll("img.fav-emoji").forEach(img=>{
+    img.addEventListener("error", function(){ this.src = FALLBACK_IMG; }, {once:true});
+  });
+  list.querySelectorAll("[data-remove-profile-alert]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      delete priceAlerts[btn.dataset.removeProfileAlert];
+      savePriceAlerts();
+      updateProfileAlertList();
+      updateAlertsDot();
+    });
+  });
+}
+
+function favRowHtml(p){
+  const available = deals.some(d=>d.productId===p.id);
+  const alert = priceAlerts[p.id];
+  let extra = "";
+  if(!available){
+    extra = alert
+      ? `<div class="alert-active" style="margin-top:6px"><span><svg class="icon icon-sm"><use href="#i-target"/></svg> Preisalarm bei ${euro(alert.target)} €</span></div>`
+      : `<button class="avatar-remove-link" data-quick-alert-toggle="${p.id}" style="margin-top:4px">Preisalarm setzen</button>
+      <div class="alert-input-row" data-quick-alert-form="${p.id}" style="display:none;margin-top:8px">
+        <input type="number" step="0.01" min="0" value="0.99" data-quick-alert-input="${p.id}">
+        <span>€</span>
+        <button class="btn primary" data-quick-alert-submit="${p.id}">Setzen</button>
+      </div>`;
+  }
+  return `
+    <div class="fav-row">
+      <img class="fav-emoji" src="${p.img}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer">
+      <div class="fav-txt">
+        <b>${p.name}</b>
+        <span>${p.brand} · ${p.sizeMl} ml${available ? "" : " · aktuell nicht verfügbar"}</span>
+        ${extra}
+      </div>
+      <svg class="icon icon-sm filled" style="color:var(--danger-text)"><use href="#i-heart"/></svg>
+    </div>
+  `;
+}
+
+function bindFavRowEvents(container, rerender){
+  container.querySelectorAll("img.fav-emoji").forEach(img=>{
+    img.addEventListener("error", function(){ this.src = FALLBACK_IMG; }, {once:true});
+  });
+  container.querySelectorAll("[data-quick-alert-toggle]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const form = container.querySelector(`[data-quick-alert-form="${btn.dataset.quickAlertToggle}"]`);
+      if(form) form.style.display = form.style.display==="none" ? "flex" : "none";
+    });
+  });
+  container.querySelectorAll("[data-quick-alert-submit]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      const pid = btn.dataset.quickAlertSubmit;
+      const input = container.querySelector(`[data-quick-alert-input="${pid}"]`);
+      const val = +input.value;
+      if(!val || val<=0) return;
+      priceAlerts[pid] = {target: val, enabled: true};
+      savePriceAlerts();
+      updateAlertsDot();
+      const product = products.find(pr=>pr.id===pid);
+      showToast(`Preisalarm gesetzt: ${product ? product.name : "Produkt"} unter ${euro(val)} €`);
+      rerender();
+    });
+  });
+}
+
+function updateProfileFavList(){
+  const list = document.getElementById("profileFavList");
+  const countEl = document.getElementById("profileFavCount");
+  const favProducts = products.filter(p=>favorites.has(p.id));
+  countEl.textContent = favProducts.length;
+
+  if(favProducts.length===0){
+    list.innerHTML = `<div class="fav-empty">Noch keine Favoriten. Tippe <svg class="icon icon-xs"><use href="#i-heart"/></svg> bei einem Angebot.</div>`;
+    return;
+  }
+
+  list.innerHTML = favProducts.map(favRowHtml).join("");
+  bindFavRowEvents(list, ()=>{ updateProfileFavList(); updateProfileAlertList(); });
+}
+
+document.querySelectorAll(".profile-row[data-open]").forEach(row=>{
+  row.addEventListener("click", ()=>{
+    closeSheet("profileOverlay");
+    openSheet(row.dataset.open);
+  });
+});
+
+function showToast(msg){
+  const toast = document.getElementById("toast");
+  toast.textContent = msg;
+  toast.classList.add("show");
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(()=>toast.classList.remove("show"), 2400);
+}
+
+document.getElementById("logoutBtn").addEventListener("click", ()=>{
+  showToast("Demo-Prototyp: Abmelden ist hier nicht aktiv.");
+});
+document.getElementById("deleteAccountBtn").addEventListener("click", ()=>{
+  showToast("Demo-Prototyp: Konto löschen ist hier nicht aktiv.");
+});
+
+function updateAvatarInitials(name){
+  const initials = name.trim().split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join("") || "?";
+  document.getElementById("profileAvatar").textContent = initials;
+}
+
+const profileNameInput = document.getElementById("profileName");
+const profileEmailInput = document.getElementById("profileEmail");
+const profileNameText = document.getElementById("profileNameText");
+const profileEmailText = document.getElementById("profileEmailText");
+
+const savedName = localStorage.getItem("canspot-name");
+const savedEmail = localStorage.getItem("canspot-email");
+if(savedName){ profileNameInput.value = savedName; profileNameText.textContent = savedName; }
+if(savedEmail){ profileEmailInput.value = savedEmail; profileEmailText.textContent = savedEmail; }
+updateAvatarInitials(profileNameText.textContent);
+
+function setFieldEditing(field, editing){
+  document.querySelector(`#${field}Block .field-view`).style.display = editing ? "none" : "flex";
+  document.getElementById(`${field}EditRow`).style.display = editing ? "flex" : "none";
+}
+
+document.querySelectorAll("[data-edit]").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    const field = btn.dataset.edit;
+    setFieldEditing(field, true);
+    document.getElementById(field==="name" ? "profileName" : "profileEmail").focus();
+  });
+});
+
+document.querySelectorAll("[data-save]").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    const field = btn.dataset.save;
+    if(field==="name"){
+      const val = profileNameInput.value.trim();
+      if(!val) return;
+      profileNameText.textContent = val;
+      localStorage.setItem("canspot-name", val);
+      updateAvatarInitials(val);
+      showToast("Name aktualisiert.");
+    } else {
+      const val = profileEmailInput.value.trim();
+      if(!val) return;
+      profileEmailText.textContent = val;
+      localStorage.setItem("canspot-email", val);
+      showToast("E-Mail-Adresse aktualisiert.");
+    }
+    setFieldEditing(field, false);
+  });
+});
+
+/* ---------------- PROFILBILD ---------------- */
+
+const avatarEditBtn = document.getElementById("avatarEditBtn");
+const avatarFileInput = document.getElementById("avatarFileInput");
+const avatarRemoveBtn = document.getElementById("avatarRemoveBtn");
+const profileAvatarEl = document.getElementById("profileAvatar");
+
+function applyAvatarPhoto(dataUrl){
+  if(dataUrl){
+    profileAvatarEl.style.backgroundImage = `url(${dataUrl})`;
+    profileAvatarEl.textContent = "";
+    avatarRemoveBtn.style.display = "block";
+  } else {
+    profileAvatarEl.style.backgroundImage = "";
+    updateAvatarInitials(profileNameText.textContent);
+    avatarRemoveBtn.style.display = "none";
+  }
+}
+
+avatarEditBtn.addEventListener("click", ()=> avatarFileInput.click());
+
+avatarFileInput.addEventListener("change", ()=>{
+  const file = avatarFileInput.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const size = 160;
+      const canvas = document.createElement("canvas");
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      const scale = Math.max(size/img.width, size/img.height);
+      const w = img.width*scale, h = img.height*scale;
+      ctx.drawImage(img, (size-w)/2, (size-h)/2, w, h);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+      try{
+        localStorage.setItem("canspot-avatar", dataUrl);
+        applyAvatarPhoto(dataUrl);
+        showToast("Profilbild aktualisiert.");
+      }catch(e){
+        showToast("Bild konnte nicht gespeichert werden (zu groß).");
+      }
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+avatarRemoveBtn.addEventListener("click", ()=>{
+  localStorage.removeItem("canspot-avatar");
+  applyAvatarPhoto(null);
+});
+
+const savedAvatar = localStorage.getItem("canspot-avatar");
+if(savedAvatar) applyAvatarPhoto(savedAvatar);
+
+/* ---------------- THEME (Hell / Dunkel / System) ---------------- */
+
+let themePref = localStorage.getItem("canspot-theme") || "system";
+
+function systemPrefersDark(){
+  return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+function resolveTheme(pref){
+  return pref==="system" ? (systemPrefersDark() ? "dark" : "light") : pref;
+}
+
+function applyTheme(pref){
+  document.documentElement.setAttribute("data-theme", resolveTheme(pref));
+  document.querySelectorAll(".theme-option").forEach(btn=>{
+    btn.classList.toggle("on", btn.dataset.theme===pref);
+  });
+}
+
+document.querySelectorAll(".theme-option").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    themePref = btn.dataset.theme;
+    localStorage.setItem("canspot-theme", themePref);
+    applyTheme(themePref);
+  });
+});
+
+if(window.matchMedia){
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", ()=>{
+    if(themePref==="system") applyTheme(themePref);
+  });
+}
+
+applyTheme(themePref);
+
+/* ---------------- LOCATION / RADIUS SHEET ---------------- */
+
+const radiusSlider = document.getElementById("radiusSlider");
+const radiusValue = document.getElementById("radiusValue");
+const germanyToggle = document.getElementById("germanyToggle");
+const radiusBox = document.getElementById("radiusBox");
+const plzInput = document.getElementById("plzInput");
+
+plzInput.value = locationLabel;
+radiusSlider.value = radiusKm;
+radiusValue.textContent = radiusKm;
+germanyToggle.checked = searchWide;
+radiusBox.classList.toggle("disabled", searchWide);
+
+radiusSlider.addEventListener("input",()=>{
+  radiusKm = +radiusSlider.value;
+  radiusValue.textContent = radiusKm;
+  syncRadiusChips();
+  updateFilterCount();
+});
+
+germanyToggle.addEventListener("change",()=>{
+  searchWide = germanyToggle.checked;
+  radiusBox.classList.toggle("disabled", searchWide);
+  syncRadiusChips();
+  updateFilterCount();
+});
+
+document.querySelector('[data-close="locOverlay"].sheet-btn').addEventListener("click",()=>{
+  const val = plzInput.value.trim();
+  if(val) locationLabel = val;
+  render();
+  updateStatus();
+  refreshProfileSummaries();
+  updateFilterCount();
+  showToast("Standort aktualisiert.");
+});
+
+document.getElementById("useGeoBtn").addEventListener("click", ()=>{
+  if(!navigator.geolocation){
+    showToast("Standortermittlung wird von diesem Browser nicht unterstützt.");
+    return;
+  }
+  const btn = document.getElementById("useGeoBtn");
+  const originalLabel = btn.innerHTML;
+  btn.innerHTML = `<svg class="icon icon-md"><use href="#i-pin"/></svg> Standort wird ermittelt…`;
+  navigator.geolocation.getCurrentPosition(
+    ()=>{
+      btn.innerHTML = originalLabel;
+      document.getElementById("plzInput").value = "Aktueller Standort";
+      showToast("Standort erkannt. In diesem Demo-Prototyp bleiben die Beispiel-Entfernungen unverändert.");
+    },
+    ()=>{
+      btn.innerHTML = originalLabel;
+      showToast("Standortzugriff wurde nicht erlaubt.");
+    },
+    {timeout:8000}
+  );
+});
+
+/* ---------------- NOTIFICATIONS SHEET ---------------- */
+
+function renderFavList(){
+  const favList = document.getElementById("favList");
+  const notifDot = document.getElementById("notifDot");
+  const favProducts = products.filter(p=>favorites.has(p.id));
+
+  notifDot.style.display = favProducts.length ? "block" : "none";
+
+  if(favProducts.length===0){
+    favList.innerHTML = `<div class="fav-empty">Noch keine Favoriten. Tippe <svg class="icon icon-xs"><use href="#i-heart"/></svg> bei einem Angebot.</div>`;
+    return;
+  }
+
+  favList.innerHTML = favProducts.map(favRowHtml).join("");
+  bindFavRowEvents(favList, renderFavList);
+}
+
+/* ---------------- FEINERE PUSH-EINSTELLUNGEN ---------------- */
+
+const notifToggleIds = ["notifBest","notifFav","notifNearby","notifWeekly"];
+const notifDefaults = {notifBest:true, notifFav:true, notifNearby:true, notifWeekly:false};
+const notifEmptyHint = document.getElementById("notifEmptyHint");
+
+function loadNotifBool(id){
+  const v = localStorage.getItem("canspot-notif-"+id);
+  return v===null ? notifDefaults[id] : v==="1";
+}
+
+function updateNotifHint(){
+  const anyOn = notifToggleIds.some(id=>document.getElementById(id).checked);
+  notifEmptyHint.classList.toggle("show", !anyOn);
+}
+
+notifToggleIds.forEach(id=>{
+  const el = document.getElementById(id);
+  el.checked = loadNotifBool(id);
+  el.addEventListener("change", ()=>{
+    localStorage.setItem("canspot-notif-"+id, el.checked ? "1" : "0");
+    updateNotifHint();
+    refreshProfileSummaries();
+  });
+});
+updateNotifHint();
+
+document.querySelector('[data-close="notifOverlay"].sheet-btn').addEventListener("click",()=>{
+  refreshProfileSummaries();
+});
+
+/* ---------------- PRICE HISTORY MODAL ---------------- */
+
+function findBestDealFor(deal){
+  const candidates = deals.filter(d=>
+    d.product===deal.product && d.sizeMl===deal.sizeMl && daysUntil(d.validUntil) >= 0
+  );
+  if(candidates.length===0) return null;
+  return candidates.reduce((a,b)=> a.offerPrice<=b.offerPrice ? a : b);
+}
+
+function openHistory(dealId){
+  const deal = deals.find(d=>d.id===dealId);
+  if(!deal) return;
+  currentDetailDealId = dealId;
+
+  document.getElementById("histTitle").textContent = deal.product;
+  document.getElementById("histCurrent").textContent = euro(deal.history[deal.history.length-1]) + " €";
+  document.getElementById("histAllTimeLowLabel").textContent = `Bisheriger Tiefstpreis bei ${deal.store}`;
+  document.getElementById("histAllTimeLow").textContent = euro(Math.min(...deal.history)) + " €";
+
+  chartRangeDays = 30;
+  document.querySelectorAll(".chip[data-range]").forEach(b=>b.classList.toggle("on", +b.dataset.range===chartRangeDays));
+
+  const detailImg = document.getElementById("detailImg");
+  detailImg.src = deal.img;
+  detailImg.alt = deal.product;
+  detailImg.onerror = function(){ this.src = FALLBACK_IMG; };
+
+  const isFav = favorites.has(deal.productId);
+  const favBtn = document.getElementById("detailFavBtn");
+  favBtn.classList.toggle("active", isFav);
+  favBtn.onclick = ()=>{
+    const wasFav = favorites.has(deal.productId);
+    if(wasFav) favorites.delete(deal.productId); else favorites.add(deal.productId);
+    saveFavorites();
+    render();
+    renderFavList();
+    showToast(wasFav ? `${deal.product} aus Favoriten entfernt` : `${deal.product} zu Favoriten hinzugefügt`);
+    openHistory(dealId);
+  };
+
+  document.getElementById("detailShareBtn").onclick = ()=> shareDeal(deal);
+
+  renderDetailChart();
+
+  let favLiterMin = Infinity;
+  deals.forEach(d=>{
+    if(favorites.has(d.productId)){
+      const lp = d.offerPrice / (d.sizeMl/1000);
+      if(lp < favLiterMin) favLiterMin = lp;
+    }
+  });
+  const badges = buildBadges(deal, isFav, favLiterMin);
+  document.getElementById("detailBadges").innerHTML = badges || `<span class="info-badge green"><svg class="icon icon-xs"><use href="#i-check"/></svg> Aktuelles Angebot</span>`;
+
+  document.getElementById("detailTrust").innerHTML =
+    `<svg class="icon icon-xs"><use href="#i-check"/></svg> Preis geprüft ${timeAgoLabel(deal.checkedMinutesAgo)} · direkt bei ${deal.store}`;
+
+  const daysLeft = daysUntil(deal.validUntil);
+  document.getElementById("detailValidity").textContent =
+    `Gültig ${formatDateRange(deal.validFrom, deal.validUntil)}` +
+    (daysLeft >= 0 ? ` · noch ${daysLeft} Tag${daysLeft===1?"":"e"}` : " · Angebot abgelaufen");
+
+  renderOtherStores(deal);
+
+  const alertInput = document.getElementById("alertPriceInput");
+  const existingAlert = priceAlerts[deal.productId];
+  alertInput.value = existingAlert ? existingAlert.target : Math.max(0, +(deal.offerPrice - 0.10).toFixed(2));
+  updateAlertActiveMsg(deal.productId);
+
+  const ctaBtn = document.getElementById("detailCtaBtn");
+  const bestDeal = findBestDealFor(deal);
+  if(!bestDeal){
+    ctaBtn.href = "#";
+    ctaBtn.innerHTML = "Angebot abgelaufen";
+    ctaBtn.classList.add("disabled-cta");
+    ctaBtn.style.pointerEvents = "none";
+  } else {
+    ctaBtn.href = bestDeal.link || "#";
+    ctaBtn.classList.remove("disabled-cta");
+    ctaBtn.style.pointerEvents = "";
+    ctaBtn.innerHTML = `Zum Angebot bei ${bestDeal.store} · ${euro(bestDeal.offerPrice)} € <svg class="icon icon-md"><use href="#i-external"/></svg>`;
+  }
+
+  openSheet("histOverlay");
+}
+
+function shareDeal(deal){
+  const url = `${location.origin}${location.pathname}#deal=${deal.id}`;
+  const shareData = {
+    title: `${deal.product} bei ${deal.store}`,
+    text: `${deal.product} (${deal.brand} · ${deal.sizeMl} ml) für ${euro(deal.offerPrice)} € bei ${deal.store} – gefunden mit CanSpot`,
+    url
+  };
+  if(navigator.share){
+    navigator.share(shareData).catch(()=>{});
+    return;
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(
+      ()=> showToast("Link kopiert – jetzt einfügen und teilen."),
+      ()=> showToast("Kopieren nicht möglich – bitte Berechtigung erlauben oder Link manuell teilen.")
+    );
+    return;
+  }
+  showToast("Teilen wird von diesem Browser nicht unterstützt.");
+}
+
+function renderDetailChart(){
+  const deal = deals.find(d=>d.id===currentDetailDealId);
+  if(!deal) return;
+  const slice = deal.history.slice(-chartRangeDays);
+  const low = Math.min(...slice);
+  const high = Math.max(...slice);
+  const avg = slice.reduce((a,b)=>a+b,0)/slice.length;
+
+  document.getElementById("histSub").textContent = `${deal.brand} · ${deal.sizeMl} ml · Letzte ${chartRangeDays} Tage`;
+  document.getElementById("histLow").textContent = euro(low) + " €";
+  document.getElementById("histHigh").textContent = euro(high) + " €";
+  document.getElementById("histAvg").textContent = euro(avg) + " €";
+
+  drawChart(slice, low, high);
+}
+
+document.querySelectorAll(".chip[data-range]").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".chip[data-range]").forEach(b=>b.classList.remove("on"));
+    btn.classList.add("on");
+    chartRangeDays = +btn.dataset.range;
+    renderDetailChart();
+  });
+});
+
+function renderOtherStores(deal){
+  const container = document.getElementById("detailStores");
+  const others = deals
+    .filter(d=>d.product===deal.product && d.sizeMl===deal.sizeMl && d.id!==deal.id)
+    .sort((a,b)=>a.offerPrice-b.offerPrice);
+
+  if(others.length===0){
+    container.innerHTML = `<div class="fav-empty">Aktuell nur bei ${deal.store} im Angebot.</div>`;
+    return;
+  }
+
+  container.innerHTML = others.map(d=>`
+    <div class="store-row">
+      <img class="store-row-logo" src="${storeLogos[d.store] || STORE_FALLBACK_IMG}" alt="${d.store}" loading="lazy" referrerpolicy="no-referrer">
+      <div class="store-row-txt">
+        <b>${d.store}</b>
+        <span>${d.distanceKm} km · ${formatDateRange(d.validFrom, d.validUntil)}</span>
+      </div>
+      <div class="store-row-price">${euro(d.offerPrice)} €</div>
+      <button class="store-row-link" data-store-detail="${d.id}">Zum Angebot</button>
+    </div>
+  `).join("");
+
+  container.querySelectorAll(".store-row-logo").forEach(img=>{
+    img.addEventListener("error", function(){ this.src = STORE_FALLBACK_IMG; }, {once:true});
+  });
+  container.querySelectorAll("[data-store-detail]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      closeSheet("histOverlay");
+      openStoreDetail(btn.dataset.storeDetail);
+    });
+  });
+}
+
+function openStoreDetail(dealId){
+  const deal = deals.find(d=>d.id===dealId);
+  if(!deal) return;
+  const branch = storeBranches[deal.store];
+
+  const logo = document.getElementById("storeDetailLogo");
+  logo.src = storeLogos[deal.store] || STORE_FALLBACK_IMG;
+  logo.alt = deal.store;
+  logo.onerror = function(){ this.src = STORE_FALLBACK_IMG; };
+
+  document.getElementById("storeDetailName").textContent = deal.store;
+
+  const openNow = branch ? isStoreOpenNow(branch) : null;
+  document.getElementById("storeDetailOpenStatus").innerHTML =
+    `<span class="open-dot ${openNow?"open":""}"></span>${openNow===null ? "Öffnungszeiten unbekannt" : (openNow ? "Jetzt geöffnet" : "Aktuell geschlossen")}`;
+
+  document.getElementById("storeDetailAddress").textContent = branch ? branch.address : "Adresse nicht verfügbar";
+  document.getElementById("storeDetailHours").textContent = branch ? formatHours(branch) : "–";
+
+  document.getElementById("storeDetailProduct").textContent = deal.product;
+  document.getElementById("storeDetailProductMeta").textContent = `${deal.brand} · ${deal.sizeMl} ml · ${deal.distanceKm} km entfernt`;
+  document.getElementById("storeDetailPrice").textContent = euro(deal.offerPrice) + " €";
+
+  document.getElementById("storeDetailRouteBtn").href = branch
+    ? `https://www.google.com/maps/dir/?api=1&destination=${branch.geo}`
+    : "#";
+  document.getElementById("storeDetailOnlineBtn").href = deal.link || "#";
+
+  openSheet("storeDetailOverlay");
+}
+
+function updateAlertActiveMsg(productId){
+  const msg = document.getElementById("alertActiveMsg");
+  const alert = priceAlerts[productId];
+  if(!alert){
+    msg.style.display = "none";
+    msg.innerHTML = "";
+    return;
+  }
+  msg.style.display = "flex";
+  msg.innerHTML = `<span><svg class="icon icon-sm"><use href="#i-target"/></svg> Aktiver Alarm bei ${euro(alert.target)} €</span><button data-remove-alert="${productId}">entfernen</button>`;
+  msg.querySelector("[data-remove-alert]").addEventListener("click", ()=>{
+    delete priceAlerts[productId];
+    savePriceAlerts();
+    updateAlertActiveMsg(productId);
+    updateAlertsDot();
+    showToast("Preisalarm entfernt.");
+  });
+}
+
+document.getElementById("alertSetBtn").addEventListener("click", ()=>{
+  if(!currentDetailDealId) return;
+  const deal = deals.find(d=>d.id===currentDetailDealId);
+  if(!deal) return;
+  const val = +document.getElementById("alertPriceInput").value;
+  if(!val || val<=0) return;
+  priceAlerts[deal.productId] = {target: val, enabled: true};
+  savePriceAlerts();
+  updateAlertActiveMsg(deal.productId);
+  updateAlertsDot();
+  showToast(`Preisalarm gesetzt: ${deal.product} unter ${euro(val)} €`);
+});
+
+function drawChart(points, low, high){
+  const svg = document.getElementById("histChart");
+  const w = 300, h = 140, pad = 10;
+  const range = (high - low) || 1;
+
+  const coords = points.map((p,i)=>{
+    const x = pad + (i/(points.length-1)) * (w - pad*2);
+    const y = h - pad - ((p - low)/range) * (h - pad*2);
+    return [x,y];
+  });
+
+  const linePath = coords.map((c,i)=> (i===0?"M":"L") + c[0].toFixed(1) + "," + c[1].toFixed(1)).join(" ");
+  const areaPath = linePath + ` L${coords[coords.length-1][0]},${h-pad} L${coords[0][0]},${h-pad} Z`;
+
+  const lowIndex = points.indexOf(low);
+  const lowCoord = coords[lowIndex];
+  const lastCoord = coords[coords.length-1];
+
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#f97316" stop-opacity="0.28"/>
+        <stop offset="100%" stop-color="#f97316" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <path d="${areaPath}" fill="url(#areaGrad)"/>
+    <path d="${linePath}" fill="none" stroke="#c2410c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="${lowCoord[0]}" cy="${lowCoord[1]}" r="4.5" fill="#047857" stroke="#fff" stroke-width="2"/>
+    <circle cx="${lastCoord[0]}" cy="${lastCoord[1]}" r="4.5" fill="#c2410c" stroke="#fff" stroke-width="2"/>
+  `;
+}
+
+/* ---------------- INIT ---------------- */
+
+function renderSkeleton(n){
+  dealsContainer.innerHTML = Array.from({length:n}).map(()=>`
+    <div class="skeleton-card">
+      <div class="skeleton-line" style="width:65%;height:16px;margin-bottom:10px"></div>
+      <div class="skeleton-line" style="width:40%;height:12px;margin-bottom:14px"></div>
+      <div class="skeleton-line" style="width:100%;height:44px;margin-bottom:10px"></div>
+      <div class="skeleton-line" style="width:55%;height:30px"></div>
+    </div>
+  `).join("");
+}
+
+renderSkeleton(4);
+
+/* ---------------- VERBINDUNGSSTATUS ---------------- */
+
+function updateConnectionBanner(){
+  document.getElementById("connectionBanner").style.display = navigator.onLine ? "none" : "flex";
+}
+window.addEventListener("online", updateConnectionBanner);
+window.addEventListener("offline", updateConnectionBanner);
+
+/* ---------------- TIEFEN-LINK (GETEILTE ANGEBOTE) ---------------- */
+
+function checkDeepLink(){
+  const match = location.hash.match(/#deal=([\w-]+)/);
+  if(!match) return;
+  const deal = deals.find(d=>d.id===match[1]);
+  if(deal) openHistory(deal.id);
+}
+
+/* ---------------- PREISALARM-PRÜFUNG BEIM ÖFFNEN (IN-APP) ---------------- */
+
+function checkTriggeredAlerts(){
+  const triggered = Object.keys(priceAlerts).filter(pid=>{
+    const alert = priceAlerts[pid];
+    if(!alert.enabled) return false;
+    const candidateDeals = deals.filter(d=>d.productId===pid);
+    if(candidateDeals.length===0) return false;
+    const best = Math.min(...candidateDeals.map(d=>d.offerPrice));
+    return best <= alert.target + 0.001;
+  });
+  if(triggered.length===1){
+    const product = products.find(p=>p.id===triggered[0]);
+    showToast(`🎯 Preisalarm erreicht: ${product ? product.name : "Ein Produkt"} ist jetzt günstig genug.`);
+  } else if(triggered.length>1){
+    showToast(`🎯 ${triggered.length} Preisalarme erreicht — sieh sie dir im Alarme-Tab an.`);
+  }
+}
+
+setTimeout(()=>{
+  render();
+  renderFavList();
+  updateStatus();
+  updateAlertsDot();
+  syncRadiusChips();
+  syncStoreChips();
+  updateFilterCount();
+  updateConnectionBanner();
+  checkDeepLink();
+  checkTriggeredAlerts();
+}, 500);
 
 </script>
 
