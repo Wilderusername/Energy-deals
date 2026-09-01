@@ -45,6 +45,16 @@ Everything lives in one file, in this order: `<style>` (CSS custom properties + 
 
 **Init sequence**: `renderSkeleton(4)` runs synchronously to show loading placeholders, then the real `render()` and related setup calls run inside a `setTimeout(..., 500)` at the very end of the script — this simulates a network-loading delay. Keep this in mind when scripting/automating against the page (content is not present until ~500ms after load).
 
+## Progressive Web App (PWA)
+
+The app is installable and works offline. This adds a few files alongside `index.html`, all wired with **relative** paths (no leading `/`) so it keeps working when served from a GitHub Pages project subpath (`https://<user>.github.io/<repo>/`), not just the domain root:
+
+- `manifest.webmanifest` — name "CanSpot", `theme_color`/`background_color` matching the app's dark palette, `start_url`/`scope` set to `./`, and icon entries (see below).
+- `icons/` — generated PNGs: `favicon-16.png`, `favicon-32.png`, `icon-192.png`, `icon-512.png` (purpose `any`), `icon-maskable-512.png` (purpose `maskable`, extra padding for Android's adaptive-icon safe zone), `apple-touch-icon-180.png`. All share the same orange-bolt-on-dark-brown mark (matches `--accent` / the app's `theme-color`). Regenerate via a canvas-drawing script if the mark changes — there's no source vector file checked in.
+- `service-worker.js` — cache-first for same-origin requests, precaches the app shell (`index.html`, the manifest, and the icons) on install, and falls back to the cached `index.html` for navigation requests when offline. It does **not** cache the hotlinked product/store images (external origins) — those still depend on network access, consistent with the existing hotlinking approach.
+- In `index.html`'s `<head>`: `<link rel="manifest">`, favicon `<link>`s, `apple-touch-icon`, and the `apple-mobile-web-app-*` / `mobile-web-app-capable` meta tags for iOS/Android homescreen install. The service worker is registered at the very end of the main `<script>` block (after the existing `setTimeout(..., 500)` init call), gated on `"serviceWorker" in navigator`, so it doesn't affect the existing init sequence or any UI behavior.
+- Bump `CACHE_NAME` in `service-worker.js` (e.g. `canspot-cache-v2`) whenever the cached app-shell files change meaningfully, so returning visitors pick up the update instead of serving a stale cache — the `activate` handler deletes old-named caches automatically.
+
 ## Workflow: progress log & commits
 
 After every completed change, add a short entry to [PROJECT_STATE.md](PROJECT_STATE.md) (newest entry on top) covering: what was implemented, key decisions made, what's still open, and known bugs/next steps. `PROJECT_STATE.md` is the running progress log — `CLAUDE.md` stays reserved for durable project rules and technical notes and should not accumulate changelog entries.

@@ -4,6 +4,31 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-01 — CanSpot als installierbare Progressive Web App (PWA)
+
+**Umgesetzt:**
+- `manifest.webmanifest` ergänzt: Name „CanSpot", Kurzname, `theme_color`/`background_color` passend zum bestehenden dunklen Farbschema, `start_url`/`scope` relativ (`./`) für GitHub-Pages-Kompatibilität unter einem Unterpfad.
+- Icon-Set unter `icons/` erzeugt (Blitz-Symbol, angelehnt an das bestehende `i-bolt`-Icon und die Akzentfarbe `--accent`, auf dunkelbraunem Hintergrund passend zu `theme-color`): `favicon-16.png`, `favicon-32.png`, `icon-192.png`, `icon-512.png` (purpose „any"), `icon-maskable-512.png` (purpose „maskable", mit Sicherheitsabstand für Androids adaptive Icons), `apple-touch-icon-180.png`. Generiert über ein lokales Canvas-Skript (kein externer Dienst, kein SVG-Konverter nötig) und über einen lokalen Upload-Server direkt als PNG auf die Festplatte geschrieben.
+- `service-worker.js` ergänzt: Cache-first-Strategie für Same-Origin-Requests, Precaching der App-Shell (`index.html`, Manifest, Icons) beim Install, Offline-Fallback auf das gecachte `index.html` bei Navigation. Hotlinked Produkt-/Händlerbilder (externe Origins) werden bewusst NICHT gecacht — bleiben wie bisher netzwerkabhängig.
+- `index.html` `<head>` ergänzt um: `<link rel="manifest">`, Favicon-Links, `apple-touch-icon`, `apple-mobile-web-app-*`/`mobile-web-app-capable`-Meta-Tags, `viewport-fit=cover`. Service-Worker-Registrierung ganz am Ende des bestehenden `<script>`-Blocks (nach dem bestehenden `setTimeout(...,500)`-Init), hinter `"serviceWorker" in navigator` abgesichert.
+- `.claude/launch.json` neu angelegt (fehlte bisher trotz Referenz in CLAUDE.md) mit der `canspot-preview`-Konfiguration (`python3 -m http.server 8123`).
+- Lokal getestet: Manifest/Icons/Service-Worker werden korrekt ausgeliefert (HTTP 200, richtige Content-Types), Service Worker registriert sich und aktiviert sich, App-Shell wird vollständig in den Cache geschrieben, Seite lädt vollständig offline (Server während Test gestoppt, Seite weiterhin nutzbar). Bestehende UI/Funktionen (Sheets, Theme, Navigation) nach den Änderungen stichprobenartig erneut geprüft — keine Regressionen.
+
+**Wichtige Entscheidungen:**
+- Alle PWA-Pfade (Manifest, Icons, Service Worker, Registrierung) sind relativ ohne führenden `/`, damit die App sowohl lokal als auch unter einem GitHub-Pages-Projektunterpfad (`https://wilderusername.github.io/Energy-deals/`, kein eigener Domain-Root) korrekt funktioniert.
+- `apple-mobile-web-app-status-bar-style` auf `black` statt `black-translucent` gesetzt, weil die App aktuell nur `env(safe-area-inset-bottom)` behandelt, aber keinen Top-Safe-Area-Abstand — `black-translucent` hätte Inhalte im Standalone-Modus unter die Statusleiste schieben können.
+- Keine bestehende UI/Logik verändert — nur neue Dateien plus rein additive `<head>`-Tags und eine Service-Worker-Registrierung am Skriptende.
+
+**Offen:**
+- `CACHE_NAME` in `service-worker.js` muss bei künftigen App-Shell-Änderungen manuell hochgezählt werden (siehe CLAUDE.md), sonst bekommen wiederkehrende Nutzer eine veraltete gecachte Version.
+- Kein Push-Notification-Support (nur die bestehende, rein lokale `canspot-notif-*`-Simulation) — falls echte Web-Push-Benachrichtigungen gewünscht sind, wäre das ein separates Feature (Server/Push-Service nötig).
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nächster Schritt: nach dem Push auf GitHub Pages die Installierbarkeit (Chrome-Install-Prompt, iOS „Zum Home-Bildschirm") auf echten Geräten verifizieren — lokal wurde nur der Offline-/Registrierungs-Teil getestet.
+
+---
+
 ## 2026-09-01 — Vollständiger End-to-End-Test des Nutzerablaufs (keine Fehler gefunden)
 
 **Umgesetzt:**
