@@ -4,6 +4,23 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-01 — PWA-Deployment auf GitHub Pages bestätigt
+
+**Umgesetzt:**
+- Nutzer hat Commit `0821710` (PWA: Manifest, Icons, Service Worker) über GitHub Desktop nach `origin/main` gepusht.
+- GitHub Pages ist mit dem neuen Stand aktualisiert.
+- Auf echtem Smartphone verifiziert: PWA ist installierbar, App-Icon (Blitz-Symbol) erscheint korrekt auf dem Homescreen.
+
+**Offen:**
+- Der bisher offene Punkt „Installierbarkeit auf echten Geräten verifizieren" aus dem vorherigen Eintrag ist damit erledigt.
+- `CACHE_NAME` in `service-worker.js` weiterhin manuell hochzählen, sobald sich künftig App-Shell-Dateien ändern (siehe CLAUDE.md).
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nächster Schritt: warten auf weitere Änderungswünsche.
+
+---
+
 ## 2026-09-01 — CanSpot als installierbare Progressive Web App (PWA)
 
 **Umgesetzt:**
