@@ -2243,70 +2243,20 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 
 <script>
 
-/* ---------------- DEMO DATA (ersetzt deals.json) ---------------- */
+/* ---------------- DATENQUELLE (deals.json) ----------------
+   Produkte, Händler/Filialen und Angebote werden nicht mehr inline im Script
+   gehalten, sondern zur Laufzeit per fetch() aus deals.json geladen (siehe
+   loadDeals() weiter unten sowie CLAUDE.md, Abschnitt "Datenquelle").
+   products/storeLogos/storeBranches/deals sind hier nur als leere Platzhalter
+   deklariert und werden nach erfolgreichem Laden befüllt. */
 
-/* Produktbilder sind per Hotlink auf die offiziellen Hersteller-Websites verlinkt
-   (kein Download/keine Kopie der Dateien) — ausschließlich zur Produkt-
-   identifikation in diesem privaten Demo-Prototyp. Für einen öffentlichen/
-   produktiven Einsatz bitte lizenzierte bzw. selbst gehostete Bilder verwenden. */
+let products = [];
 
-const products = [
-  {id:"p1", name:"Red Bull Energy Drink",        brand:"Red Bull", sizeMl:250,
-    img:"https://www.redbull.com/energydrink/v1/resources/storyblok/images/f/287059/870x2200/9153a98907/de_ed_250ml_energy-drink_country_rgb_initi5-311_cold_closed_front_com_25.png/m/200x0"},
-  {id:"p2", name:"Red Bull Sugarfree",           brand:"Red Bull", sizeMl:250,
-    img:"https://www.redbull.com/energydrink/v1/resources/storyblok/images/f/287059/528x1348/afe59ffa52/de_sf_250ml_sugarfree_country_rgb__cold_closed_front_com_full.png/m/200x0"},
-  {id:"p3", name:"Monster Energy Ultra",         brand:"Monster",  sizeMl:500,
-    img:"https://web-assests.monsterenergy.com/mnst/62e227e2-0e77-46d6-a989-35838a1f0981.png"},
-  {id:"p4", name:"Monster Energy Classic",       brand:"Monster",  sizeMl:500,
-    img:"https://web-assests.monsterenergy.com/mnst/c2c19b9e-6989-4f47-9375-017c7c1101f8.png"},
-  {id:"p5", name:"Rockstar Energy Original",     brand:"Rockstar", sizeMl:500,
-    img:"https://www.rockstarenergy.com/cdn/shop/files/1720545676-original_d4e37562-d26e-4fc8-a3b9-e9df99785b21.png?v=1761060858&width=300"},
-  {id:"p6", name:"GÖNRGY Raspberry Cheesecake",  brand:"GÖNRGY",   sizeMl:500,
-    img:"https://goenrgy.de/cdn/shop/files/Goenrgy_RaspberryCheesecake_500ml_1.png?v=1751890542&width=300"},
-  {id:"p7", name:"Carabao Energy Drink",         brand:"Carabao",  sizeMl:330,
-    img:"https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Carabao_Daeng.png/250px-Carabao_Daeng.png"},
-
-  {id:"p8", name:"Red Bull Zero",                     brand:"Red Bull",     sizeMl:250,
-    img:"https://www.redbull.com/energydrink/v1/resources/storyblok/images/f/287059/528x1348/4f77700c69/de_zr_250ml_ac_zero_country_rgb_packrq-3017_cold_closed_front_com_full.png/m/200x0"},
-  {id:"p9", name:"Red Bull Red Edition (Wassermelone)", brand:"Red Bull",   sizeMl:250,
-    img:"https://www.redbull.com/energydrink/v1/resources/storyblok/images/f/287059/528x1348/f78543afad/qa_wm_250ml_the-red-edition_country_rgb_do239038_cold_closed_front_com_full.png/m/200x0"},
-  {id:"p10", name:"Red Bull Blue Edition (Heidelbeere)", brand:"Red Bull",  sizeMl:250,
-    img:"https://www.redbull.com/energydrink/v1/resources/storyblok/images/f/287059/528x1348/fb99a4bab3/de_bl_250ml_the-blue-edition_country_rgb_do242282_cold_closed_front_com_full.png/m/200x0"},
-  {id:"p11", name:"Monster Ultra Zero",           brand:"Monster",  sizeMl:500,
-    img:"https://web-assests.monsterenergy.com/mnst/5587a01b-3c83-42f7-a741-b29a1d534409.png"},
-  {id:"p12", name:"Monster Mango Loco",           brand:"Monster",  sizeMl:500,
-    img:"https://web-assests.monsterenergy.com/mnst/bcbf7fc0-05e9-4d0d-933c-30eabf9ca620.png"},
-  {id:"p13", name:"Monster Pipeline Punch",       brand:"Monster",  sizeMl:500,
-    img:"https://web-assests.monsterenergy.com/mnst/6aa8ff45-fcd8-4c9d-b2b2-d15a69a1d465.png"},
-  {id:"p14", name:"Monster Ultra Watermelon",     brand:"Monster",  sizeMl:500,
-    img:"https://web-assests.monsterenergy.com/mnst/1cb31b0a-fd8d-42b4-8e3b-e9fcb0f6bb80.png"},
-  {id:"p16", name:"Rockstar Punched Guava",       brand:"Rockstar", sizeMl:500,
-    img:"https://images.openfoodfacts.org/images/products/406/080/016/0126/front_de.68.400.jpg"},
-  {id:"p17", name:"Carabao Green Apple Sugar Free", brand:"Carabao", sizeMl:330,
-    img:"https://images.openfoodfacts.org/images/products/885/579/000/0783/front_en.3.400.jpg"},
-  {id:"p18", name:"GÖNRGY Black Acai",            brand:"GÖNRGY",   sizeMl:500,
-    img:"https://goenrgy.de/cdn/shop/files/BlackAcai_Vorderseite.png?v=1740045389&width=533"},
-  {id:"p19", name:"GÖNRGY Erdbeere Aprikose",     brand:"GÖNRGY",   sizeMl:500,
-    img:"https://goenrgy.de/cdn/shop/files/ErdbeereAprikose_Vorderseite.png?v=1740045206&width=533"},
-  {id:"p20", name:"GÖNRGY Tropical Exotic",       brand:"GÖNRGY",   sizeMl:500,
-    img:"https://goenrgy.de/cdn/shop/files/Gonrgy_TropicalExotik_Frontal_500ml_Drops.webp?v=1755877197&width=300"},
-  {id:"p21", name:"effect Classic Energy",        brand:"Effect Energy", sizeMl:250,
-    img:"https://www.effect-energy.com/wp-content/uploads/2020/10/effect_can-025l_CLASSIC_RGB.png"},
-  {id:"p22", name:"effect Gazoz",                 brand:"Effect Energy", sizeMl:330,
-    img:"https://www.effect-energy.com/wp-content/uploads/2025/08/effect_can-330ml_FLAVOURED_GAZOZ.png"},
-  {id:"p23", name:"effect Zero Sugarfree",        brand:"Effect Energy", sizeMl:330,
-    img:"https://www.effect-energy.com/wp-content/uploads/2020/10/effect_can-033l_ZERO_RGB.png"},
-  {id:"p24", name:"effect Guava Massive",         brand:"Effect Energy", sizeMl:330,
-    img:"https://www.effect-energy.com/wp-content/uploads/2023/01/effect_can-330ml_FLAVOURED_GUAVA-MASSIVE.png"},
-  {id:"p25", name:"28 Black Açaí",                brand:"28 Black", sizeMl:250,
-    img:"https://www.28black.com/wp-content/uploads/2025/07/acai.png"},
-  {id:"p26", name:"28 Black Açaí Zero",           brand:"28 Black", sizeMl:250,
-    img:"https://www.28black.com/wp-content/uploads/2025/07/Acai-Zero.png"},
-  {id:"p27", name:"28 Black Sour Cherry",         brand:"28 Black", sizeMl:250,
-    img:"https://www.28black.com/wp-content/uploads/2025/07/Sour-Cherry.png"},
-  {id:"p28", name:"28 Black Waldmeister",         brand:"28 Black", sizeMl:250,
-    img:"https://www.28black.com/wp-content/uploads/2025/07/Waldmeister-1.png"}
-];
+/* Produktbilder werden per Hotlink auf die offiziellen Hersteller-Websites
+   eingebunden (kein Download/keine Kopie der Dateien) — ausschließlich zur
+   Produktidentifikation in diesem privaten Demo-Prototyp. Für einen
+   öffentlichen/produktiven Einsatz bitte lizenzierte bzw. selbst gehostete
+   Bilder verwenden. */
 
 const FALLBACK_IMG = "data:image/svg+xml," + encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60">'+
@@ -2315,15 +2265,9 @@ const FALLBACK_IMG = "data:image/svg+xml," + encodeURIComponent(
 );
 
 /* Händler-Logos: Hotlink auf die offiziellen Marken-Websites (kein Download),
-   ausschließlich zur Wiedererkennung des jeweiligen Händlers in diesem Demo-Prototyp. */
-const storeLogos = {
-  "Kaufland": "https://static.cdn.kaufland.de/static/common/dist/img/logos/kaufland-logo-social.png",
-  "Lidl":     "https://www.lidl.de/cdn/assets/logos/1.0.1/lidl-logo-shop-cdn.svg",
-  "EDEKA":    "https://www.edeka.de/_assets/images/logo-bb726ef35371bb015ca029e58b5998a4.webp?vsn=d",
-  "Penny":    "https://cdn.penny.de/dam/jcr:2e83a678-da13-47e7-b336-ead20bfb3446/PENNY_DEL_DEB_Logo.svg",
-  "REWE":     "https://www.rewe.de/icons/apple-touch-icon.png",
-  "Netto":    "https://www.netto-online.de/INTERSHOP/static/WFS/Plus-NettoDE-Site/-/-/de_DE./images/netto-logo.svg"
-};
+   ausschließlich zur Wiedererkennung des jeweiligen Händlers in diesem Demo-Prototyp.
+   Wird wie products/deals aus deals.json (Feld "stores") befüllt. */
+let storeLogos = {};
 
 const STORE_FALLBACK_IMG = "data:image/svg+xml," + encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">'+
@@ -2333,16 +2277,12 @@ const STORE_FALLBACK_IMG = "data:image/svg+xml," + encodeURIComponent(
   '</g></svg>'
 );
 
-/* Demo-Filialdaten je Händler (fiktive, aber plausible Adresse/Öffnungszeiten
-   für diesen privaten Prototyp — keine echten Filialdaten). */
-const storeBranches = {
-  "Kaufland": {address:"Ruhrstraße 22, 59821 Arnsberg", open:7,   close:22, closedSun:true,  geo:"51.4013,8.0658"},
-  "Lidl":     {address:"Hauptstraße 45, 59821 Arnsberg", open:8,   close:21, closedSun:true,  geo:"51.3968,8.0602"},
-  "EDEKA":    {address:"Bahnhofstraße 10, 59821 Arnsberg", open:7.5, close:20, closedSun:true, geo:"51.4022,8.0714"},
-  "Penny":    {address:"Neheimer Straße 5, 59821 Arnsberg", open:8,   close:20, closedSun:true, geo:"51.3945,8.0781"},
-  "REWE":     {address:"Clemens-August-Straße 8, 59821 Arnsberg", open:7, close:21, closedSun:true, geo:"51.4001,8.0655"},
-  "Netto":    {address:"Alter Marktplatz 3, 59821 Arnsberg", open:8,   close:20, closedSun:true, geo:"51.3982,8.0699"}
-};
+/* Filialdaten je Händler (fiktive, aber plausible Adresse/Öffnungszeiten für
+   diesen privaten Prototyp — keine echten Filialdaten). Aus deals.json (Feld
+   "stores"."<Händler>".branch) befüllt; open/close/closedSun werden von
+   isStoreOpenNow() zur Laufzeit gegen die aktuelle Uhrzeit ausgewertet, damit
+   der Öffnungsstatus nie im Datensatz veraltet. */
+let storeBranches = {};
 
 function formatHours(b){
   const fmt = n => Number.isInteger(n) ? `${n}:00` : `${Math.floor(n)}:30`;
@@ -2361,64 +2301,16 @@ function routeMinutes(km){
   return Math.max(1, Math.round(km * 2.3));
 }
 
-function getPackaging(){ return "Dose"; } /* aktuell sind alle Angebote Dosen */
+/* Pfand/Verpackung: Fallback-Defaults, falls ein Angebot in deals.json diese
+   Felder nicht mitliefert. Aktuell setzt jeder Datensatz sie explizit —
+   alle Energy-Drink-Dosen in DE haben Einwegpfand, aktuell sind alle
+   Angebote Dosen (siehe deals.json → _meta.fields). */
+const PFAND_FALLBACK = 0.25;
+const PACKAGING_FALLBACK = "Dose";
 
-const rawDeals = [
-  {id:"d1",  productId:"p1", store:"Kaufland", regularPrice:1.29, offerPrice:0.89, distanceKm:1.4, validFrom:"2026-08-28", validUntil:"2026-09-10", link:"#"},
-  {id:"d2",  productId:"p1", store:"Lidl",      regularPrice:1.25, offerPrice:0.99, distanceKm:3.1, validFrom:"2026-08-25", validUntil:"2026-09-03", link:"#"},
-  {id:"d3",  productId:"p2", store:"REWE",      regularPrice:1.35, offerPrice:0.95, distanceKm:2.2, validFrom:"2026-08-28", validUntil:"2026-09-10", link:"#"},
-  {id:"d4",  productId:"p3", store:"EDEKA",     regularPrice:1.99, offerPrice:1.39, distanceKm:4.6, validFrom:"2026-08-26", validUntil:"2026-09-08", link:"#"},
-  {id:"d5",  productId:"p3", store:"Penny",     regularPrice:1.89, offerPrice:1.49, distanceKm:6.3, validFrom:"2026-08-28", validUntil:"2026-09-10", link:"#"},
-  {id:"d6",  productId:"p4", store:"Netto",     regularPrice:1.79, offerPrice:1.29, distanceKm:5.0, validFrom:"2026-08-29", validUntil:"2026-09-11", link:"#"},
-  {id:"d7",  productId:"p5", store:"Kaufland",  regularPrice:1.69, offerPrice:1.19, distanceKm:1.4, validFrom:"2026-08-25", validUntil:"2026-09-07", link:"#"},
-  {id:"d8",  productId:"p6", store:"Lidl",      regularPrice:1.49, offerPrice:0.99, distanceKm:3.1, validFrom:"2026-08-28", validUntil:"2026-09-10", link:"#"},
-  {id:"d9",  productId:"p7", store:"REWE",      regularPrice:1.59, offerPrice:1.19, distanceKm:2.2, validFrom:"2026-08-27", validUntil:"2026-09-09", link:"#"},
-  {id:"d10", productId:"p2", store:"Penny",     regularPrice:1.35, offerPrice:1.05, distanceKm:6.3, validFrom:"2026-08-28", validUntil:"2026-09-10", link:"#"}
-];
-
-/* Preise/Angebote für die zusätzlichen Sorten (p8–p28) je Händler generieren,
-   damit jede Sorte in 2 Läden auftaucht — gleiche Entfernungen wie oben je Händler */
-const storeMeta = {
-  Kaufland:{distanceKm:1.4}, Lidl:{distanceKm:3.1}, EDEKA:{distanceKm:4.6},
-  Penny:{distanceKm:6.3}, REWE:{distanceKm:2.2}, Netto:{distanceKm:5.0}
-};
-
-const dateRanges = [
-  ["2026-08-28","2026-09-10"], ["2026-08-25","2026-09-07"],
-  ["2026-08-26","2026-09-08"], ["2026-08-29","2026-09-11"],
-  ["2026-08-27","2026-09-09"]
-];
-
-function priceForSize(sizeMl){
-  if(sizeMl===250) return {reg:1.29, off:0.95};
-  if(sizeMl===330) return {reg:1.59, off:1.19};
-  return {reg:1.79, off:1.29};
-}
-
-const newProductIds = ["p8","p9","p10","p11","p12","p13","p14","p16","p17",
-  "p18","p19","p20","p21","p22","p23","p24","p25","p26","p27","p28"];
-const storeCycle = ["Kaufland","REWE","Lidl","Penny","EDEKA","Netto"];
-
-let dealNum = 11;
-newProductIds.forEach((pid,i)=>{
-  const product = products.find(p=>p.id===pid);
-  const base = priceForSize(product.sizeMl);
-  const stores = [storeCycle[i%6], storeCycle[(i+2)%6]];
-  stores.forEach((store,j)=>{
-    const jitter = j*0.06;
-    const [validFrom,validUntil] = dateRanges[dealNum % dateRanges.length];
-    rawDeals.push({
-      id:"d"+dealNum, productId:pid, store,
-      regularPrice:+(base.reg+jitter).toFixed(2),
-      offerPrice:+(base.off+jitter*0.6).toFixed(2),
-      distanceKm:storeMeta[store].distanceKm,
-      validFrom, validUntil, link:"#"
-    });
-    dealNum++;
-  });
-});
-
-/* synthetische tägliche Preisverlaufs-Daten (90 Tage) je Angebot.
+/* Synthetische tägliche Preisverlaufs-Daten (90 Tage), genutzt als Fallback,
+   wenn ein Angebot kein eigenes priceHistory mitliefert (aktuell immer der
+   Fall — echte historische Tagespreise sind zu viele Daten für die Demo).
    Index 0 = vor 90 Tagen, letzter Index = heute (aktueller Preis). */
 const HISTORY_DAYS = 90;
 function genHistory(currentOffer, regular){
@@ -2440,18 +2332,31 @@ function hashStr(s){
   return h;
 }
 
-let deals = rawDeals.map(d=>{
-  const product = products.find(p=>p.id===d.productId);
-  return {
-    ...d,
-    product: product.name,
-    brand: product.brand,
-    sizeMl: product.sizeMl,
-    img: product.img,
-    history: genHistory(d.offerPrice, d.regularPrice),
-    checkedMinutesAgo: 3 + (hashStr(d.id) % 118)
-  };
-});
+/* Reichert die rohen offers[] aus deals.json um Produktdaten, Pfand-/
+   Verpackungs-Fallbacks, Preisverlauf und "zuletzt geprüft" an — exakt die
+   gleiche Anreicherung, die vorher synchron auf dem inline generierten
+   Array lief, nur jetzt als aufrufbare Funktion für loadDeals(). */
+function buildDeals(offers){
+  return offers.map(d=>{
+    const product = products.find(p=>p.id===d.productId);
+    return {
+      ...d,
+      product: product.name,
+      brand: product.brand,
+      sizeMl: product.sizeMl,
+      img: product.img,
+      pfand: typeof d.pfand === "number" ? d.pfand : PFAND_FALLBACK,
+      packaging: d.packaging || PACKAGING_FALLBACK,
+      history: Array.isArray(d.priceHistory) && d.priceHistory.length
+        ? d.priceHistory
+        : genHistory(d.offerPrice, d.regularPrice),
+      checkedMinutesAgo: 3 + (hashStr(d.id) % 118)
+    };
+  });
+}
+
+/* Laufzeit-Angebotsliste; bis zum ersten erfolgreichen loadDeals() leer. */
+let deals = [];
 
 /* Fixes "heute"-Datum für die Demo, damit Gültigkeits-/Alarm-Logik unabhängig
    vom tatsächlichen Aufrufdatum konsistent zu den Demo-Angeboten bleibt. */
@@ -2507,9 +2412,6 @@ let sizeFilter = "Alle";
 let packagingFilter = "Alle";
 let periodFilter = "Alle";
 let chartRangeDays = 30;
-
-const PFAND = 0.25;
-function getPfand(){ return PFAND; } /* alle Dosen-Energy-Drinks in DE haben Einwegpfand */
 
 let priceAlerts = {};
 try{ priceAlerts = JSON.parse(localStorage.getItem("canspot-alerts") || "{}"); }catch(e){ priceAlerts = {}; }
@@ -2584,13 +2486,13 @@ function render(){
     filtered = filtered.filter(d=>daysUntil(d.validUntil) >= 0);
   }
   if(noPfandOnly){
-    filtered = filtered.filter(d=>getPfand()===0);
+    filtered = filtered.filter(d=>d.pfand===0);
   }
   if(sizeFilter !== "Alle"){
     filtered = filtered.filter(d=>String(d.sizeMl)===sizeFilter);
   }
   if(packagingFilter !== "Alle"){
-    filtered = filtered.filter(d=>getPackaging()===packagingFilter);
+    filtered = filtered.filter(d=>d.packaging===packagingFilter);
   }
   if(periodFilter==="soon"){
     filtered = filtered.filter(d=>{ const dl=daysUntil(d.validUntil); return dl>=0 && dl<=3; });
@@ -2638,9 +2540,9 @@ function render(){
         if(storeFilter.value!=="Alle" && d.store!==storeFilter.value) return false;
         if(searchText && !(d.product.toLowerCase().includes(searchText) || d.brand.toLowerCase().includes(searchText) || d.store.toLowerCase().includes(searchText))) return false;
         if(hideExpired && daysUntil(d.validUntil)<0) return false;
-        if(noPfandOnly && getPfand()!==0) return false;
+        if(noPfandOnly && d.pfand!==0) return false;
         if(sizeFilter!=="Alle" && String(d.sizeMl)!==sizeFilter) return false;
-        if(packagingFilter!=="Alle" && getPackaging()!==packagingFilter) return false;
+        if(packagingFilter!=="Alle" && d.packaging!==packagingFilter) return false;
         if(periodFilter==="soon"){ const dl=daysUntil(d.validUntil); if(!(dl>=0 && dl<=3)) return false; }
         if(periodFilter==="new"){ const df=daysUntil(d.validFrom)*-1; if(!(df>=0 && df<=3)) return false; }
         return true;
@@ -2682,7 +2584,7 @@ function render(){
       const literPrice = deal.offerPrice / (deal.sizeMl/1000);
       const savingPct = Math.round((1 - deal.offerPrice/deal.regularPrice) * 100);
       const badges = buildBadges(deal, isFav, favLiterMin);
-      const pfand = getPfand();
+      const pfand = deal.pfand;
       const branch = storeBranches[deal.store];
       const openNow = branch ? isStoreOpenNow(branch) : null;
       const avgHist = deal.history.reduce((a,b)=>a+b,0)/deal.history.length;
@@ -4073,8 +3975,6 @@ function renderSkeleton(n){
   `).join("");
 }
 
-renderSkeleton(4);
-
 /* ---------------- VERBINDUNGSSTATUS ---------------- */
 
 function updateConnectionBanner(){
@@ -4111,7 +4011,13 @@ function checkTriggeredAlerts(){
   }
 }
 
-setTimeout(()=>{
+/* ---------------- ANGEBOTE LADEN (deals.json) ---------------- */
+
+function delay(ms){
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function finishInit(){
   render();
   renderFavList();
   updateStatus();
@@ -4122,7 +4028,57 @@ setTimeout(()=>{
   updateConnectionBanner();
   checkDeepLink();
   checkTriggeredAlerts();
-}, 500);
+}
+
+/* Fehlerzustand mit "Erneut versuchen", falls deals.json nicht geladen
+   werden konnte (Netzwerkfehler, HTTP-Fehler, kaputtes/unerwartetes JSON). */
+function showLoadError(){
+  dealsContainer.innerHTML = `
+    <div class="empty">
+      <svg class="icon icon-xl"><use href="#i-wifi-off"/></svg><br><br>
+      <b>Angebote konnten nicht geladen werden.</b><br>
+      Bitte prüfe deine Internetverbindung und versuche es erneut.
+      <br><br>
+      <button class="btn primary" id="retryLoadBtn" style="display:inline-flex">Erneut versuchen</button>
+    </div>`;
+  document.getElementById("retryLoadBtn").addEventListener("click", loadDeals);
+}
+
+/* Lädt Produkte/Händler/Angebote zur Laufzeit aus deals.json (Format siehe
+   dortige "_meta"). Die künstliche Mindestwartezeit von 500ms entspricht dem
+   bisherigen simulierten Ladedelay, damit das Lade-Skelett bei einer sehr
+   schnellen lokalen Antwort nicht nur aufblitzt; dauert der echte Request
+   länger, wartet die App entsprechend länger statt die UI zu früh zu zeigen.
+   Enthält deals.json keine (oder eine leere) offers-Liste, bleibt "deals"
+   leer und render() zeigt den bestehenden "Keine Angebote gefunden"-Zustand. */
+function loadDeals(){
+  renderSkeleton(4);
+  Promise.all([
+    fetch("deals.json", {cache:"no-store"}),
+    delay(500)
+  ]).then(([res]) => {
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+  }).then(data => {
+    if(!data || !Array.isArray(data.products) || !Array.isArray(data.offers)){
+      throw new Error("Unerwartetes Datenformat in deals.json");
+    }
+    products = data.products;
+    storeLogos = {};
+    storeBranches = {};
+    for(const name in (data.stores || {})){
+      storeLogos[name] = data.stores[name].logo;
+      storeBranches[name] = data.stores[name].branch;
+    }
+    deals = buildDeals(data.offers);
+    finishInit();
+  }).catch(err => {
+    console.error("CanSpot: Angebote konnten nicht geladen werden.", err);
+    showLoadError();
+  });
+}
+
+loadDeals();
 
 if("serviceWorker" in navigator){
   window.addEventListener("load", () => {

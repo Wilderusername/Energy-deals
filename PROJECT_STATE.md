@@ -4,6 +4,33 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-01 — Angebotsdaten in deals.json ausgelagert, App lädt dynamisch
+
+**Umgesetzt:**
+- Vorbereitung auf eine spätere echte Angebotsdatenquelle: Produkte, Händler/Filialen und Angebote sind nicht mehr inline in `index.html` codiert, sondern liegen in [deals.json](deals.json), das die App zur Laufzeit per `fetch()` lädt (`loadDeals()`). Kein UI- oder Verhaltensänderung, keine echten Händlerdaten abgerufen — `deals.json` enthält weiterhin ausschließlich die bisherigen Demo-/Testdaten.
+- `deals.json` neu strukturiert (ersetzt den alten, ungenutzten Alt-Bestand aus einem früheren Prototyp-Stand) mit klar dokumentiertem Schema (`_meta.description`/`_meta.fields` im JSON selbst): `products[]`, `stores{}` (Logo + Filiale: Adresse/Geo/Öffnungszeiten je Händler) und `offers[]` — das einheitliche Angebotsformat mit Produkt (`productId`), Marke/Menge (über `products[]`), Händler (`store`), Preis (`regularPrice`/`offerPrice`), Pfand (`pfand`), Angebotszeitraum (`validFrom`/`validUntil`), Entfernung (`distanceKm`) sowie optionalem `priceHistory` für den Preisverlauf. Öffnungsstatus wird bewusst NICHT im Datensatz gespeichert, sondern weiterhin clientseitig aus den Öffnungszeiten gegen die aktuelle Uhrzeit berechnet (sonst würde er veralten).
+- Die 50 aktuellen Test-Angebote (10 Basis-Angebote + 20 zuvor zur Laufzeit generierte Zusatz-Angebote für p8–p28, je 2 Händler) wurden einmalig exakt mit der bisherigen Generator-Logik berechnet und 1:1 unverändert nach `deals.json` übernommen (gleiche Preise, IDs, Distanzen, Zeiträume) — keine sichtbare Änderung an den angezeigten Angeboten.
+- `index.html`: `products`/`storeLogos`/`storeBranches`/`deals` sind jetzt leere `let`-Platzhalter, befüllt durch `loadDeals()`. Neue Funktionen `buildDeals()` (Anreicherung: Produktdaten, Pfand-/Verpackungs-Fallback, Preisverlauf, „zuletzt geprüft") und `loadDeals()`/`finishInit()`/`showLoadError()`/`delay()`. `getPfand()`/`getPackaging()`-Wrapper entfernt, alle Aufrufstellen lesen jetzt direkt `deal.pfand`/`deal.packaging`.
+- Ladezustände: Skeleton-Platzhalter (`renderSkeleton(4)`) bis die Daten da sind (künstliche Mindestwartezeit von 500ms wie bisher, damit das Skelett bei schneller lokaler Antwort nicht nur aufblitzt); bei Fehlschlag (Netzwerkfehler, HTTP-Fehler, kaputtes JSON) neuer Fehlerzustand mit „Erneut versuchen"-Button; bei leerer/gefilterter Angebotsliste weiterhin der bestehende „Keine Angebote gefunden“-Leerzustand (keine neue UI nötig).
+- Service Worker (`service-worker.js`): `deals.json` zum Precache der App-Shell hinzugefügt, `CACHE_NAME` auf `canspot-cache-v2` erhöht, damit Offline-Nutzung weiterhin die vollen 50 Angebote zeigt statt nur die App-Hülle.
+- Lokal getestet (Server auf Port 8123, dabei jeweils Service-Worker-Cache geleert für saubere Tests): normaler Load (50 Angebote, Preise identisch zu vorher), Fehlerzustand durch temporär entfernte `deals.json` ausgelöst und per „Erneut versuchen“ wiederhergestellt, Leerzustand mit leerer `offers[]`-Liste, Preisverlauf-Chart (Fallback-Generierung funktioniert), Filialdetail-Sheet (Adresse/Öffnungszeiten/Live-Status), Verpackungsfilter „Flasche“ weiterhin 0 Treffer, „Ohne Pfand“-Filter weiterhin 0 Treffer (beides exakt wie zuvor dokumentiertes Verhalten), Kartenansicht, Offline-Modus bei gestopptem Server (App inkl. aller 50 Angebote weiterhin nutzbar).
+
+**Wichtige Entscheidungen:**
+- Alt-Inhalt von `deals.json` (aus einem früheren, nicht mehr verwendeten Prototyp-Stand mit anderen Produkt-IDs, ohne Bilder/Historie/Filialdaten, referenziert von inzwischen ungenutzten `*.html`-Einzelseiten) wurde vollständig ersetzt statt parallel gepflegt — die neue Datei ist jetzt die einzige, tatsächlich genutzte Datenquelle.
+- Filiale wird pro Händlerkette modelliert (ein Satz Öffnungszeiten/Adresse je Kette in Arnsberg), nicht pro einzelnem Angebot — entspricht exakt dem bisherigen Verhalten. Für echte Mehr-Filial-Daten müsste `offers[]` künftig eine eigene `branchId` bekommen; bewusst nicht vorgebaut, um keine ungenutzte Komplexität einzuführen.
+- Preisverlauf und „zuletzt geprüft“ bleiben clientseitig synthetisch/deterministisch erzeugt (unverändertes Verhalten), `deals.json` unterstützt aber schon optional ein eigenes `priceHistory`-Array pro Angebot für eine echte Datenquelle.
+- Künstliche 500ms-Mindestwartezeit beim Laden bewusst beibehalten (jetzt als Untergrenze neben dem echten `fetch()`, nicht mehr als reiner Fake-Timer), damit sich am wahrgenommenen Ladeverhalten nichts ändert.
+
+**Offen:**
+- Wie in CLAUDE.md dokumentiert: `CACHE_NAME` in `service-worker.js` bei künftigen Änderungen an `deals.json` (oder anderen App-Shell-Dateien) manuell weiter hochzählen.
+- Für eine echte Datenquelle später: `loadDeals()`'s `fetch("deals.json")`-Ziel austauschen bzw. `deals.json` durch einen echten, gleich geformten Feed ersetzen; optional `lastCheckedAt`-Zeitstempel statt der deterministischen `checkedMinutesAgo`-Simulation ergänzen (bewusst nicht vorgebaut).
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Änderungen sind lokal committet, noch nicht gepusht (auf Freigabe des Nutzers wartend).
+
+---
+
 ## 2026-09-01 — PWA-Deployment auf GitHub Pages bestätigt
 
 **Umgesetzt:**

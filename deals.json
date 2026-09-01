@@ -1,126 +1,917 @@
 {
+  "_meta": {
+    "description": "CanSpot Angebotsdatenquelle. Wird von index.html zur Laufzeit per fetch(\"deals.json\") geladen (siehe CLAUDE.md, Abschnitt \"Datenquelle (deals.json)\"). Enthaelt aktuell ausschliesslich Demo-/Testdaten fuer den Prototyp -- keine echten, live abgerufenen Haendlerdaten.",
+    "schemaVersion": 1,
+    "fields": {
+      "products[]": "Produktkatalog. Felder: id, name, brand (Marke), sizeMl (Menge in ml), img (hotlinked Produktbild-URL, kein lokaler Download).",
+      "stores{}": "Haendler, keyed by Haendlername (z.B. \"Kaufland\"). Felder: logo (hotlinked Logo-URL), branch { address, geo \"lat,lon\", open/close (Oeffnungszeit in Stunden, 24h-Format, halbe Stunden als .5), closedSun (bool) }. Hinweis: bildet aktuell genau eine Filiale je Haendler in Arnsberg ab (Demo-Gebiet), nicht mehrere Filialen pro Kette -- fuer echte Mehr-Filial-Daten muesste \"store\" bei offers[] um eine eigene branchId erweitert werden.",
+      "offers[]": "Einzelangebote (das eigentliche \"Angebotsformat\"). Felder: id, productId (-> products[].id), store (-> stores{}-Key = Haendler+Filiale), regularPrice/offerPrice (Preis in EUR), pfand (Pfand in EUR), packaging (\"Dose\" | \"Flasche\"), distanceKm (Entfernung), validFrom/validUntil (Angebotszeitraum, YYYY-MM-DD), link (Ziel-URL des Angebots). Optional: priceHistory (number[], chronologischer Tagespreisverlauf) -- wenn vorhanden wird er von der App 1:1 uebernommen, andernfalls synthetisch generiert (Demo-Verhalten, unveraendert)."
+    },
+    "derivedClientSide": "Der Oeffnungsstatus (\"Jetzt geoeffnet\"/\"Geschlossen\") wird NICHT gespeichert, sondern zur Laufzeit aus stores{}.branch (open/close/closedSun) gegen die aktuelle Uhrzeit berechnet, damit er nie veraltet. \"Preis geprueft vor ...\" bleibt fuer Demo-Zwecke deterministisch aus der offer-id abgeleitet (kein echter Zeitstempel im Datensatz)."
+  },
   "products": [
     {
-      "id": "product-rockstar-original",
-      "name": "Rockstar Energy Original",
-      "brand": "Rockstar",
-      "sizeMl": 500
-    },
-    {
-      "id": "product-monster-original",
-      "name": "Monster Energy",
-      "brand": "Monster",
-      "sizeMl": 500
-    },
-    {
-      "id": "product-redbull-original",
+      "id": "p1",
       "name": "Red Bull Energy Drink",
       "brand": "Red Bull",
-      "sizeMl": 250
+      "sizeMl": 250,
+      "img": "https://www.redbull.com/energydrink/v1/resources/storyblok/images/f/287059/870x2200/9153a98907/de_ed_250ml_energy-drink_country_rgb_initi5-311_cold_closed_front_com_25.png/m/200x0"
     },
     {
-      "id": "product-gonrgy",
-      "name": "GÖNRGY",
+      "id": "p2",
+      "name": "Red Bull Sugarfree",
+      "brand": "Red Bull",
+      "sizeMl": 250,
+      "img": "https://www.redbull.com/energydrink/v1/resources/storyblok/images/f/287059/528x1348/afe59ffa52/de_sf_250ml_sugarfree_country_rgb__cold_closed_front_com_full.png/m/200x0"
+    },
+    {
+      "id": "p3",
+      "name": "Monster Energy Ultra",
+      "brand": "Monster",
+      "sizeMl": 500,
+      "img": "https://web-assests.monsterenergy.com/mnst/62e227e2-0e77-46d6-a989-35838a1f0981.png"
+    },
+    {
+      "id": "p4",
+      "name": "Monster Energy Classic",
+      "brand": "Monster",
+      "sizeMl": 500,
+      "img": "https://web-assests.monsterenergy.com/mnst/c2c19b9e-6989-4f47-9375-017c7c1101f8.png"
+    },
+    {
+      "id": "p5",
+      "name": "Rockstar Energy Original",
+      "brand": "Rockstar",
+      "sizeMl": 500,
+      "img": "https://www.rockstarenergy.com/cdn/shop/files/1720545676-original_d4e37562-d26e-4fc8-a3b9-e9df99785b21.png?v=1761060858&width=300"
+    },
+    {
+      "id": "p6",
+      "name": "GÖNRGY Raspberry Cheesecake",
       "brand": "GÖNRGY",
-      "sizeMl": 500
+      "sizeMl": 500,
+      "img": "https://goenrgy.de/cdn/shop/files/Goenrgy_RaspberryCheesecake_500ml_1.png?v=1751890542&width=300"
     },
     {
-      "id": "product-carabao-original",
-      "name": "Carabao Original",
+      "id": "p7",
+      "name": "Carabao Energy Drink",
       "brand": "Carabao",
-      "sizeMl": 330
+      "sizeMl": 330,
+      "img": "https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Carabao_Daeng.png/250px-Carabao_Daeng.png"
+    },
+    {
+      "id": "p8",
+      "name": "Red Bull Zero",
+      "brand": "Red Bull",
+      "sizeMl": 250,
+      "img": "https://www.redbull.com/energydrink/v1/resources/storyblok/images/f/287059/528x1348/4f77700c69/de_zr_250ml_ac_zero_country_rgb_packrq-3017_cold_closed_front_com_full.png/m/200x0"
+    },
+    {
+      "id": "p9",
+      "name": "Red Bull Red Edition (Wassermelone)",
+      "brand": "Red Bull",
+      "sizeMl": 250,
+      "img": "https://www.redbull.com/energydrink/v1/resources/storyblok/images/f/287059/528x1348/f78543afad/qa_wm_250ml_the-red-edition_country_rgb_do239038_cold_closed_front_com_full.png/m/200x0"
+    },
+    {
+      "id": "p10",
+      "name": "Red Bull Blue Edition (Heidelbeere)",
+      "brand": "Red Bull",
+      "sizeMl": 250,
+      "img": "https://www.redbull.com/energydrink/v1/resources/storyblok/images/f/287059/528x1348/fb99a4bab3/de_bl_250ml_the-blue-edition_country_rgb_do242282_cold_closed_front_com_full.png/m/200x0"
+    },
+    {
+      "id": "p11",
+      "name": "Monster Ultra Zero",
+      "brand": "Monster",
+      "sizeMl": 500,
+      "img": "https://web-assests.monsterenergy.com/mnst/5587a01b-3c83-42f7-a741-b29a1d534409.png"
+    },
+    {
+      "id": "p12",
+      "name": "Monster Mango Loco",
+      "brand": "Monster",
+      "sizeMl": 500,
+      "img": "https://web-assests.monsterenergy.com/mnst/bcbf7fc0-05e9-4d0d-933c-30eabf9ca620.png"
+    },
+    {
+      "id": "p13",
+      "name": "Monster Pipeline Punch",
+      "brand": "Monster",
+      "sizeMl": 500,
+      "img": "https://web-assests.monsterenergy.com/mnst/6aa8ff45-fcd8-4c9d-b2b2-d15a69a1d465.png"
+    },
+    {
+      "id": "p14",
+      "name": "Monster Ultra Watermelon",
+      "brand": "Monster",
+      "sizeMl": 500,
+      "img": "https://web-assests.monsterenergy.com/mnst/1cb31b0a-fd8d-42b4-8e3b-e9fcb0f6bb80.png"
+    },
+    {
+      "id": "p16",
+      "name": "Rockstar Punched Guava",
+      "brand": "Rockstar",
+      "sizeMl": 500,
+      "img": "https://images.openfoodfacts.org/images/products/406/080/016/0126/front_de.68.400.jpg"
+    },
+    {
+      "id": "p17",
+      "name": "Carabao Green Apple Sugar Free",
+      "brand": "Carabao",
+      "sizeMl": 330,
+      "img": "https://images.openfoodfacts.org/images/products/885/579/000/0783/front_en.3.400.jpg"
+    },
+    {
+      "id": "p18",
+      "name": "GÖNRGY Black Acai",
+      "brand": "GÖNRGY",
+      "sizeMl": 500,
+      "img": "https://goenrgy.de/cdn/shop/files/BlackAcai_Vorderseite.png?v=1740045389&width=533"
+    },
+    {
+      "id": "p19",
+      "name": "GÖNRGY Erdbeere Aprikose",
+      "brand": "GÖNRGY",
+      "sizeMl": 500,
+      "img": "https://goenrgy.de/cdn/shop/files/ErdbeereAprikose_Vorderseite.png?v=1740045206&width=533"
+    },
+    {
+      "id": "p20",
+      "name": "GÖNRGY Tropical Exotic",
+      "brand": "GÖNRGY",
+      "sizeMl": 500,
+      "img": "https://goenrgy.de/cdn/shop/files/Gonrgy_TropicalExotik_Frontal_500ml_Drops.webp?v=1755877197&width=300"
+    },
+    {
+      "id": "p21",
+      "name": "effect Classic Energy",
+      "brand": "Effect Energy",
+      "sizeMl": 250,
+      "img": "https://www.effect-energy.com/wp-content/uploads/2020/10/effect_can-025l_CLASSIC_RGB.png"
+    },
+    {
+      "id": "p22",
+      "name": "effect Gazoz",
+      "brand": "Effect Energy",
+      "sizeMl": 330,
+      "img": "https://www.effect-energy.com/wp-content/uploads/2025/08/effect_can-330ml_FLAVOURED_GAZOZ.png"
+    },
+    {
+      "id": "p23",
+      "name": "effect Zero Sugarfree",
+      "brand": "Effect Energy",
+      "sizeMl": 330,
+      "img": "https://www.effect-energy.com/wp-content/uploads/2020/10/effect_can-033l_ZERO_RGB.png"
+    },
+    {
+      "id": "p24",
+      "name": "effect Guava Massive",
+      "brand": "Effect Energy",
+      "sizeMl": 330,
+      "img": "https://www.effect-energy.com/wp-content/uploads/2023/01/effect_can-330ml_FLAVOURED_GUAVA-MASSIVE.png"
+    },
+    {
+      "id": "p25",
+      "name": "28 Black Açaí",
+      "brand": "28 Black",
+      "sizeMl": 250,
+      "img": "https://www.28black.com/wp-content/uploads/2025/07/acai.png"
+    },
+    {
+      "id": "p26",
+      "name": "28 Black Açaí Zero",
+      "brand": "28 Black",
+      "sizeMl": 250,
+      "img": "https://www.28black.com/wp-content/uploads/2025/07/Acai-Zero.png"
+    },
+    {
+      "id": "p27",
+      "name": "28 Black Sour Cherry",
+      "brand": "28 Black",
+      "sizeMl": 250,
+      "img": "https://www.28black.com/wp-content/uploads/2025/07/Sour-Cherry.png"
+    },
+    {
+      "id": "p28",
+      "name": "28 Black Waldmeister",
+      "brand": "28 Black",
+      "sizeMl": 250,
+      "img": "https://www.28black.com/wp-content/uploads/2025/07/Waldmeister-1.png"
     }
   ],
-  "deals": [
+  "stores": {
+    "Kaufland": {
+      "logo": "https://static.cdn.kaufland.de/static/common/dist/img/logos/kaufland-logo-social.png",
+      "branch": {
+        "address": "Ruhrstraße 22, 59821 Arnsberg",
+        "open": 7,
+        "close": 22,
+        "closedSun": true,
+        "geo": "51.4013,8.0658"
+      }
+    },
+    "Lidl": {
+      "logo": "https://www.lidl.de/cdn/assets/logos/1.0.1/lidl-logo-shop-cdn.svg",
+      "branch": {
+        "address": "Hauptstraße 45, 59821 Arnsberg",
+        "open": 8,
+        "close": 21,
+        "closedSun": true,
+        "geo": "51.3968,8.0602"
+      }
+    },
+    "EDEKA": {
+      "logo": "https://www.edeka.de/_assets/images/logo-bb726ef35371bb015ca029e58b5998a4.webp?vsn=d",
+      "branch": {
+        "address": "Bahnhofstraße 10, 59821 Arnsberg",
+        "open": 7.5,
+        "close": 20,
+        "closedSun": true,
+        "geo": "51.4022,8.0714"
+      }
+    },
+    "Penny": {
+      "logo": "https://cdn.penny.de/dam/jcr:2e83a678-da13-47e7-b336-ead20bfb3446/PENNY_DEL_DEB_Logo.svg",
+      "branch": {
+        "address": "Neheimer Straße 5, 59821 Arnsberg",
+        "open": 8,
+        "close": 20,
+        "closedSun": true,
+        "geo": "51.3945,8.0781"
+      }
+    },
+    "REWE": {
+      "logo": "https://www.rewe.de/icons/apple-touch-icon.png",
+      "branch": {
+        "address": "Clemens-August-Straße 8, 59821 Arnsberg",
+        "open": 7,
+        "close": 21,
+        "closedSun": true,
+        "geo": "51.4001,8.0655"
+      }
+    },
+    "Netto": {
+      "logo": "https://www.netto-online.de/INTERSHOP/static/WFS/Plus-NettoDE-Site/-/-/de_DE./images/netto-logo.svg",
+      "branch": {
+        "address": "Alter Marktplatz 3, 59821 Arnsberg",
+        "open": 8,
+        "close": 20,
+        "closedSun": true,
+        "geo": "51.3982,8.0699"
+      }
+    }
+  },
+  "offers": [
     {
-      "id": "deal-001",
-      "productId": "product-rockstar-original",
-      "offerPrice": 0.79,
-      "regularPrice": 1.49,
+      "id": "d1",
+      "productId": "p1",
       "store": "Kaufland",
-      "city": "Arnsberg",
-      "postalCode": "59821",
-      "distanceKm": 4.3,
-      "validFrom": "2026-08-31",
-      "validUntil": "2026-09-02",
-      "verified": true,
-      "source": "Demo",
-      "link": "rockstar.html"
-    },
-    {
-      "id": "deal-002",
-      "productId": "product-monster-original",
+      "regularPrice": 1.29,
       "offerPrice": 0.89,
-      "regularPrice": 1.49,
+      "distanceKm": 1.4,
+      "validFrom": "2026-08-28",
+      "validUntil": "2026-09-10",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d2",
+      "productId": "p1",
       "store": "Lidl",
-      "city": "Arnsberg",
-      "postalCode": "59821",
-      "distanceKm": 2.4,
-      "validFrom": "2026-08-31",
-      "validUntil": "2026-09-05",
-      "verified": true,
-      "source": "Demo",
-      "link": "monster.html"
+      "regularPrice": 1.25,
+      "offerPrice": 0.99,
+      "distanceKm": 3.1,
+      "validFrom": "2026-08-25",
+      "validUntil": "2026-09-03",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
     },
     {
-      "id": "deal-003",
-      "productId": "product-redbull-original",
-      "offerPrice": 0.99,
-      "regularPrice": 1.49,
-      "store": "EDEKA",
-      "city": "Arnsberg",
-      "postalCode": "59821",
-      "distanceKm": 2.1,
-      "validFrom": "2026-08-31",
-      "validUntil": "2026-09-05",
-      "verified": true,
-      "source": "Demo",
-      "link": "red-bull.html"
-    },
-    {
-      "id": "deal-004",
-      "productId": "product-gonrgy",
-      "offerPrice": 0.99,
-      "regularPrice": 1.49,
-      "store": "Penny",
-      "city": "Arnsberg",
-      "postalCode": "59821",
-      "distanceKm": 1.8,
-      "validFrom": "2026-08-31",
-      "validUntil": "2026-09-05",
-      "verified": true,
-      "source": "Demo",
-      "link": "gonrgy.html"
-    },
-    {
-      "id": "deal-005",
-      "productId": "product-carabao-original",
-      "offerPrice": 0.99,
-      "regularPrice": 1.39,
+      "id": "d3",
+      "productId": "p2",
       "store": "REWE",
-      "city": "Arnsberg",
-      "postalCode": "59821",
-      "distanceKm": 2.5,
-      "validFrom": "2026-08-31",
-      "validUntil": "2026-09-05",
-      "verified": true,
-      "source": "Demo",
-      "link": "carabao.html"
+      "regularPrice": 1.35,
+      "offerPrice": 0.95,
+      "distanceKm": 2.2,
+      "validFrom": "2026-08-28",
+      "validUntil": "2026-09-10",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
     },
     {
-      "id": "deal-006",
-      "productId": "product-redbull-original",
+      "id": "d4",
+      "productId": "p3",
+      "store": "EDEKA",
+      "regularPrice": 1.99,
+      "offerPrice": 1.39,
+      "distanceKm": 4.6,
+      "validFrom": "2026-08-26",
+      "validUntil": "2026-09-08",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d5",
+      "productId": "p3",
+      "store": "Penny",
+      "regularPrice": 1.89,
       "offerPrice": 1.49,
-      "regularPrice": 1.59,
+      "distanceKm": 6.3,
+      "validFrom": "2026-08-28",
+      "validUntil": "2026-09-10",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d6",
+      "productId": "p4",
       "store": "Netto",
-      "city": "Arnsberg",
-      "postalCode": "59821",
-      "distanceKm": 1.2,
-      "validFrom": "2026-08-31",
-      "validUntil": "2026-09-05",
-      "verified": true,
-      "source": "Demo",
-      "link": "red-bull.html"
+      "regularPrice": 1.79,
+      "offerPrice": 1.29,
+      "distanceKm": 5,
+      "validFrom": "2026-08-29",
+      "validUntil": "2026-09-11",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d7",
+      "productId": "p5",
+      "store": "Kaufland",
+      "regularPrice": 1.69,
+      "offerPrice": 1.19,
+      "distanceKm": 1.4,
+      "validFrom": "2026-08-25",
+      "validUntil": "2026-09-07",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d8",
+      "productId": "p6",
+      "store": "Lidl",
+      "regularPrice": 1.49,
+      "offerPrice": 0.99,
+      "distanceKm": 3.1,
+      "validFrom": "2026-08-28",
+      "validUntil": "2026-09-10",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d9",
+      "productId": "p7",
+      "store": "REWE",
+      "regularPrice": 1.59,
+      "offerPrice": 1.19,
+      "distanceKm": 2.2,
+      "validFrom": "2026-08-27",
+      "validUntil": "2026-09-09",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d10",
+      "productId": "p2",
+      "store": "Penny",
+      "regularPrice": 1.35,
+      "offerPrice": 1.05,
+      "distanceKm": 6.3,
+      "validFrom": "2026-08-28",
+      "validUntil": "2026-09-10",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d11",
+      "productId": "p8",
+      "store": "Kaufland",
+      "regularPrice": 1.29,
+      "offerPrice": 0.95,
+      "distanceKm": 1.4,
+      "validFrom": "2026-08-25",
+      "validUntil": "2026-09-07",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d12",
+      "productId": "p8",
+      "store": "Lidl",
+      "regularPrice": 1.35,
+      "offerPrice": 0.99,
+      "distanceKm": 3.1,
+      "validFrom": "2026-08-26",
+      "validUntil": "2026-09-08",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d13",
+      "productId": "p9",
+      "store": "REWE",
+      "regularPrice": 1.29,
+      "offerPrice": 0.95,
+      "distanceKm": 2.2,
+      "validFrom": "2026-08-29",
+      "validUntil": "2026-09-11",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d14",
+      "productId": "p9",
+      "store": "Penny",
+      "regularPrice": 1.35,
+      "offerPrice": 0.99,
+      "distanceKm": 6.3,
+      "validFrom": "2026-08-27",
+      "validUntil": "2026-09-09",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d15",
+      "productId": "p10",
+      "store": "Lidl",
+      "regularPrice": 1.29,
+      "offerPrice": 0.95,
+      "distanceKm": 3.1,
+      "validFrom": "2026-08-28",
+      "validUntil": "2026-09-10",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d16",
+      "productId": "p10",
+      "store": "EDEKA",
+      "regularPrice": 1.35,
+      "offerPrice": 0.99,
+      "distanceKm": 4.6,
+      "validFrom": "2026-08-25",
+      "validUntil": "2026-09-07",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d17",
+      "productId": "p11",
+      "store": "Penny",
+      "regularPrice": 1.79,
+      "offerPrice": 1.29,
+      "distanceKm": 6.3,
+      "validFrom": "2026-08-26",
+      "validUntil": "2026-09-08",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d18",
+      "productId": "p11",
+      "store": "Netto",
+      "regularPrice": 1.85,
+      "offerPrice": 1.33,
+      "distanceKm": 5,
+      "validFrom": "2026-08-29",
+      "validUntil": "2026-09-11",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d19",
+      "productId": "p12",
+      "store": "EDEKA",
+      "regularPrice": 1.79,
+      "offerPrice": 1.29,
+      "distanceKm": 4.6,
+      "validFrom": "2026-08-27",
+      "validUntil": "2026-09-09",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d20",
+      "productId": "p12",
+      "store": "Kaufland",
+      "regularPrice": 1.85,
+      "offerPrice": 1.33,
+      "distanceKm": 1.4,
+      "validFrom": "2026-08-28",
+      "validUntil": "2026-09-10",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d21",
+      "productId": "p13",
+      "store": "Netto",
+      "regularPrice": 1.79,
+      "offerPrice": 1.29,
+      "distanceKm": 5,
+      "validFrom": "2026-08-25",
+      "validUntil": "2026-09-07",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d22",
+      "productId": "p13",
+      "store": "REWE",
+      "regularPrice": 1.85,
+      "offerPrice": 1.33,
+      "distanceKm": 2.2,
+      "validFrom": "2026-08-26",
+      "validUntil": "2026-09-08",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d23",
+      "productId": "p14",
+      "store": "Kaufland",
+      "regularPrice": 1.79,
+      "offerPrice": 1.29,
+      "distanceKm": 1.4,
+      "validFrom": "2026-08-29",
+      "validUntil": "2026-09-11",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d24",
+      "productId": "p14",
+      "store": "Lidl",
+      "regularPrice": 1.85,
+      "offerPrice": 1.33,
+      "distanceKm": 3.1,
+      "validFrom": "2026-08-27",
+      "validUntil": "2026-09-09",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d25",
+      "productId": "p16",
+      "store": "REWE",
+      "regularPrice": 1.79,
+      "offerPrice": 1.29,
+      "distanceKm": 2.2,
+      "validFrom": "2026-08-28",
+      "validUntil": "2026-09-10",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d26",
+      "productId": "p16",
+      "store": "Penny",
+      "regularPrice": 1.85,
+      "offerPrice": 1.33,
+      "distanceKm": 6.3,
+      "validFrom": "2026-08-25",
+      "validUntil": "2026-09-07",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d27",
+      "productId": "p17",
+      "store": "Lidl",
+      "regularPrice": 1.59,
+      "offerPrice": 1.19,
+      "distanceKm": 3.1,
+      "validFrom": "2026-08-26",
+      "validUntil": "2026-09-08",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d28",
+      "productId": "p17",
+      "store": "EDEKA",
+      "regularPrice": 1.65,
+      "offerPrice": 1.23,
+      "distanceKm": 4.6,
+      "validFrom": "2026-08-29",
+      "validUntil": "2026-09-11",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d29",
+      "productId": "p18",
+      "store": "Penny",
+      "regularPrice": 1.79,
+      "offerPrice": 1.29,
+      "distanceKm": 6.3,
+      "validFrom": "2026-08-27",
+      "validUntil": "2026-09-09",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d30",
+      "productId": "p18",
+      "store": "Netto",
+      "regularPrice": 1.85,
+      "offerPrice": 1.33,
+      "distanceKm": 5,
+      "validFrom": "2026-08-28",
+      "validUntil": "2026-09-10",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d31",
+      "productId": "p19",
+      "store": "EDEKA",
+      "regularPrice": 1.79,
+      "offerPrice": 1.29,
+      "distanceKm": 4.6,
+      "validFrom": "2026-08-25",
+      "validUntil": "2026-09-07",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d32",
+      "productId": "p19",
+      "store": "Kaufland",
+      "regularPrice": 1.85,
+      "offerPrice": 1.33,
+      "distanceKm": 1.4,
+      "validFrom": "2026-08-26",
+      "validUntil": "2026-09-08",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d33",
+      "productId": "p20",
+      "store": "Netto",
+      "regularPrice": 1.79,
+      "offerPrice": 1.29,
+      "distanceKm": 5,
+      "validFrom": "2026-08-29",
+      "validUntil": "2026-09-11",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d34",
+      "productId": "p20",
+      "store": "REWE",
+      "regularPrice": 1.85,
+      "offerPrice": 1.33,
+      "distanceKm": 2.2,
+      "validFrom": "2026-08-27",
+      "validUntil": "2026-09-09",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d35",
+      "productId": "p21",
+      "store": "Kaufland",
+      "regularPrice": 1.29,
+      "offerPrice": 0.95,
+      "distanceKm": 1.4,
+      "validFrom": "2026-08-28",
+      "validUntil": "2026-09-10",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d36",
+      "productId": "p21",
+      "store": "Lidl",
+      "regularPrice": 1.35,
+      "offerPrice": 0.99,
+      "distanceKm": 3.1,
+      "validFrom": "2026-08-25",
+      "validUntil": "2026-09-07",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d37",
+      "productId": "p22",
+      "store": "REWE",
+      "regularPrice": 1.59,
+      "offerPrice": 1.19,
+      "distanceKm": 2.2,
+      "validFrom": "2026-08-26",
+      "validUntil": "2026-09-08",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d38",
+      "productId": "p22",
+      "store": "Penny",
+      "regularPrice": 1.65,
+      "offerPrice": 1.23,
+      "distanceKm": 6.3,
+      "validFrom": "2026-08-29",
+      "validUntil": "2026-09-11",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d39",
+      "productId": "p23",
+      "store": "Lidl",
+      "regularPrice": 1.59,
+      "offerPrice": 1.19,
+      "distanceKm": 3.1,
+      "validFrom": "2026-08-27",
+      "validUntil": "2026-09-09",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d40",
+      "productId": "p23",
+      "store": "EDEKA",
+      "regularPrice": 1.65,
+      "offerPrice": 1.23,
+      "distanceKm": 4.6,
+      "validFrom": "2026-08-28",
+      "validUntil": "2026-09-10",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d41",
+      "productId": "p24",
+      "store": "Penny",
+      "regularPrice": 1.59,
+      "offerPrice": 1.19,
+      "distanceKm": 6.3,
+      "validFrom": "2026-08-25",
+      "validUntil": "2026-09-07",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d42",
+      "productId": "p24",
+      "store": "Netto",
+      "regularPrice": 1.65,
+      "offerPrice": 1.23,
+      "distanceKm": 5,
+      "validFrom": "2026-08-26",
+      "validUntil": "2026-09-08",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d43",
+      "productId": "p25",
+      "store": "EDEKA",
+      "regularPrice": 1.29,
+      "offerPrice": 0.95,
+      "distanceKm": 4.6,
+      "validFrom": "2026-08-29",
+      "validUntil": "2026-09-11",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d44",
+      "productId": "p25",
+      "store": "Kaufland",
+      "regularPrice": 1.35,
+      "offerPrice": 0.99,
+      "distanceKm": 1.4,
+      "validFrom": "2026-08-27",
+      "validUntil": "2026-09-09",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d45",
+      "productId": "p26",
+      "store": "Netto",
+      "regularPrice": 1.29,
+      "offerPrice": 0.95,
+      "distanceKm": 5,
+      "validFrom": "2026-08-28",
+      "validUntil": "2026-09-10",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d46",
+      "productId": "p26",
+      "store": "REWE",
+      "regularPrice": 1.35,
+      "offerPrice": 0.99,
+      "distanceKm": 2.2,
+      "validFrom": "2026-08-25",
+      "validUntil": "2026-09-07",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d47",
+      "productId": "p27",
+      "store": "Kaufland",
+      "regularPrice": 1.29,
+      "offerPrice": 0.95,
+      "distanceKm": 1.4,
+      "validFrom": "2026-08-26",
+      "validUntil": "2026-09-08",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d48",
+      "productId": "p27",
+      "store": "Lidl",
+      "regularPrice": 1.35,
+      "offerPrice": 0.99,
+      "distanceKm": 3.1,
+      "validFrom": "2026-08-29",
+      "validUntil": "2026-09-11",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d49",
+      "productId": "p28",
+      "store": "REWE",
+      "regularPrice": 1.29,
+      "offerPrice": 0.95,
+      "distanceKm": 2.2,
+      "validFrom": "2026-08-27",
+      "validUntil": "2026-09-09",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
+    },
+    {
+      "id": "d50",
+      "productId": "p28",
+      "store": "Penny",
+      "regularPrice": 1.35,
+      "offerPrice": 0.99,
+      "distanceKm": 6.3,
+      "validFrom": "2026-08-28",
+      "validUntil": "2026-09-10",
+      "link": "#",
+      "pfand": 0.25,
+      "packaging": "Dose"
     }
   ]
 }
