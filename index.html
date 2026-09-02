@@ -3735,6 +3735,13 @@ function showAlertsView(){
 document.getElementById("navHome").addEventListener("click", ()=>{
   closeAllSheets();
   viewFavoritesOnly = false;
+  search.value = "";
+  selectedBrand = "Alle";
+  document.querySelectorAll(".tabs .chip").forEach(b=>b.classList.remove("on"));
+  const allChip = document.querySelector('.tabs .chip[data-brand="Alle"]');
+  if(allChip) allChip.classList.add("on");
+  sort.value = "price";
+  resetExtraFilters();
   showDealsView();
   setActiveNav("home");
   updateStatus();

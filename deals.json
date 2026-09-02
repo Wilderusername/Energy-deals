@@ -202,7 +202,7 @@
   ],
   "stores": {
     "Kaufland": {
-      "logo": "https://static.cdn.kaufland.de/static/common/dist/img/logos/kaufland-logo-social.png",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/4/44/Kaufland_201x_logo.svg",
       "branch": {
         "address": "Ruhrstraße 22, 59821 Arnsberg",
         "open": 7,
@@ -242,7 +242,7 @@
       }
     },
     "REWE": {
-      "logo": "https://www.rewe.de/icons/apple-touch-icon.png",
+      "logo": "https://www.rewe.de/icons/icon-512.png",
       "branch": {
         "address": "Clemens-August-Straße 8, 59821 Arnsberg",
         "open": 7,

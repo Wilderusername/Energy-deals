@@ -4,6 +4,29 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-02 — Kaufland-/REWE-Logo vergrößert + „Start" setzt Filter zurück
+
+**Umgesetzt:**
+- **Kaufland-Logo**: `deals.json` → `stores.Kaufland.logo` von `kaufland-logo-social.png` (1200×600, das "K"-Signet nimmt darin nur die mittlere Hälfte ein, Rest ist weißer Leerraum links/rechts — dadurch wirkte es in der quadratischen 44×44-Box mit `object-fit:contain` kleiner als Lidl/Penny) auf die offizielle, quadratisch zugeschnittene Wikimedia-Commons-Datei `Kaufland_201x_logo.svg` (500×500, Vektor, nur das rote "K"-Signet mit "Kaufland"-Schriftzug, kein Fremd-Branding) geändert.
+- **REWE-Logo**: von `rewe.de/icons/apple-touch-icon.png` (180×180, Sprechblasen-Form mit "Schwänzchen" unten rechts, lässt dadurch an den Ecken mehr Leerraum als ein füllendes Icon) auf `rewe.de/icons/icon-512.png` (512×512, offizielles PWA-App-Icon: abgerundetes, randfüllendes Rot-Quadrat mit "REWE DEIN MARKT") geändert — höher aufgelöst und füllt die Logo-Box genauso satt wie Lidl/Penny.
+- Beide neuen Quellen offiziell (Wikimedia-Commons-Spiegelung der aktuellen Kaufland-Marke bzw. direkt von rewe.de) und höher aufgelöst/vektoriell als vorher, also keine Unschärfe beim Skalieren; keine Fremdlogos/Zusatz-Branding enthalten.
+- **„Start" setzt Filter zurück**: `#navHome`-Click-Handler um dieselben Reset-Schritte ergänzt, die bereits der bestehende "Filter zurücksetzen"-Button im Empty-State nutzt (`search.value=""`, `selectedBrand="Alle"` + Tab-Chip-UI, `sort.value="price"`, `resetExtraFilters()` — setzt Radius, Störer-Filter, Größe/Verpackung, Zeitraum, Pfand-Only, "Abgelaufene ausblenden" zurück und synct alle zugehörigen Checkboxen/Chips/Slider). Bestehender `data-reset="filters"`-Handler (Empty-State-Button) dafür unverändert gelassen — Logik bewusst dupliziert statt in eine gemeinsame Funktion ausgelagert, um keinen bestehenden, funktionierenden Code anzufassen.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v12` erhöht (Pflichtregel, `index.html` und `deals.json` geändert).
+- Verifiziert über einen temporären lokalen Server: Kaufland- und REWE-Logo jetzt sichtbar genauso groß/satt wie Lidl/Penny in Angebotskarte, keine Ladefehler; Filter (Suche, Marke, Sortierung, Radius, Pfand-Only, Größe, "Abgelaufene ausblenden") gezielt gesetzt und per Klick auf „Start" vollständig auf den Ausgangszustand zurückgesetzt (inkl. UI-Zustand von Sortierbutton-Label und Filter-Zähler-Badge, alle 50 Demo-Angebote wieder sichtbar); Favoriten-Ansicht wird beim Klick auf „Start" ebenfalls verlassen; keine Konsolenfehler.
+
+**Wichtige Entscheidungen:**
+- Für Kaufland/REWE wurden bewusst offizielle, aber jeweils andere Asset-Varianten der gleichen Händler gewählt (Wikimedia-Spiegel für Kaufland, PWA-Icon-Variante direkt von rewe.de) statt eines pauschalen CSS-Fixes (z. B. Zoom/Skalierung) — Letzteres hätte bei den anderen, bereits korrekt aussehenden Logos (Lidl, EDEKA, Penny, Netto) zu Verzerrungen geführt, da das eigentliche Problem im Bild-Zuschnitt lag, nicht in der CSS-Box.
+- „Start"-Reset dupliziert bewusst den bestehenden Reset-Code statt ihn in eine gemeinsame Hilfsfunktion zu extrahieren — laut bisherigem Muster in diesem Projekt werden bestehende, funktionierende Codepfade nicht angefasst, wenn eine rein additive Ergänzung genügt.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-02 — Handle-Tap zum Schließen (Detail/Preisverlauf) + korrigiertes Penny-Logo
 
 **Umgesetzt:**
