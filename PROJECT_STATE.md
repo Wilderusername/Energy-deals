@@ -4,6 +4,26 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-03 — Produktbilder größer, Angebotspreis etwas kleiner
+
+**Umgesetzt:**
+- `.thumb` (gemeinsame Produktbild-Klasse) von `46px` auf `58px` vergrößert — bewusst an der Basis-Regel geändert statt nur für die Angebotskarte, da der Nutzer „allgemein" größere Produktbilder wollte: wirkt dadurch einheitlich überall dort, wo `.thumb` bereits verwendet wird (Angebotskarte, Preisalarm-Karte im Alarme-Tab, „Hinweise für dich"-Karten).
+- `.card .price` (Angebotspreis, nur in der Angebotskarte) von `28px` auf `24px` reduziert — die auf die Karte beschränkte Zusatzregel aus der vorherigen Runde blieb bestehen, nur der Wert wurde angepasst; die Basis-Regel `.price{}` (u. a. von der Händler-Detailansicht genutzt) weiterhin unangetastet bei `25px`.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v22` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server (Mobile + Desktop, Light + Dark Mode): Produktbilder in Angebotskarte, Preisalarm-Karte und „Hinweise für dich"-Karten sichtbar größer, keine Überlappung/kein Umbruch-Problem; Preis in der Angebotskarte spürbar kleiner, bleibt aber weiterhin klar prominent; Favorisieren-Funktion stichprobenartig erneut bestätigt; keine Konsolenfehler.
+
+**Wichtige Entscheidungen:**
+- `.thumb`-Basis-Regel bewusst direkt geändert (nicht wie sonst über eine kartenspezifische Zusatzregel) — einzige sinnvolle Umsetzung von „allgemein größer", ohne die Größe an drei Stellen einzeln duplizieren zu müssen. Vorab geprüft, dass alle drei Verwendungsorte (Angebotskarte, Preisalarm-Karte, Hinweise-Karten) die größere Größe unfallfrei vertragen.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-02 — Angebotskarte: Zweispaltiges Layout (Produkt/Preis links, Händler/Angebot rechts)
 
 **Umgesetzt:**
