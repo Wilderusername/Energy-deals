@@ -4,6 +4,28 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-02 — Favoriten-Herz: kräftigeres Rot + Leucht-Effekt + Pop-Animation
+
+**Umgesetzt:**
+- Nutzer-Feedback zur vorherigen Herz-Überarbeitung: Rot im Light Mode zu dunkel/matt, im Dark Mode zu "rosa". Ursache: beide nutzten den geteilten Token `--status-error-text` (Light `#ae352d`, Dark `#de8e89` — für Fehlermeldungen bewusst gedämpft). `.btn.fav.active` nutzt jetzt stattdessen einen fest hinterlegten, kräftigen Rot-Ton `#ef4444` in **beiden** Themes (bewusst keine Wiederverwendung/Änderung von `--status-error-text`, um andere Fehler-/Badge-Stellen im Rest der App nicht zu beeinflussen). Zusätzlich ein dezenter Leucht-Effekt via `filter:drop-shadow(0 0 4px rgba(239,68,68,.6))` auf dem gefüllten Herz, damit es speziell im Dark Mode sichtbar "leuchtet".
+- **Pop-Animation beim Favorisieren**: neue `@keyframes fav-pop` (kurzer Scale-Bounce 1 → 1.35 → 0.92 → 1, 380ms) plus Hilfsfunktion `triggerFavPop(iconEl)`, die die Animationsklasse auf das Herz-Icon setzt und nach Ablauf automatisch wieder entfernt. Wird ausschließlich beim **Hinzufügen** zu Favoriten ausgelöst (nicht beim Entfernen), an beiden bestehenden Fav-Toggle-Stellen (Angebotskarte `[data-fav]` sowie `#detailFavBtn` im Preisverlauf-Sheet) — dezent, kein neues visuelles Element, exakt wie vom Nutzer gewünscht ("nicht zu auffällig, wie bei einem normalen Shoppingportal").
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v10` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server in Light- und Dark-Mode: Rot deutlich kräftiger/gesättigter in beiden Themes (kein "Rosa" mehr im Dark Mode), Leucht-Effekt sichtbar; Pop-Animation läuft beim Favorisieren an beiden Stellen (Karte + Produktdetail), bleibt beim Entfernen aus, Klasse entfernt sich zuverlässig nach Animationsende; bestehende Favoritenfunktion unverändert getestet; keine Konsolenfehler.
+
+**Wichtige Entscheidungen:**
+- Bewusst ein neuer, fest codierter Rotton statt eines geteilten Design-Tokens, weil `--status-error-text` an mehreren anderen, unveränderten Stellen der App (Fehler-/Ablauf-Badges) verwendet wird — eine Änderung dort hätte über den angefragten Scope (nur das Herz) hinausgewirkt.
+- Gleicher Rotton für Light UND Dark Mode (statt zweier abweichender Werte) — entspricht dem Wunsch nach einem kräftigen, "leuchtenden" Rot in beiden Modi und ist der in Shopping-/Social-Apps übliche Ansatz (Herz-Rot bleibt themenunabhängig knallig).
+- Animation nur auf das Icon angewendet (nicht auf den 44×44-Klickbereich), damit der unsichtbare Touch-Bereich aus der vorherigen Änderung stabil bleibt und nicht mitspringt.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-02 — Favoriten-Herz: sichtbarer Kasten entfernt, freistehendes Icon
 
 **Umgesetzt:**

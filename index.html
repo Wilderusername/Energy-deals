@@ -647,10 +647,24 @@ color:var(--text-primary)
 .btn.fav.active{
 background:none;
 border:none;
-color:var(--status-error-text)
+color:#ef4444
 }
 .btn.fav.active:hover{background:none}
-.btn.fav.active .icon{fill:currentColor;stroke:none}
+.btn.fav.active .icon{
+fill:currentColor;
+stroke:none;
+filter:drop-shadow(0 0 4px rgba(239,68,68,.6))
+}
+
+@keyframes fav-pop{
+0%{transform:scale(1)}
+35%{transform:scale(1.35)}
+60%{transform:scale(.92)}
+100%{transform:scale(1)}
+}
+.btn.fav .icon.fav-pop{
+animation:fav-pop .38s cubic-bezier(.34,1.56,.64,1)
+}
 
 .btn.primary{
 background:var(--brand-primary-blue);
@@ -3356,6 +3370,18 @@ syncSortUI();
 
 /* ---------------- DEAL CARD ACTIONS (favorite / history / best-price) ---------------- */
 
+/* Kleines, dezentes "Pop"-Feedback beim Favorisieren (nicht beim Entfernen),
+   wie man es von Shopping-Apps kennt. Nur die Icon-Skalierung animiert
+   (nicht der 44x44-Klickbereich selbst), Klasse entfernt sich nach Ablauf
+   der Animation automatisch wieder von selbst. */
+function triggerFavPop(iconEl){
+  if(!iconEl) return;
+  iconEl.classList.remove("fav-pop");
+  void iconEl.offsetWidth;
+  iconEl.classList.add("fav-pop");
+  iconEl.addEventListener("animationend", ()=>iconEl.classList.remove("fav-pop"), {once:true});
+}
+
 dealsContainer.addEventListener("click",(e)=>{
   const favBtn = e.target.closest("[data-fav]");
   if(favBtn){
@@ -3365,6 +3391,9 @@ dealsContainer.addEventListener("click",(e)=>{
     saveFavorites();
     render();
     renderFavList();
+    if(!wasFav){
+      triggerFavPop(dealsContainer.querySelector(`[data-fav="${pid}"] .icon`));
+    }
     const product = products.find(p=>p.id===pid);
     const label = product ? product.name : "Produkt";
     showToast(wasFav ? `${label} aus Favoriten entfernt` : `${label} zu Favoriten hinzugefügt`);
@@ -4628,6 +4657,9 @@ function openHistory(dealId){
     renderFavList();
     showToast(wasFav ? `${deal.product} aus Favoriten entfernt` : `${deal.product} zu Favoriten hinzugefügt`);
     openHistory(dealId);
+    if(!wasFav){
+      triggerFavPop(document.querySelector("#detailFavBtn .icon"));
+    }
   };
 
   document.getElementById("detailShareBtn").onclick = ()=> shareDeal(deal);
