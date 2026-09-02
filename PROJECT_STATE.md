@@ -4,6 +4,31 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-03 — Angebotskarte neu strukturiert: links Produkt/Preis/Favorit, rechts Händler/Angebot
+
+**Umgesetzt:**
+- Karten-Template inhaltlich neu gruppiert (Desktop, `.card-columns` 60/40-Grid unverändert bei `1.5fr 1fr`): LINKS (`.card-product`) enthält jetzt Produktkopf (Bild, Name, Marke/Volumen, Favoriten-Herz), BESTER-PREIS-Badge, Preis/Pfand, Literpreis/Gesamtpreis, Ersparnis (alter Preis, %, Ø-Preis-Vergleich) und „Zum Angebot" — RECHTS (`.card-store`) enthält nur noch Händlerblock (Logo, Name, Entfernung, Route/Öffnungsstatus), Angebotszeitraum und „Preisverlauf". Vorher stand BESTER PREIS und die Aktionszeile (Herz+CTA) in der rechten Spalte; beides wandert jetzt vollständig auf die linke Produktseite.
+- **Favoriten-Herz neu positioniert**: sitzt jetzt direkt rechts neben dem Produktnamen (`.product-name-row`, neue Wrapper-Klasse nur für die Angebotskarte) statt unten neben „Zum Angebot". Weiterhin kein sichtbarer Kasten (`.btn.fav` Basisstil unverändert: `background:none;border:none`), Touch-Ziel weiterhin 44×44px; Icon-Größe nur für diese Instanz per scoped Regel (`.product-name-row .btn.fav .icon{width:26px;height:26px}`) von 24px auf 26px angehoben ("etwas größer"), ohne den Favoriten-Button im Preisverlauf-Sheet (`#detailFavBtn`, teilt sich die Basisklasse `.btn.fav`) zu beeinflussen — dort weiterhin 24px, per Stichprobe erneut bestätigt unverändert. Fav-Funktion selbst (Event-Delegation über `closest("[data-fav]")`, `saveFavorites()`, `render()`, Pop-Animation) komplett unangetastet, da rein DOM-Positionsänderung.
+- **BESTER PREIS neu positioniert**: Badge steht jetzt zwischen Produktkopf und Preis auf der linken Seite (`margin:10px 0 8px`), bleibt kompakt (`display:inline-flex`) statt wie ein Block auf volle Spaltenbreite zu strecken — dieser Stretch-Bug wurde beim ersten Testdurchlauf entdeckt (Grund: `.badge-best` hat selbst `display:flex`, was im normalen Blockfluss ohne Weiteres auf 100% Spaltenbreite expandiert) und mit der `inline-flex`-Regel behoben.
+- **„Zum Angebot"** bleibt CTA, aber jetzt alleiniger Inhalt von `.actions` (Fav-Button wurde herausgenommen) und linksbündig statt rechtsbündig ausgerichtet (`.actions{justify-content:flex-start}`, einzige Verwendung dieser Klasse im Code, daher direkt an der Basisregel geändert); die vorherige schmale Kompakt-Größe (`.card-store .actions .btn.primary{padding:9px 10px;font-size:12px}`), die nur für die enge rechte Spalte nötig war, wurde entfernt — der Button nutzt jetzt die normale `.btn.primary`-Standardgröße, da er in der breiteren linken Spalte genug Platz hat.
+- **Mobile Reihenfolge** (Produkt → BESTER PREIS → Preis → Ersparnis → Händler → Zeitraum → Preisverlauf → Zum Angebot) weiterhin über die bestehende `@media (max-width:540px)`-Grenze gelöst, aber mit neuer Technik: `.card-product`/`.card-store` bekommen `display:contents`, wodurch ihre direkten Kinder zu Grid-Items von `.card-columns` werden und sich per `order` frei in die gewünschte Reihenfolge bringen lassen, ohne das DOM zu duplizieren oder eine zweite Kartenvorlage zu pflegen. Dabei zweiten Stretch-Bug entdeckt und behoben: als direktes Grid-Item erbte `.badge-best` zusätzlich `justify-self:stretch` (Grid-Default) und wurde dadurch trotz `inline-flex` wieder volle Breite — behoben mit `.card-product .badge-best{justify-self:start}`, nur im Mobile-Media-Query.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v25` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server: Desktop bei 577px, 1280px (App-Shell deckelt ohnehin bei 560px) und an der bisher kritischen Grenze 545px — sauberes 60/40-Layout, Herz exakt neben Produktname (per `getBoundingClientRect()` programmatisch verifiziert: Fav-Button liegt am rechten Rand der linken Spalte, vertikal auf Höhe des Produktnamens), BESTER PREIS kompakt, „Zum Angebot" einzeilig und linksbündig, kein horizontaler Overflow, keine Konsolenfehler; Light+Dark Mode beide geprüft (Herz-Outline hell/dunkel wie zuvor, rot wenn favorisiert). Mobile bei 375px und 320px: einspaltige Reihenfolge exakt wie gefordert, BESTER PREIS nach Bugfix ebenfalls kompakt, kein Overflow. Funktional erneut bestätigt: Favorisieren/Entfavorisieren, „Preisverlauf"-Sheet (inkl. „Preis geprüft" weiterhin nicht vorhanden), „Zum Angebot" → Händler-Sheet, Produktdetail-Sheet (Klick aufs Bild) — alle unverändert funktionsfähig. Alarme-Tab („Hinweise für dich"-Karten, `.thumb-price` dort unverändert ohne `.product-name-row`) stichprobenartig unverändert bestätigt.
+
+**Wichtige Entscheidungen:**
+- Spaltenverhältnis `1.5fr 1fr` (60/40) unverändert gelassen statt auf z. B. `1.6fr 1fr` erhöht — liegt bereits am unteren Rand des gewünschten Bereichs „ca. 60–65% links", zusätzliche Änderung ohne konkreten Anlass hätte nur unnötiges Risiko für die Desktop-Optik bedeutet.
+- Für die neue Mobile-Reihenfolge bewusst `display:contents` + `order` statt einer zweiten, dupliziertenKarten-Vorlage gewählt — hält die Datenlogik/JS unangetastet (ein einziges `card.innerHTML`-Template) und macht künftige Reihenfolge-Anpassungen zu reinen Ein-Zeilen-CSS-Änderungen.
+- Beide beim Testen gefundenen „volle Breite"-Bugs bei `.badge-best` (Block-Stretch auf Desktop, Grid-Stretch auf Mobile) sind zwei unterschiedliche CSS-Mechanismen und wurden deshalb mit zwei getrennten, kontextspezifischen Regeln behoben (`display:inline-flex` global für die Karte, `justify-self:start` zusätzlich nur im Mobile-Media-Query).
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-03 — Eigene, einspaltige Mobile-Anordnung der Angebotskarte (löst „immer nebeneinander" ab)
 
 **Umgesetzt:**
