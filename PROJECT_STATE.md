@@ -4,6 +4,29 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-02 — Bereich über den Produktkarten kompaktiert (Toolbar, Standort, Liste/Karte)
+
+**Umgesetzt:**
+- **Kompakte Toolbar** statt großer Sortier-/Filter-Zeile: `.controls` (Container-Klasse und JS-Selektor `controlsEl` bewusst unverändert gelassen, nur Inhalt/Optik geändert) zeigt jetzt „50 Angebote · Günstigster Preis ⌄ · [Filter-Icon]“ in einer schlanken Zeile. `#sortBtn` verloren Rahmen/Hintergrund/großes Padding (jetzt reiner Text-Button mit Chevron, führendes Sortier-Icon entfernt), `#filterBtn` von 44px großer umrandeter Box auf 30px reines Icon ohne Rahmen reduziert (Zähler-Badge bleibt). Neuer `<span id="count">` (aus der Standortzeile hierher verschoben) zeigt die Trefferanzahl live an — `render()`s bestehende Zeile `count.textContent = filtered.length` musste dafür nicht angepasst werden.
+- **Kompakte Standortzeile**: `.status` von großer umrandeter Box (Hintergrund, Border, 13px Padding) auf schlanke Textzeile reduziert. `updateStatus()` zeigt jetzt „📍 Arnsberg · 10 km“ statt „📍 59821 Arnsberg · Radius 10 km · 50 Angebote“ — Postleitzahl wird per Regex (`^\d{4,5}\s+`) abgeschnitten, sofern vorhanden (Fallback: voller Text, falls kein führendes PLZ-Muster erkannt wird, z. B. bei "Aktueller Standort" oder frei getippten Ortsnamen ohne PLZ). Angebots-Anzahl entfernt (jetzt in der Toolbar). „Ändern“-Button (`#statusEdit`) unverändert.
+- **Liste/Karte kompakter**: `.view-btn`-Padding von `10px` auf `7px` reduziert — Umschaltung insgesamt niedriger, Klickfläche bleibt ausreichend groß, Farben/aktiver Zustand unverändert.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v13` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server auf 320px, 375px und Desktop-Breite: Toolbar bleibt in allen Fällen einzeilig (auch mit dem längsten Sortier-Label „Günstigster €/Liter“), keine Überlappungen/Abschneidungen; Sortier- und Filter-Sheet öffnen weiterhin korrekt per Klick; Filter setzen aktualisiert Badge UND Toolbar-Trefferzahl live und korrekt (getestet: Pfand-frei-Filter → 0 Treffer, zurückgesetzt → 50); Standortzeile getestet mit PLZ-Label, PLZ-losem Label und "Ganz Deutschland"-Modus — alle drei Fälle sauber ohne Fehler; „Ändern“-Button öffnet weiterhin das Standort-Sheet; Alarme-Tab blendet Toolbar/Standortzeile weiterhin korrekt aus (unverändertes `showAlertsView()`); erste Produktkarte ist jetzt ohne Scrollen sichtbar (vorher musste gescrollt werden); keine Konsolenfehler.
+
+**Wichtige Entscheidungen:**
+- Container-Klasse `.controls` bewusst NICHT umbenannt, obwohl sie jetzt eine "Toolbar" darstellt — die Klasse wird von `showDealsView()`/`showAlertsView()` per `document.querySelector(".controls")` referenziert; eine Umbenennung hätte diese (nicht angefragte) Anzeige-Logik mit anfassen müssen.
+- Die globale `select{...}`-CSS-Regel (für `#filterPeriod` im Filter-Sheet) bewusst nicht berührt, obwohl im selben CSS-Bereich — sie wird an einer anderen, nicht zum Aufgabenbereich gehörenden Stelle gebraucht.
+- Trefferzahl-`<span id="count">` lebt jetzt dauerhaft in der Toolbar statt (wie vorher) bei jedem `updateStatus()`-Aufruf in der Standortzeile neu erzeugt zu werden — behebt nebenbei eine vorbestehende Fragilität (die alte Node wurde bei jedem `innerHTML`-Replace der Standortzeile durch eine neue mit gleicher ID ersetzt, während die JS-Variable `count` noch auf die alte, losgelöste Node zeigte). Rein eine notwendige Konsequenz des Verschiebens, keine eigenständige Funktionsänderung.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-02 — Kaufland-/REWE-Logo vergrößert + „Start" setzt Filter zurück
 
 **Umgesetzt:**

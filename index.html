@@ -394,17 +394,29 @@ color:#fff
 
 .controls{
 display:flex;
-gap:8px;
-padding:10px 18px 5px
+align-items:center;
+gap:6px;
+padding:8px 18px 4px;
+font-size:12.5px;
+color:var(--text-muted);
+flex-wrap:wrap
 }
+
+.toolbar-count{
+font-weight:700;
+color:var(--text-secondary);
+white-space:nowrap
+}
+
+.toolbar-dot{color:var(--text-disabled)}
 
 .filter-btn{
 flex:0 0 auto;
-border:1px solid var(--border-subtle);
-background:var(--bg-surface);
+border:0;
+background:none;
 color:var(--text-secondary);
-border-radius:var(--radius-md);
-width:44px;
+width:30px;
+height:30px;
 padding:0;
 font-size:16px;
 cursor:pointer;
@@ -412,9 +424,9 @@ position:relative;
 display:flex;
 align-items:center;
 justify-content:center;
-transition:background .15s,border-color .15s,color .15s
+transition:color .15s
 }
-.filter-btn:hover{color:var(--brand-primary-blue);border-color:var(--border-default)}
+.filter-btn:hover{color:var(--brand-primary-blue)}
 
 select{
 flex:1;
@@ -431,13 +443,10 @@ padding:8px 18px 100px
 }
 
 .status{
-margin:12px 0;
-background:var(--bg-surface);
-border:1px solid var(--border-subtle);
-border-radius:var(--radius-lg);
-padding:13px;
-font-size:var(--fs-small);
-color:var(--text-secondary);
+margin:6px 0;
+padding:2px 2px;
+font-size:12px;
+color:var(--text-muted);
 display:flex;
 align-items:center;
 justify-content:space-between;
@@ -877,23 +886,22 @@ transition:background .15s,border-color .15s
 .geo-btn:hover{background:var(--brand-primary-subtle);border-color:var(--brand-primary-blue)}
 
 .sort-btn{
-flex:1;
 display:flex;
 align-items:center;
-gap:8px;
-border:1px solid var(--border-subtle);
-background:var(--bg-surface);
-border-radius:var(--radius-md);
-padding:11px;
-font-size:13px;
-font-weight:600;
+gap:3px;
+border:0;
+background:none;
+padding:2px 0;
+font-size:12.5px;
+font-weight:700;
 color:var(--text-primary);
 cursor:pointer;
 font-family:inherit;
 min-width:0;
-transition:border-color .15s
+max-width:100%;
+transition:color .15s
 }
-.sort-btn:hover{border-color:var(--border-default)}
+.sort-btn:hover{color:var(--brand-primary-blue)}
 .sort-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 .sort-row{
@@ -1374,7 +1382,7 @@ flex:1;
 border:1px solid var(--border-subtle);
 background:var(--bg-surface);
 color:var(--text-muted);
-padding:10px;
+padding:7px;
 border-radius:var(--radius-md);
 font-size:12.5px;
 font-weight:700;
@@ -2245,13 +2253,17 @@ Aktuelle Energy-Drink-Angebote in deiner Nähe
 <option value="ending">Endet bald</option>
 </select>
 
+<span class="toolbar-count"><span id="count">0</span> Angebote</span>
+<span class="toolbar-dot">·</span>
+
 <button class="sort-btn" id="sortBtn">
-<svg class="icon icon-md"><use href="#i-sort"/></svg>
 <span id="sortBtnLabel">Günstigster Preis</span>
-<svg class="icon icon-sm" style="margin-left:auto"><use href="#i-chevron-down"/></svg>
+<svg class="icon icon-xs"><use href="#i-chevron-down"/></svg>
 </button>
 
-<button class="filter-btn" id="filterBtn" aria-label="Weitere Filter"><svg class="icon icon-lg"><use href="#i-filter"/></svg><span class="count-badge" id="filterCount">0</span></button>
+<span class="toolbar-dot">·</span>
+
+<button class="filter-btn" id="filterBtn" aria-label="Weitere Filter"><svg class="icon icon-sm"><use href="#i-filter"/></svg><span class="count-badge" id="filterCount">0</span></button>
 </div>
 
 <main>
@@ -2262,7 +2274,7 @@ Du bist offline. Angebote werden möglicherweise nicht aktuell angezeigt.
 </div>
 
 <div class="status">
-<span id="statusText"><svg class="icon icon-sm"><use href="#i-pin"/></svg> <b>59821 Arnsberg</b> · Radius 10 km · <span id="count">0</span> Angebote</span>
+<span id="statusText"><svg class="icon icon-sm"><use href="#i-pin"/></svg> <b>Arnsberg</b> · 10 km</span>
 <button class="status-edit" id="statusEdit">Ändern</button>
 </div>
 
@@ -3309,10 +3321,11 @@ function updateStatus(){
   const statusText = document.getElementById("statusText");
   const locLabel = document.getElementById("locLabel");
   if(searchWide){
-    statusText.innerHTML = `<svg class="icon icon-sm"><use href="#i-pin"/></svg> <b>Ganz Deutschland</b> · ${count.textContent} Angebote`;
+    statusText.innerHTML = `<svg class="icon icon-sm"><use href="#i-pin"/></svg> <b>Ganz Deutschland</b>`;
     locLabel.textContent = "Deutschland";
   } else {
-    statusText.innerHTML = `<svg class="icon icon-sm"><use href="#i-pin"/></svg> <b>${locationLabel}</b> · Radius ${radiusKm} km · <span id="count">${count.textContent}</span> Angebote`;
+    const cityOnly = locationLabel.replace(/^\d{4,5}\s+/, "");
+    statusText.innerHTML = `<svg class="icon icon-sm"><use href="#i-pin"/></svg> <b>${cityOnly}</b> · ${radiusKm} km`;
     locLabel.textContent = `${locationLabel.split(" ")[0]} · ${radiusKm} km`;
   }
   saveLocation();
