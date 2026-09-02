@@ -4,6 +4,27 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-02 — "Preis geprüft" ausgeblendet, Produkte in Alarme anklickbar
+
+**Umgesetzt:**
+- **"Preis geprüft vor ..." ausgeblendet**: `.trust-line{display:flex}` → `display:none`. Betrifft beide Stellen, die diese Klasse nutzen (Angebotskarte + `#detailTrust` im Preisverlauf-Sheet), ohne deren HTML/JS anzufassen — `checkedMinutesAgo`/`timeAgoLabel()` und das Befüllen der Zeile laufen unverändert im Hintergrund weiter (51 `.trust-line`-Elemente existieren weiterhin im DOM, sind nur nicht sichtbar), damit die Funktion laut Nutzerwunsch später ohne Aufwand wieder eingeblendet werden kann (einfach `display` zurück auf `flex`).
+- **Produkte im "Alarme"-Tab anklickbar**: Sowohl die "Hinweise für dich"-Karten (`newsCardHtml()`, alle drei Varianten: aktuell/demnächst/nicht verfügbar) als auch die bestehenden Preisalarm-Karten (`.alert-card`) haben jetzt `data-product-detail="{productId}"` auf Produktbild UND Produktname. Ein neuer Zweig ganz oben im bestehenden `alertsView`-Klick-Delegate ruft bei Treffer `openProductDetail(productId)` auf — identisch zur Funktion, die auf der Startseite beim Klick auf das Produktfoto bereits existiert. Bestehende Buttons in denselben Karten ("Angebote ansehen", "Löschen", Enable/Disable-Toggle) unverändert und weiterhin einzeln funktionsfähig geprüft.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v19` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server: "Preis geprüft" nirgends mehr sichtbar; Klick auf Produktbild UND auf Produktname öffnet in allen drei "Hinweise für dich"-Kartentypen sowie in der Preisalarm-Karte zuverlässig die Produktdetailansicht (Nährwerte/ähnliche Produkte) mit korrektem Titel; "Angebote ansehen" (öffnet weiterhin Preisverlauf) und "Löschen" (entfernt weiterhin den Preisalarm) unverändert funktionsfähig; keine Konsolenfehler.
+
+**Wichtige Entscheidungen:**
+- Bei der ersten Umsetzung wurde `data-product-detail` per `replace_all` nur auf 2 von 3 `newsCardHtml()`-Varianten angewendet, weil die dritte (Standardfall "Jetzt im Angebot") aus einer anderen Einrückungstiefe stammt und dadurch nicht exakt beim automatischen Ersetzen traf — im Test bemerkt (Klick auf Namen bei einem "Jetzt im Angebot"-Eintrag reagierte nicht) und gezielt nachgezogen; alle drei Varianten jetzt einzeln verifiziert.
+- Ausblenden statt Löschen für "Preis geprüft" gewählt, exakt wie vom Nutzer verlangt ("wird ggf. später wieder eingepflegt") — keine Logik/Daten entfernt, nur die visuelle Ausgabe unterdrückt.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-02 — Toast-System: oben mit Safe-Area statt unten über der Navigation
 
 **Umgesetzt:**

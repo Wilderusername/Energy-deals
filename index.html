@@ -1706,11 +1706,14 @@ align-items:center;
 gap:8px
 }
 
+/* "Preis geprüft vor ..." vorerst ausgeblendet (auf Nutzerwunsch) — Logik
+   (checkedMinutesAgo/timeAgoLabel) bleibt unverändert, falls später wieder
+   eingeblendet werden soll (dann einfach display wieder auf flex setzen). */
 .trust-line{
 font-size:9.5px;
 color:var(--text-disabled);
 margin-top:6px;
-display:flex;
+display:none;
 align-items:center;
 gap:4px;
 opacity:.9
@@ -3875,9 +3878,9 @@ function newsCardHtml(item){
       <article class="news-card">
         <div class="news-card-status expired"><svg class="icon icon-xs"><use href="#i-x"/></svg> Aktuell nicht verfügbar</div>
         <div class="news-card-body">
-          <img class="thumb" src="${img}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer">
+          <img class="thumb" data-product-detail="${p.id}" src="${img}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer">
           <div class="news-card-text">
-            <div class="news-card-name">${p.name}</div>
+            <div class="news-card-name" data-product-detail="${p.id}">${p.name}</div>
             <div class="news-card-meta">${p.brand} · ${p.sizeMl} ml</div>
           </div>
         </div>
@@ -3893,9 +3896,9 @@ function newsCardHtml(item){
       <article class="news-card">
         <div class="news-card-status gold"><svg class="icon icon-xs"><use href="#i-hourglass"/></svg> Demnächst im Angebot</div>
         <div class="news-card-body">
-          <img class="thumb" src="${img}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer">
+          <img class="thumb" data-product-detail="${p.id}" src="${img}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer">
           <div class="news-card-text">
-            <div class="news-card-name">${p.name}</div>
+            <div class="news-card-name" data-product-detail="${p.id}">${p.name}</div>
             <div class="news-card-meta">${p.brand} · ${p.sizeMl} ml</div>
           </div>
         </div>
@@ -3921,9 +3924,9 @@ function newsCardHtml(item){
     <article class="news-card">
       <div class="news-card-status green"><svg class="icon icon-xs"><use href="#i-tag"/></svg> Jetzt im Angebot</div>
       <div class="news-card-body">
-        <img class="thumb" src="${img}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer">
+        <img class="thumb" data-product-detail="${p.id}" src="${img}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer">
         <div class="news-card-text">
-          <div class="news-card-name">${p.name}</div>
+          <div class="news-card-name" data-product-detail="${p.id}">${p.name}</div>
           <div class="news-card-meta">${p.brand} · ${p.sizeMl} ml</div>
         </div>
       </div>
@@ -3971,9 +3974,9 @@ function renderAlertsView(){
       <article class="card alert-card">
         <div class="line">
           <div class="thumb-price">
-            <img class="thumb" src="${e.product.img}" alt="${e.product.name}" loading="lazy" referrerpolicy="no-referrer">
+            <img class="thumb" data-product-detail="${e.product.id}" src="${e.product.img}" alt="${e.product.name}" loading="lazy" referrerpolicy="no-referrer">
             <div>
-              <div class="product">${e.product.name}</div>
+              <div class="product" data-product-detail="${e.product.id}">${e.product.name}</div>
               <div class="brandtxt">${e.product.brand} · ${e.product.sizeMl} ml</div>
             </div>
           </div>
@@ -4011,6 +4014,11 @@ function renderAlertsView(){
 }
 
 alertsView.addEventListener("click", (e)=>{
+  const productDetailEl = e.target.closest("[data-product-detail]");
+  if(productDetailEl){
+    openProductDetail(productDetailEl.dataset.productDetail);
+    return;
+  }
   const delBtn = e.target.closest("[data-alert-delete]");
   if(delBtn){
     delete priceAlerts[delBtn.dataset.alertDelete];
