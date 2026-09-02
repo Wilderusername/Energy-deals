@@ -490,6 +490,30 @@ transition:background .2s ease,border-color .2s ease,box-shadow .15s ease
 .card.expired .price,
 .card.expired .product{color:var(--text-disabled)}
 
+/* Zweispaltiges Karten-Layout: links Produkt/Preis, rechts Händler/Angebot.
+   Trennung bewusst nur über Abstand/Gruppierung, keine Trennlinie. */
+.card-columns{
+display:grid;
+grid-template-columns:1.5fr 1fr;
+gap:16px;
+align-items:start
+}
+.card-product{min-width:0}
+.card-store{
+min-width:0;
+display:flex;
+flex-direction:column;
+gap:10px
+}
+@media (max-width:540px){
+.card-columns{grid-template-columns:1fr}
+}
+
+.card-store .actions .btn.primary{
+padding:9px 10px;
+font-size:12px
+}
+
 .line{
 display:flex;
 justify-content:space-between;
@@ -514,18 +538,21 @@ margin-top:3px
 border:1px solid var(--highlight-border);
 background:var(--highlight-bg);
 color:var(--highlight-text);
-font-size:10px;
+font-size:9px;
 font-weight:800;
-padding:7px 9px;
+padding:5px 8px;
 border-radius:var(--radius-xs);
 height:max-content;
 cursor:pointer;
 white-space:nowrap;
 display:flex;
 align-items:center;
+align-self:flex-start;
 gap:4px;
-transition:transform .1s,background .15s
+opacity:.9;
+transition:transform .1s,background .15s,opacity .15s
 }
+.badge-best:hover{opacity:1}
 .badge-best:active{transform:scale(.95)}
 
 .store{
@@ -556,9 +583,9 @@ font-weight:500
 
 .meta-row{
 display:flex;
-align-items:center;
-justify-content:space-between;
-margin-top:6px
+flex-direction:column;
+align-items:flex-start;
+gap:6px
 }
 
 .history-link{
@@ -580,8 +607,8 @@ transition:background .15s,color .15s,border-color .15s
 
 .bottom{
 display:flex;
-justify-content:space-between;
-align-items:end;
+flex-direction:column;
+gap:12px;
 margin-top:10px
 }
 
@@ -616,6 +643,7 @@ font-weight:900;
 color:var(--text-primary);
 letter-spacing:-0.01em
 }
+.card .price{font-size:28px}
 
 .unit{
 font-size:11px;
@@ -624,6 +652,7 @@ color:var(--text-muted)
 
 .actions{
 display:flex;
+justify-content:flex-end;
 gap:8px
 }
 
@@ -3268,54 +3297,49 @@ function render(){
       card.dataset.id = deal.id;
 
       card.innerHTML = `
-        <div class="line">
-          <div>
-            <div class="product">${deal.product}</div>
-            <div class="brandtxt">${deal.brand} · ${deal.sizeMl} ml</div>
-          </div>
-          ${isBest ? `<button class="badge-best" data-link="${deal.link}"><svg class="icon icon-xs"><use href="#i-trophy"/></svg> BESTER PREIS</button>` : ""}
-        </div>
-
-        <div class="store">
-          <img class="store-logo" src="${storeLogos[deal.store] || STORE_FALLBACK_IMG}" alt="${deal.store}" loading="lazy" referrerpolicy="no-referrer">
-          <div>
-            <div>${deal.store} <span class="distance">· ${deal.distanceKm} km</span></div>
-            <div class="store-sub">${routeMinutes(deal.distanceKm)} Min. Route${openNow===null ? "" : `<span class="open-dot ${openNow?"open":""}"></span>${openNow?"Jetzt geöffnet":"Geschlossen"}`}</div>
-          </div>
-        </div>
-
-        <div class="meta-row">
-          <div class="meta"><svg class="icon icon-xs"><use href="#i-calendar"/></svg> ${formatDateRange(deal.validFrom, deal.validUntil)}</div>
-          <button class="history-link" data-hist="${deal.id}"><svg class="icon icon-sm"><use href="#i-trend"/></svg> Preisverlauf</button>
-        </div>
-
-        ${badges ? `<div class="badges-row">${badges}</div>` : ""}
-
-        <div class="bottom">
-          <div class="thumb-price">
-            <img class="thumb" data-product-detail="${deal.productId}" src="${deal.img}" alt="${deal.product}" loading="lazy" referrerpolicy="no-referrer">
-            <div>
-              <div class="price-line">
-                <span class="price">${euro(deal.offerPrice)} €</span>
-                <span class="pfand-note">+ ${euro(pfand)} € Pfand</span>
+        <div class="card-columns">
+          <div class="card-product">
+            <div class="thumb-price">
+              <img class="thumb" data-product-detail="${deal.productId}" src="${deal.img}" alt="${deal.product}" loading="lazy" referrerpolicy="no-referrer">
+              <div>
+                <div class="product">${deal.product}</div>
+                <div class="brandtxt">${deal.brand} · ${deal.sizeMl} ml</div>
               </div>
-              <div class="unit">${euro(literPrice)} €/L · Gesamt an der Kasse: ${euro(deal.offerPrice+pfand)} €</div>
-              <div class="saving">
-                <span class="old-price">${euro(deal.regularPrice)} €</span>
-                <span class="saving-percent">${savingPct}% GÜNSTIGER</span>
+            </div>
+            <div class="price-line">
+              <span class="price">${euro(deal.offerPrice)} €</span>
+              <span class="pfand-note">+ ${euro(pfand)} € Pfand</span>
+            </div>
+            <div class="unit">${euro(literPrice)} €/L · Gesamt an der Kasse: ${euro(deal.offerPrice+pfand)} €</div>
+            <div class="saving">
+              <span class="old-price">${euro(deal.regularPrice)} €</span>
+              <span class="saving-percent">${savingPct}% GÜNSTIGER</span>
+            </div>
+            ${avgDiff > 0.05 ? `<div class="avg-context">${euro(avgDiff)} € unter Ø Preis (${euro(avgHist)} €)</div>` : ""}
+            ${badges ? `<div class="badges-row">${badges}</div>` : ""}
+          </div>
+
+          <div class="card-store">
+            ${isBest ? `<button class="badge-best" data-link="${deal.link}"><svg class="icon icon-xs"><use href="#i-trophy"/></svg> BESTER PREIS</button>` : ""}
+            <div class="store">
+              <img class="store-logo" src="${storeLogos[deal.store] || STORE_FALLBACK_IMG}" alt="${deal.store}" loading="lazy" referrerpolicy="no-referrer">
+              <div>
+                <div>${deal.store} <span class="distance">· ${deal.distanceKm} km</span></div>
+                <div class="store-sub">${routeMinutes(deal.distanceKm)} Min. Route${openNow===null ? "" : `<span class="open-dot ${openNow?"open":""}"></span>${openNow?"Jetzt geöffnet":"Geschlossen"}`}</div>
               </div>
-              ${avgDiff > 0.05 ? `<div class="avg-context">${euro(avgDiff)} € unter Ø Preis (${euro(avgHist)} €)</div>` : ""}
+            </div>
+            <div class="meta-row">
+              <div class="meta"><svg class="icon icon-xs"><use href="#i-calendar"/></svg> ${formatDateRange(deal.validFrom, deal.validUntil)}</div>
+              <button class="history-link" data-hist="${deal.id}"><svg class="icon icon-sm"><use href="#i-trend"/></svg> Preisverlauf</button>
+            </div>
+            <div class="actions">
+              <button class="btn fav ${isFav ? "active":""}" data-fav="${deal.productId}"><svg class="icon icon-md"><use href="#i-heart"/></svg></button>
+              ${isExpired
+                ? `<button class="btn disabled-cta" disabled>Abgelaufen</button>`
+                : `<button class="btn primary" data-store-detail="${deal.id}">Zum Angebot <svg class="icon icon-sm"><use href="#i-external"/></svg></button>`}
             </div>
           </div>
-          <div class="actions">
-            <button class="btn fav ${isFav ? "active":""}" data-fav="${deal.productId}"><svg class="icon icon-md"><use href="#i-heart"/></svg></button>
-            ${isExpired
-              ? `<button class="btn disabled-cta" disabled>Abgelaufen</button>`
-              : `<button class="btn primary" data-store-detail="${deal.id}">Zum Angebot <svg class="icon icon-sm"><use href="#i-external"/></svg></button>`}
-          </div>
         </div>
-
-        <div class="trust-line"><svg class="icon icon-xs"><use href="#i-check"/></svg> Preis geprüft ${timeAgoLabel(deal.checkedMinutesAgo)} · direkt bei ${deal.store}</div>
       `;
 
       card.querySelector(".thumb").addEventListener("error", function(){

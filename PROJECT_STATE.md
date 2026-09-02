@@ -4,6 +4,56 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-02 — Angebotskarte: Zweispaltiges Layout (Produkt/Preis links, Händler/Angebot rechts)
+
+**Umgesetzt:**
+- Karten-Template komplett neu strukturiert: `.card-columns` (CSS Grid, `1.5fr 1fr`, `gap:16px`) teilt die Karte in `.card-product` (links: Bild+Name/Marke, Preis groß, Pfand/Literpreis/Gesamtpreis, durchgestrichener Alt-Preis+Ersparnis-%, Ø-Preis-Vergleich, sonstige Badges) und `.card-store` (rechts: BESTER-PREIS-Badge, Händlerlogo+Name+Distanz, Route/Öffnungsstatus, Zeitraum, Preisverlauf-Button, Herz+„Zum Angebot" als Aktionszeile). Keine Trennlinie — Trennung ausschließlich über Spalten/Abstand, wie gefordert.
+- **Responsive**: Unter 540px Viewportbreite wechselt `.card-columns` per Media Query auf eine Spalte (rechte Seite rutscht vollständig unter die linke) — bei den meisten echten Smartphone-Breiten (≤430px) ohnehin schon der Fall. Breakpoint bewusst höher als ursprünglich geplant (480px) gesetzt, nachdem sich im Test zeigte, dass der „Zum Angebot"-Button im schmalen Bereich 480–540px sonst zweizeilig umgebrochen wäre; ab 545px passt er nachweislich einzeilig.
+- `.meta-row` (Zeitraum + Preisverlauf) von nebeneinander (`justify-content:space-between`) auf untereinander (`flex-direction:column`) umgestellt — passt zur schmaleren rechten Spalte; Klasse wird ausschließlich hier verwendet (geprüft), keine Seiteneffekte.
+- `.badge-best` bekam `align-self:flex-start`, da er als direktes Kind der neuen Flex-Spalte `.card-store` sonst auf volle Spaltenbreite gestreckt worden wäre (im Test entdeckt und behoben) — Farbe/Position/Funktion sonst unverändert (Verkleinerung war bereits aus der vorherigen Runde vorhanden).
+- Kleiner, auf die Angebotskarte beschränkter Override `.card-store .actions .btn.primary{padding:9px 10px;font-size:12px}`, um „Zum Angebot" im schmaleren rechten Bereich zuverlässig einzeilig darzustellen — Basis-`.btn.primary` (an vielen anderen Stellen der App verwendet) bewusst unangetastet.
+- Das bisherige `<div class="trust-line">…Preis geprüft…</div>` wurde diesmal komplett aus dem Karten-Template entfernt (nicht nur per CSS versteckt wie zuvor) — passend zur diesmal expliziten Formulierung „vollständig entfernen". Die zugrunde liegenden Daten (`deal.checkedMinutesAgo`, `timeAgoLabel()`) bleiben unangetastet; die gleichnamige `.trust-line`-Klasse bleibt unverändert `display:none` und wird weiterhin von `#detailTrust` im Preisverlauf-Sheet verwendet (davon unberührt).
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v21` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server bei 320px, 375px, 414px (gestapelt), 500–540px (gestapelt, Grenzbereich), 545px, 560px (nebeneinander) sowie Light+Dark Mode: zweispaltiges Layout wie in der Skizze, Preis links klar dominant, Händlerinfos/Zeitraum/Preisverlauf/Aktionen rechts sauber gruppiert, „BESTER PREIS" kompakt (nicht mehr gestreckt), „Zum Angebot" durchgehend einzeilig; alle Interaktionen erneut einzeln nachgetestet (Favorisieren, „Zum Angebot" → Händlerdetail, „Preisverlauf", Klick auf Produktbild → Produktdetail) funktionieren unverändert; Preisalarm-Karte im Alarme-Tab optisch komplett unverändert (erneut per Stichprobe geprüft, u. a. weil `.badge-best`/`.meta-row` diesmal mitgeändert wurden); „Preis geprüft" nirgends mehr vorhanden; keine Konsolenfehler.
+
+**Wichtige Entscheidungen:**
+- `.thumb-price` (Bild+Name-Kopfzeile) unverändert weiterverwendet, jetzt aber innerhalb von `.card-product` statt neben dem Aktionsbereich — spart eine neue Klasse, da sich am eigentlichen Flex-Verhalten (Bild links, Text rechts, zentriert) nichts ändern musste.
+- Responsive Breakpoint anhand tatsächlichem Testergebnis (nicht Bauchgefühl) auf 540px statt der ursprünglich angedachten 480px gesetzt — vermeidet zweizeiligen Button-Text im kritischen Zwischenbereich, ohne die Seitenverhältnis-Vorgabe (60–65 % / 35–40 %) zu verletzen.
+- Bei jeder wiederverwendeten, aber auch anderswo genutzten Klasse (`.badge-best`, `.meta-row`, `.btn.primary`, `.trust-line`) einzeln geprüft, ob sie exklusiv für die Angebotskarte ist, bevor sie verändert wurde — Muster aus den vorherigen beiden Karten-Layout-Runden konsequent fortgeführt.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
+## 2026-09-02 — Angebotskarte: Preis/Aktionen getrennt, Preis prominenter
+
+**Umgesetzt:**
+- Analyse ergab: Kopfbereich (Produktname/Marke/BESTER-PREIS), Händlerbereich (Logo/Name/Distanz/Route/Status) und Zeitraum+Preisverlauf-Zeile entsprachen inhaltlich/strukturell bereits exakt der gewünschten Zielgliederung — dort nur Feinschliff (siehe unten), keine Strukturänderung nötig.
+- **Größte Änderung (Abschnitt 5/8 der Anfrage)**: Preisbereich und Aktionsbereich (Herz + „Zum Angebot") teilten sich bisher eine Zeile (`.bottom{justify-content:space-between;align-items:end}`), wodurch die Aktionen unten rechts neben einem bis zu 5-zeiligen Preistext "klebten". `.bottom` ist jetzt `flex-direction:column` mit Abstand (`gap:12px`) — Preisblock (Bild+Preis/Pfand/Literpreis/Ersparnis/Ø-Vergleich) und Aktionsblock stehen jetzt klar als zwei getrennte, übereinanderliegende Gruppen. `.actions` bekam `justify-content:flex-end`, damit Herz+Button weiterhin (wie zuvor) rechtsbündig zusammenstehen, jetzt aber auf eigener, voller Zeilenbreite statt seitlich gequetscht.
+- **Preis deutlich größer**: `.card .price` (neue, auf die Angebotskarte beschränkte Regel) von 25px auf 28px — bewusst NICHT die Basis-Regel `.price{}` direkt geändert, da diese auch von `#storeDetailPrice` (Händler-Detailansicht, außerhalb des angefragten Bereichs) verwendet wird und dort unverändert bleiben sollte.
+- **„BESTER PREIS"-Badge dezenter**: Padding `7px 9px`→`5px 8px`, Schrift `10px`→`9px`, zusätzlich `opacity:.9` (volle Deckkraft erst bei Hover) — bleibt in Farbe/Position/Funktion unverändert, tritt aber weniger stark gegen den jetzt größeren Preis an.
+- `.thumb-price` (Bild+Preistext-Zeile) bewusst NICHT verändert — dieselbe Klasse wird auch von der Preisalarm-Karte im Alarme-Tab verwendet (`.alert-card .thumb-price`), die laut Aufgabe unangetastet bleiben soll; die gewünschte Trennung wurde ausschließlich über den umgebenden `.bottom`/`.actions`-Umbau erreicht, ohne diese gemeinsame Klasse anzufassen.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v20` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server (Mobile, Desktop, Light + Dark Mode): Preisblock und Aktionsblock jetzt klar getrennte Zeilen, Preis deutlich prominenter, BESTER-PREIS-Badge dezenter; alle Interaktionen einzeln nachgetestet — Favorisieren/Entfavorisieren, „Zum Angebot" (öffnet Händlerdetail), „Preisverlauf", Klick auf Produktbild (öffnet Produktdetail) — funktionieren alle unverändert; Preisalarm-Karte im Alarme-Tab optisch komplett unverändert (Stichprobe durchgeführt); keine Konsolenfehler.
+
+**Wichtige Entscheidungen:**
+- Scoping-Prinzip konsequent angewendet: Wo eine CSS-Klasse (`.price`, `.thumb-price`) auch außerhalb der Angebotskarte verwendet wird, wurde entweder eine spezifischere Zusatzregel ergänzt (`.card .price`) oder die Klasse komplett unangetastet gelassen, statt sie direkt zu verändern — verhindert unbeabsichtigte Layoutänderungen an der Händler-Detailansicht bzw. den Preisalarm-Karten.
+- Kopf-/Händler-/Zeitraum-Bereiche nicht neu gruppiert, da deren bestehende Struktur bereits der gewünschten Zielgliederung entsprach — nur dort geändert, wo tatsächlich eine Abweichung zur Anfrage bestand (Preis-/Aktionstrennung, Preisgröße, Badge-Gewicht).
+
+**Offen:**
+- Rückfrage an Nutzer: Punkt 9 der Anfrage beschreibt die „Preis geprüft"-Fußzeile als weiterhin sichtbar/dezent vorhanden — sie ist aber seit der vorherigen, expliziten Anfrage bewusst per `display:none` ausgeblendet (nicht rückgängig gemacht, da diese Anweisung neuer und eindeutig war). Rückmeldung nötig, ob sie im Rahmen dieses Layout-Umbaus wieder eingeblendet werden soll.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-02 — "Preis geprüft" ausgeblendet, Produkte in Alarme anklickbar
 
 **Umgesetzt:**
