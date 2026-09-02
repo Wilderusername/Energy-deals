@@ -4,6 +4,28 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-02 — Preis-Eingabefelder auf deutsches Komma-Format umgestellt
+
+**Umgesetzt:**
+- Bug: Die beiden Preisalarm-Eingabefelder (`#alertPriceInput` im Preisverlauf-Sheet, `[data-quick-alert-input]` in der Favoriten-Schnell-Alarm-Form) waren `<input type="number" step="0.01">`. Native Zahlenfelder normalisieren ihren Wert intern immer mit Punkt als Dezimaltrennzeichen und zeigen keine unwesentlichen Nachkommastellen an — dadurch wurde ein per JS gesetzter Wert wie `0.60` als `0.6` dargestellt, und je nach Browser/Locale wurde ein getipptes Komma zu einem Punkt.
+- Fix: Beide Felder auf `type="text" inputmode="decimal"` umgestellt (gleiches numerisches Tastaturlayout auf Mobilgeräten, aber volle Kontrolle über Anzeige/Format statt Browser-nativer Zahlennormalisierung). Neue Hilfsfunktionen in `index.html` (direkt bei `euro()`): `parseGermanPrice()` liest getippten Text unabhängig von Komma/Punkt zu einer Zahl ein; `sanitizePriceInputValue()` normalisiert während des Tippens jeden Punkt zu einem Komma, entfernt ungültige Zeichen, erlaubt nur ein Komma und max. 2 Nachkommastellen; `attachGermanPriceInput()` hängt beides als `input`-/`blur`-Handler an ein Feld (bei Blur wird über `euro()` auf exakt 2 Nachkommastellen normalisiert, z. B. „0,6“ → „0,60“). Angewendet auf `#alertPriceInput` (einmalig bei Init) sowie auf alle `[data-quick-alert-input]`-Felder (in `bindFavRowEvents()`, da diese bei jedem Favoriten-Rerender neu erzeugt werden).
+- Die beiden Stellen, die den bisherigen Wert per JS in ein Feld schrieben, nutzen jetzt `euro(...)` statt der rohen Zahl (Preisverlauf-Sheet-Öffnen sowie der hartcodierte Default `value="0,99"` im Favoriten-Template); die beiden Stellen, die den Feldwert lasen (`alertSetBtn`-Click, Quick-Alert-Submit), nutzen jetzt `parseGermanPrice(...)` statt `+input.value`.
+- `CACHE_NAME` in `service-worker.js` gemäß der neuen Pflichtregel (siehe CLAUDE.md) auf `canspot-cache-v5` erhöht, da `index.html` geändert wurde.
+- Verifiziert über einen temporären lokalen Server: alle 7 vom Nutzer genannten Testfälle (0,60 / 0,99 / 1,40 / 1,49 / 2,50 / 10,00 / 10,99 €) geprüft — live beim Tippen, nach Blur und nach „Alarm setzen“ jeweils korrektes Komma-Format mit exakt 2 Nachkommastellen; Sanitizing-Kantenfälle (getippter Punkt, mehrere Kommas, >2 Nachkommastellen, Buchstaben) geprüft; keine Konsolenfehler; Layout/Design der Eingabezeile optisch unverändert (generische `.alert-input-row input`-CSS-Regel ist nicht typ-spezifisch, betrifft weiterhin beide Feld-Varianten identisch).
+
+**Wichtige Entscheidungen:**
+- Ausschließlich die zwei Preisalarm-Eingabefelder und deren Lese-/Schreibstellen angefasst — alle anderen Preis-*Anzeigen* liefen bereits ausnahmslos über `euro()` (korrekt) und wurden nicht verändert; keine sonstigen UI-, Layout-, Text- oder Logikänderungen.
+- `type="text"` + `inputmode="decimal"` statt eines Versuchs, `type="number"` per `lang`/`step` zum Komma zu zwingen — Letzteres ist browserübergreifend nicht zuverlässig steuerbar, ersteres gibt volle Kontrolle über Anzeige und Parsing.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht laut vereinbartem Workflow selbst, nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-02 — Wischgeste zum Schließen + Preisverlauf/Produktdetail getrennt
 
 **Umgesetzt:**

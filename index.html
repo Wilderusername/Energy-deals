@@ -2584,7 +2584,7 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 <div class="alert-box">
 <div class="desc" style="margin-bottom:0">Benachrichtige mich, wenn der Preis fällt unter</div>
 <div class="alert-input-row">
-<input type="number" step="0.01" min="0" id="alertPriceInput">
+<input type="text" inputmode="decimal" id="alertPriceInput">
 <span>€</span>
 <button class="btn primary" id="alertSetBtn">Alarm setzen</button>
 </div>
@@ -2890,6 +2890,42 @@ function formatDateRange(from, until){
 }
 
 function euro(n){ return n.toFixed(2).replace(".",","); }
+
+/* Deutsches Zahlenformat (Komma) für Preis-Eingabefelder: parseGermanPrice()
+   liest den getippten Text (egal ob Komma oder Punkt getippt wurde) zu einer
+   JS-Zahl ein, sanitizePriceInputValue()/attachGermanPriceInput() sorgen
+   dafür, dass im Feld selbst beim Tippen immer ein Komma angezeigt wird
+   (nie automatisch durch einen Punkt ersetzt) und beim Verlassen des Felds
+   auf exakt zwei Nachkommastellen normalisiert wird — behebt, dass native
+   <input type="number">-Felder Kommas zu Punkten machten bzw. eine
+   nachgestellte Null (z. B. "0,60") beim Anzeigen verschluckten. */
+function parseGermanPrice(str){
+  if(str == null) return null;
+  const n = parseFloat(String(str).trim().replace(",", "."));
+  return isNaN(n) ? null : n;
+}
+function sanitizePriceInputValue(raw){
+  let v = raw.replace(/\./g, ",").replace(/[^0-9,]/g, "");
+  const firstComma = v.indexOf(",");
+  if(firstComma !== -1){
+    v = v.slice(0, firstComma+1) + v.slice(firstComma+1).replace(/,/g, "");
+    const [intPart, decPart] = v.split(",");
+    v = intPart + "," + decPart.slice(0,2);
+  }
+  return v;
+}
+function attachGermanPriceInput(inputEl){
+  if(!inputEl || inputEl.dataset.germanPriceBound) return;
+  inputEl.dataset.germanPriceBound = "1";
+  inputEl.addEventListener("input", ()=>{
+    const sanitized = sanitizePriceInputValue(inputEl.value);
+    if(sanitized !== inputEl.value) inputEl.value = sanitized;
+  });
+  inputEl.addEventListener("blur", ()=>{
+    const n = parseGermanPrice(inputEl.value);
+    if(n !== null && n >= 0) inputEl.value = euro(n);
+  });
+}
 
 /* ---------------- RENDER DEALS ---------------- */
 
@@ -3892,7 +3928,7 @@ function favRowHtml(p){
       ? `<div class="alert-active" style="margin-top:6px"><span><svg class="icon icon-sm"><use href="#i-target"/></svg> Preisalarm bei ${euro(alert.target)} €</span></div>`
       : `<button class="avatar-remove-link" data-quick-alert-toggle="${p.id}" style="margin-top:4px">Preisalarm setzen</button>
       <div class="alert-input-row" data-quick-alert-form="${p.id}" style="display:none;margin-top:8px">
-        <input type="number" step="0.01" min="0" value="0.99" data-quick-alert-input="${p.id}">
+        <input type="text" inputmode="decimal" value="0,99" data-quick-alert-input="${p.id}">
         <span>€</span>
         <button class="btn primary" data-quick-alert-submit="${p.id}">Setzen</button>
       </div>`;
@@ -3914,6 +3950,7 @@ function bindFavRowEvents(container, rerender){
   container.querySelectorAll("img.fav-emoji").forEach(img=>{
     img.addEventListener("error", function(){ this.src = FALLBACK_IMG; }, {once:true});
   });
+  container.querySelectorAll("[data-quick-alert-input]").forEach(attachGermanPriceInput);
   container.querySelectorAll("[data-quick-alert-toggle]").forEach(btn=>{
     btn.addEventListener("click", ()=>{
       const form = container.querySelector(`[data-quick-alert-form="${btn.dataset.quickAlertToggle}"]`);
@@ -3924,7 +3961,7 @@ function bindFavRowEvents(container, rerender){
     btn.addEventListener("click", ()=>{
       const pid = btn.dataset.quickAlertSubmit;
       const input = container.querySelector(`[data-quick-alert-input="${pid}"]`);
-      const val = +input.value;
+      const val = parseGermanPrice(input.value);
       if(!val || val<=0) return;
       priceAlerts[pid] = {target: val, enabled: true};
       savePriceAlerts();
@@ -4298,7 +4335,7 @@ function openHistory(dealId){
 
   const alertInput = document.getElementById("alertPriceInput");
   const existingAlert = priceAlerts[deal.productId];
-  alertInput.value = existingAlert ? existingAlert.target : Math.max(0, +(deal.offerPrice - 0.10).toFixed(2));
+  alertInput.value = euro(existingAlert ? existingAlert.target : Math.max(0, +(deal.offerPrice - 0.10).toFixed(2)));
   updateAlertActiveMsg(deal.productId);
 
   const ctaBtn = document.getElementById("detailCtaBtn");
@@ -4524,11 +4561,13 @@ function updateAlertActiveMsg(productId){
   });
 }
 
+attachGermanPriceInput(document.getElementById("alertPriceInput"));
+
 document.getElementById("alertSetBtn").addEventListener("click", ()=>{
   if(!currentDetailDealId) return;
   const deal = deals.find(d=>d.id===currentDetailDealId);
   if(!deal) return;
-  const val = +document.getElementById("alertPriceInput").value;
+  const val = parseGermanPrice(document.getElementById("alertPriceInput").value);
   if(!val || val<=0) return;
   priceAlerts[deal.productId] = {target: val, enabled: true};
   savePriceAlerts();
