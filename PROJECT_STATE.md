@@ -4,6 +4,31 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-02 — Neues Farb-/Design-System und Logo aus Referenzdatei übernommen
+
+**Umgesetzt:**
+- Nutzer stellte eine Referenzdatei bereit (`.../ENERGY-APP/20260902/Überarbeitung-Farben-Logo/EnergyBoost — Prototyp-2.html`, ein per Browser „Seite speichern“ exportierter Snapshot). Dieselbe Änderung war zunächst versehentlich an einer lokalen Kopie außerhalb dieses Repos vorgenommen worden; auf Hinweis des Nutzers hier im GitHub-Verzeichnis (`index.html`) nachgeholt.
+- Vor der Änderung geprüft: Der `<style>`-Block dieses Repos war byte-identisch mit dem Ausgangszustand der lokalen Kopie (bevor dort das neue Design übernommen wurde) — daher **ausschließlich der komplette `<style>`-Block** 1:1 aus der Referenzdatei übernommen (neues Marken-Blau `#3363ac` statt Orange, systematische Neutral-/Status-Farbskala, Radius-/Schatten-/Hover-/Focus-Tokens) sowie `<div class="brand">` durch das neue Vektor-Logo-SVG („canspot“-Wortmarke) ersetzt.
+- Sechs im JavaScript **hart codierte** Farbwerte außerhalb des CSS-Blocks ebenfalls umgestellt: Preisverlauf-Chart (`drawChart()`: Linie/Fläche/Punkte), dessen Legenden-Punkte, `FALLBACK_IMG` und `STORE_FALLBACK_IMG` (Bild-Fallbacks). `<meta name="theme-color">` von `#2a1607` auf `#1b213f` aktualisiert.
+- `manifest.webmanifest`: `theme_color` und `background_color` ebenfalls auf die neue dunkle Marken-Palette (`#1b213f`/`#0d0f14`) umgestellt, damit PWA-Installationsbildschirm/Browser-Tinting zum neuen Design passen.
+- `deals.json`, alle Angebots-/Filial-/Produktdaten, sämtliche JS-Logik (Suche, Filter, Favoriten, Preisalarme, Persistenz, `loadDeals()`/PWA-Mechanik) sowie die Struktur von `index.html` blieben unverändert.
+- Verifiziert über einen temporären lokalen Server: Light-/Dark-Theme, Produktdetail-Chart, Kartenansicht, sowie funktionaler Regressionstest (Suche, Favorit setzen/entfernen inkl. Persistenz, Kartenansicht-Pins) — keine Konsolenfehler (bis auf eine Service-Worker-Registrierungsmeldung, die auf die automatisierte Browser-Umgebung zurückgeht, nicht auf die Änderung).
+
+**Wichtige Entscheidungen:**
+- **Nicht** angefasst: die PWA-Icon-Dateien (`icons/*.png`, weiterhin der alte orangene Blitz auf dunkelbraun) und die sieben eigenständigen SEO-Landingpages (`arnsberg-59823.html`, `carabao.html`, `gonrgy.html`, `location.html`, `monster.html`, `red-bull.html`, `rockstar.html`), die jeweils ihr eigenes kleines, ebenfalls noch altes Styling mitbringen. Beides ist zusätzlicher, vom Nutzer noch nicht angeforderter Scope — siehe Rückfrage im Chat.
+- Committet, aber **nicht gepusht** — dieses Repo ist mit einem GitHub-Remote verbunden und laut vorherigem Log-Eintrag bereits als GitHub-Pages-PWA live deployed; ein Push würde die öffentliche Version ändern und erfordert explizite Bestätigung.
+
+**Offen:**
+- Rückfrage an Nutzer: sollen die PWA-Icons (Favicon/App-Icon) neu generiert werden, damit sie zum neuen Logo/Farbschema passen? Aktuell zeigen sie noch den alten Blitz.
+- Rückfrage an Nutzer: sollen die sieben SEO-Landingpages ebenfalls farblich/optisch angeglichen werden?
+- Push zum GitHub-Remote steht aus, bis der Nutzer das bestätigt.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler in `index.html`.
+- Nächster Schritt: Rückmeldung des Nutzers zu Icons/Landingpages/Push abwarten.
+
+---
+
 ## 2026-09-01 — Angebotsdaten in deals.json ausgelagert, App lädt dynamisch
 
 **Umgesetzt:**
