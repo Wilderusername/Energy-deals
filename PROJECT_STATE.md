@@ -4,6 +4,27 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-02 — Handle-Tap zum Schließen (Detail/Preisverlauf) + korrigiertes Penny-Logo
+
+**Umgesetzt:**
+- **Handle-Tap schließt Detail-/Preisverlauf-Sheet**: Neue Funktion `initHandleTapToClose(overlayId)` hängt einen Klick-Listener an den `.handle`-Balken eines Sheets, der `closeSheet(overlayId)` aufruft — aufgerufen ausschließlich für `histOverlay` (Preisverlauf) und `productDetailOverlay` (Produktdetail), direkt neben den bestehenden `initSwipeToClose(...)`-Aufrufen. Bewusst **nicht** global für alle Sheets mit `.handle` (loc-/notif-/filter-/sort-/profile-/storeDetail-/news-Overlay bleiben unverändert) — per Test bestätigt: Klick auf deren Handle schließt sie weiterhin nicht. Zurück-Pfeil und Wischgeste bei den beiden betroffenen Sheets funktionieren unverändert weiter, kommen alle drei Wege jetzt nebeneinander vor.
+- **Penny-Logo korrigiert**: `deals.json` → `stores.Penny.logo` von `https://cdn.penny.de/.../PENNY_DEL_DEB_Logo.svg` auf `https://upload.wikimedia.org/wikipedia/commons/8/8e/Penny-Logo.svg` geändert. Ursache des bisherigen Fehlers: Die alte Datei ist ein zusammengesetztes Footer-Sujet mit **drei** Logos nebeneinander (rotes "PENNY DEL"-Co-Branding-Logo, das eigentliche schlichte "PENNY."-Wortmarke sowie ein Payback-Logo) in einem extrem breiten Viewbox (160×31) — dadurch erschien im App-Kontext (44×44-Box, `object-fit:contain`) alles verkleinert samt "DEL"-Zusatz. Recherchiert: Penny selbst verlinkt auf der eigenen Website (auch im Presse-Bereich) exakt dieselbe zusammengesetzte Datei; ihr `apple-touch-icon.png`/Favicon zeigen nur ein reduziertes "P."-Icon statt eines lesbaren Schriftzugs (anders als bei REWE, dessen `apple-touch-icon.png` das volle "REWE Dein Markt"-Logo zeigt). Als sauberste verfügbare Quelle für einen alleinstehenden, lesbaren "PENNY."-Schriftzug (quadratisches Viewbox, direkt vergleichbar zur REWE-Größe) wurde stattdessen die aktuelle offizielle Wikimedia-Commons-Datei verwendet — einzige Ausnahme vom sonst in diesem Projekt durchgängigen "nur offizielle Händler-Website"-Hotlink-Muster, da Penny selbst keinen sauberen Einzelschriftzug öffentlich hostet.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v11` erhöht (Pflichtregel, `index.html` und `deals.json` geändert — Letzteres ist ebenfalls Teil des precached App-Shells).
+- Verifiziert über einen temporären lokalen Server: Handle-Tap schließt `histOverlay`/`productDetailOverlay` zuverlässig, andere Sheets unbeeinflusst, Pfeil-/Wisch-Wege weiterhin funktionsfähig; neues Penny-Logo erscheint in Angebotskarte, Karten-Popover und Händler-Detailansicht überall korrekt und gleich groß wie z. B. Lidl/EDEKA; keine Konsolenfehler.
+
+**Wichtige Entscheidungen:**
+- Handle-Tap-Funktion bewusst als eigene, kleine Funktion mit expliziter Overlay-ID-Liste umgesetzt statt eines globalen `document.querySelectorAll(".handle")`-Listeners — verhindert versehentliche Verhaltensänderung an den sechs anderen, nicht genannten Sheets.
+- Wikimedia Commons als Ausnahme-Quelle für das Penny-Logo transparent dokumentiert (siehe oben) — falls gewünscht, könnte alternativ langfristig ein lokal eingebettetes SVG-Snippet (nur der "PENNY_DEB_neg_CMYK_hor"-Teilpfad aus der Originaldatei) genutzt werden, das wurde hier aber nicht umgesetzt, um von der bestehenden Hotlink-only-Konvention nicht noch weiter abzuweichen.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-02 — Favoriten-Herz: kräftigeres Rot + Leucht-Effekt + Pop-Animation
 
 **Umgesetzt:**

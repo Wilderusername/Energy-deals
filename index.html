@@ -4108,6 +4108,17 @@ function initSwipeToClose(overlayId){
 initSwipeToClose("histOverlay");
 initSwipeToClose("productDetailOverlay");
 
+/* Zusätzlich zum Pfeil und der Wischgeste: Tippen auf den Handle-Balken
+   oben mittig schließt ebenfalls. Bewusst nur für diese beiden Sheets
+   (Detail-/Preisverlauf-Fenster) verdrahtet, nicht global für alle
+   Overlays mit .handle. */
+function initHandleTapToClose(overlayId){
+  const handle = document.querySelector(`#${overlayId} .handle`);
+  if(handle) handle.addEventListener("click", ()=>closeSheet(overlayId));
+}
+initHandleTapToClose("histOverlay");
+initHandleTapToClose("productDetailOverlay");
+
 document.getElementById("locBtn").addEventListener("click",()=>openSheet("locOverlay"));
 document.getElementById("statusEdit").addEventListener("click",()=>openSheet("locOverlay"));
 document.getElementById("notifBtn").addEventListener("click",()=>openNewsSheet());
