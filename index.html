@@ -583,7 +583,8 @@ object-fit:contain;
 background:var(--bg-surface-sunken);
 border:1px solid var(--border-subtle);
 padding:4px;
-flex-shrink:0
+flex-shrink:0;
+cursor:pointer
 }
 
 .thumb.thumb-fallback{
@@ -891,6 +892,10 @@ text-align:left
 
 .overlay.open .sheet{
 transform:translateY(0)
+}
+
+.sheet.dragging{
+transition:none
 }
 
 .handle{
@@ -1702,6 +1707,72 @@ font-family:inherit
 }
 .alert-active button:hover{color:var(--text-muted)}
 
+/* ---------- PRODUKTDETAILANSICHT (Nährwerte / ähnliche Produkte) ---------- */
+
+.nutrition-note{
+font-size:11.5px;
+color:var(--text-muted);
+margin:2px 0 10px
+}
+
+.nutrition-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px
+}
+.nutrition-grid .nbox{
+background:var(--bg-surface-sunken);
+border:1px solid var(--border-subtle);
+border-radius:var(--radius-md);
+padding:12px;
+text-align:center
+}
+.nutrition-grid .nbox b{display:block;font-size:16px;color:var(--text-primary)}
+.nutrition-grid .nbox span{font-size:10.5px;color:var(--text-muted)}
+
+.similar-scroll{
+display:flex;
+gap:10px;
+overflow-x:auto;
+padding-bottom:2px;
+scrollbar-width:none
+}
+.similar-scroll::-webkit-scrollbar{display:none}
+
+.similar-card{
+flex:0 0 118px;
+background:var(--bg-surface-sunken);
+border:1px solid var(--border-subtle);
+border-radius:var(--radius-lg);
+padding:10px;
+text-align:left;
+cursor:pointer;
+font-family:inherit;
+transition:border-color .15s
+}
+.similar-card:hover{border-color:var(--border-default)}
+.similar-card img{
+width:100%;
+height:74px;
+object-fit:contain;
+background:#fff;
+border-radius:var(--radius-sm);
+margin-bottom:8px
+}
+.similar-name{
+font-size:12px;
+font-weight:700;
+color:var(--text-primary);
+line-height:1.25;
+display:-webkit-box;
+-webkit-line-clamp:2;
+-webkit-box-orient:vertical;
+overflow:hidden
+}
+.similar-meta{font-size:10.5px;color:var(--text-muted);margin-top:3px}
+.similar-price{font-size:11.5px;font-weight:800;color:var(--status-success-text);margin-top:5px}
+.similar-price.muted{color:var(--text-disabled);font-weight:600}
+
 /* ---------- PROFILE: AVATAR EDIT & LABELS ---------- */
 
 .profile-avatar-wrap{position:relative;flex-shrink:0}
@@ -2461,6 +2532,10 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 </div>
 
 <h2 id="histTitle">Preisverlauf</h2>
+<div class="store" id="histStoreRow">
+<img class="store-logo" id="histStoreLogo" src="" alt="">
+<span id="histStoreName">–</span>
+</div>
 <div class="desc" id="histSub">Letzte 30 Tage</div>
 
 <div class="detail-badges" id="detailBadges"></div>
@@ -2517,6 +2592,31 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 </div>
 
 <a class="sheet-btn" id="detailCtaBtn" href="#" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none">Zum besten Angebot <svg class="icon icon-md"><use href="#i-external"/></svg></a>
+
+</div>
+</div>
+</div>
+
+<!-- PRODUKTDETAILANSICHT (Nährwerte + ähnliche Produkte) -->
+<div class="overlay" id="productDetailOverlay">
+<div class="sheet">
+<div class="sheet-inner">
+<button class="sheet-close sheet-close-back" data-close="productDetailOverlay" aria-label="Zurück"><svg class="icon icon-md"><use href="#i-arrow-left"/></svg></button>
+<div class="handle"></div>
+
+<div class="detail-hero">
+<img class="detail-img" id="pdImg" src="" alt="">
+</div>
+
+<h2 id="pdTitle">–</h2>
+<div class="desc" id="pdSub">–</div>
+
+<div class="field-label" style="margin-top:18px">Nährwerte</div>
+<div class="nutrition-note" id="pdNutritionCaption">–</div>
+<div class="nutrition-grid" id="pdNutritionGrid"></div>
+
+<div class="field-label" style="margin-top:24px">Ähnliche Produkte</div>
+<div class="similar-scroll" id="pdSimilar"></div>
 
 </div>
 </div>
@@ -2630,6 +2730,42 @@ function routeMinutes(km){
 const PFAND_FALLBACK = 0.25;
 const PACKAGING_FALLBACK = "Dose";
 
+/* MOCK-DATEN: Nährwerte gibt es (noch) nicht in deals.json — es existiert
+   keine echte Herstellerdatenquelle dafür im Prototyp. Werte unten sind
+   branchenübliche Circa-Angaben pro 100 ml, keine geprüften Herstellerdaten
+   (in der UI entsprechend als Demo-Werte gekennzeichnet, siehe
+   #pdNutritionCaption in openProductDetail()). Auflösung beim Rendern:
+   NUTRITION_MOCK_BY_PRODUCT[productId] -> NUTRITION_MOCK_BY_BRAND[brand] ->
+   NUTRITION_FALLBACK_PER_100ML — dieselbe Fallback-Kette wie bei Pfand/
+   Verpackung oben. Für eine echte Datenquelle genügt es, productId-Einträge
+   in NUTRITION_MOCK_BY_PRODUCT mit realen Werten zu befüllen (oder komplett
+   durch ein Fetch-Ergebnis zu ersetzen) — getNutritionPer100ml() bliebe die
+   einzige Stelle, die angepasst werden müsste. */
+const NUTRITION_FALLBACK_PER_100ML = { kcal: 45, sugarG: 11, caffeineMg: 32, taurineMg: 400 };
+const NUTRITION_MOCK_BY_BRAND = {
+  "Red Bull": { kcal: 45, sugarG: 11, caffeineMg: 32, taurineMg: 400 },
+  "Monster": { kcal: 47, sugarG: 11, caffeineMg: 36, taurineMg: 400 },
+  "Rockstar": { kcal: 45, sugarG: 11, caffeineMg: 32, taurineMg: 400 },
+  "GÖNRGY": { kcal: 48, sugarG: 12, caffeineMg: 32, taurineMg: 400 },
+  "Carabao": { kcal: 45, sugarG: 11, caffeineMg: 30, taurineMg: 400 },
+  "Effect Energy": { kcal: 48, sugarG: 11, caffeineMg: 32, taurineMg: 400 },
+  "28 Black": { kcal: 45, sugarG: 11, caffeineMg: 32, taurineMg: 400 }
+};
+/* Zucker-/kalorienreduzierte Varianten: Markendefault oben passt nicht
+   ("Zero"/"Sugarfree"/"zuckerfrei" im Namen), daher produktgenaue Ausnahmen. */
+const NUTRITION_MOCK_BY_PRODUCT = {
+  p2:  { kcal: 3, sugarG: 0, caffeineMg: 32, taurineMg: 400 },  // Red Bull Sugarfree
+  p8:  { kcal: 3, sugarG: 0, caffeineMg: 32, taurineMg: 400 },  // Red Bull Zero
+  p11: { kcal: 3, sugarG: 0, caffeineMg: 36, taurineMg: 400 },  // Monster Ultra Zero
+  p23: { kcal: 3, sugarG: 0, caffeineMg: 32, taurineMg: 400 },  // effect Zero Sugarfree
+  p26: { kcal: 3, sugarG: 0, caffeineMg: 32, taurineMg: 400 }   // 28 Black Açaí Zero
+};
+function getNutritionPer100ml(product){
+  return NUTRITION_MOCK_BY_PRODUCT[product.id]
+    || NUTRITION_MOCK_BY_BRAND[product.brand]
+    || NUTRITION_FALLBACK_PER_100ML;
+}
+
 /* Synthetische tägliche Preisverlaufs-Daten (90 Tage), genutzt als Fallback,
    wenn ein Angebot kein eigenes priceHistory mitliefert (aktuell immer der
    Fall — echte historische Tagespreise sind zu viele Daten für die Demo).
@@ -2728,6 +2864,7 @@ let viewFavoritesOnly = false;
 let viewMode = "list";
 let selectedMapStore = null;
 let currentDetailDealId = null;
+let currentProductDetailId = null;
 let hideExpired = true;
 let noPfandOnly = false;
 let sizeFilter = "Alle";
@@ -2943,7 +3080,7 @@ function render(){
 
         <div class="bottom">
           <div class="thumb-price">
-            <img class="thumb" src="${deal.img}" alt="${deal.product}" loading="lazy" referrerpolicy="no-referrer">
+            <img class="thumb" data-product-detail="${deal.productId}" src="${deal.img}" alt="${deal.product}" loading="lazy" referrerpolicy="no-referrer">
             <div>
               <div class="price-line">
                 <span class="price">${euro(deal.offerPrice)} €</span>
@@ -3068,6 +3205,11 @@ dealsContainer.addEventListener("click",(e)=>{
   const histBtn = e.target.closest("[data-hist]");
   if(histBtn){
     openHistory(histBtn.dataset.hist);
+    return;
+  }
+  const productDetailBtn = e.target.closest("[data-product-detail]");
+  if(productDetailBtn){
+    openProductDetail(productDetailBtn.dataset.productDetail);
     return;
   }
   const bestBtn = e.target.closest(".badge-best");
@@ -3617,6 +3759,66 @@ document.querySelectorAll(".overlay").forEach(ov=>{
   ov.addEventListener("click",(e)=>{ if(e.target===ov) closeSheet(ov.id); });
 });
 
+/* ---------------- WISCHGESTE ZUM SCHLIESSEN (Detailansichten) ----------------
+   Zusätzlich zum bestehenden Zurück-Pfeil: Herunterwischen schließt die
+   Detailansicht. Zieht per Touch nur, wenn der Sheet-Inhalt bereits ganz
+   oben gescrollt ist (scrollTop<=0) UND die Bewegung eindeutig nach unten
+   geht — sonst bleibt normales Scrollen innerhalb der Sheet unangetastet. */
+function initSwipeToClose(overlayId){
+  const overlay = document.getElementById(overlayId);
+  const sheet = overlay.querySelector(".sheet");
+  const CLOSE_THRESHOLD = 110;
+  let startY = 0, startX = 0, lastY = 0, tracking = false, dragging = false;
+
+  sheet.addEventListener("touchstart",(e)=>{
+    if(e.touches.length !== 1) return;
+    startY = lastY = e.touches[0].clientY;
+    startX = e.touches[0].clientX;
+    tracking = sheet.scrollTop <= 0;
+    dragging = false;
+  }, {passive:true});
+
+  sheet.addEventListener("touchmove",(e)=>{
+    if(!tracking) return;
+    const touch = e.touches[0];
+    const deltaY = touch.clientY - startY;
+    const deltaX = touch.clientX - startX;
+    lastY = touch.clientY;
+
+    if(!dragging){
+      if(deltaY < 8 || Math.abs(deltaX) > Math.abs(deltaY)) return;
+      if(sheet.scrollTop > 0){ tracking = false; return; }
+      dragging = true;
+      sheet.classList.add("dragging");
+    }
+    sheet.style.transform = `translateY(${Math.max(0, deltaY)}px)`;
+    e.preventDefault();
+  }, {passive:false});
+
+  function endDrag(){
+    if(!dragging){ tracking = false; return; }
+    tracking = false;
+    dragging = false;
+    sheet.classList.remove("dragging");
+    const dist = Math.max(0, lastY - startY);
+    if(dist > CLOSE_THRESHOLD){
+      sheet.style.transform = "translateY(100%)";
+      setTimeout(()=>{
+        sheet.style.transform = "";
+        closeSheet(overlayId);
+      }, 200);
+    } else {
+      sheet.style.transform = "";
+    }
+  }
+
+  sheet.addEventListener("touchend", endDrag);
+  sheet.addEventListener("touchcancel", endDrag);
+}
+
+initSwipeToClose("histOverlay");
+initSwipeToClose("productDetailOverlay");
+
 document.getElementById("locBtn").addEventListener("click",()=>openSheet("locOverlay"));
 document.getElementById("statusEdit").addEventListener("click",()=>openSheet("locOverlay"));
 document.getElementById("notifBtn").addEventListener("click",()=>openSheet("notifOverlay"));
@@ -4038,6 +4240,13 @@ function openHistory(dealId){
   currentDetailDealId = dealId;
 
   document.getElementById("histTitle").textContent = deal.product;
+
+  const histStoreLogo = document.getElementById("histStoreLogo");
+  histStoreLogo.src = storeLogos[deal.store] || STORE_FALLBACK_IMG;
+  histStoreLogo.alt = deal.store;
+  histStoreLogo.onerror = function(){ this.src = STORE_FALLBACK_IMG; };
+  document.getElementById("histStoreName").textContent = deal.store;
+
   document.getElementById("histCurrent").textContent = euro(deal.history[deal.history.length-1]) + " €";
   document.getElementById("histAllTimeLowLabel").textContent = `Bisheriger Tiefstpreis bei ${deal.store}`;
   document.getElementById("histAllTimeLow").textContent = euro(Math.min(...deal.history)) + " €";
@@ -4186,6 +4395,82 @@ function renderOtherStores(deal){
       closeSheet("histOverlay");
       openStoreDetail(btn.dataset.storeDetail);
     });
+  });
+}
+
+/* ---------------- PRODUKTDETAILANSICHT (Nährwerte / ähnliche Produkte) ----------------
+   Getrennt von openHistory(): dreht sich ausschließlich um das Produkt selbst
+   (Katalogdaten aus products[]), nicht um ein einzelnes Angebot bei einem
+   bestimmten Händler — daher als productId adressiert statt als dealId. */
+
+function openProductDetail(productId){
+  const product = products.find(p=>p.id===productId);
+  if(!product) return;
+  currentProductDetailId = productId;
+
+  const pdImg = document.getElementById("pdImg");
+  pdImg.src = product.img;
+  pdImg.alt = product.name;
+  pdImg.onerror = function(){ this.src = FALLBACK_IMG; };
+
+  document.getElementById("pdTitle").textContent = product.name;
+  document.getElementById("pdSub").textContent = `${product.brand} · ${product.sizeMl} ml`;
+
+  renderNutrition(product);
+  renderSimilarProducts(product);
+
+  openSheet("productDetailOverlay");
+}
+
+function renderNutrition(product){
+  const per100 = getNutritionPer100ml(product);
+  const factor = product.sizeMl / 100;
+  const kcal = Math.round(per100.kcal * factor);
+  const sugarG = +(per100.sugarG * factor).toFixed(1);
+  const caffeineMg = Math.round(per100.caffeineMg * factor);
+  const taurineMg = Math.round(per100.taurineMg * factor);
+
+  document.getElementById("pdNutritionGrid").innerHTML = `
+    <div class="nbox"><b>${kcal} kcal</b><span>Kalorien</span></div>
+    <div class="nbox"><b>${sugarG} g</b><span>Zucker</span></div>
+    <div class="nbox"><b>${caffeineMg} mg</b><span>Koffein</span></div>
+    <div class="nbox"><b>${taurineMg} mg</b><span>Taurin</span></div>
+  `;
+  document.getElementById("pdNutritionCaption").textContent =
+    `Angaben pro Dose (${product.sizeMl} ml) · Demo-Werte, keine geprüften Herstellerangaben`;
+}
+
+function renderSimilarProducts(product){
+  const sameBrand = products.filter(p=>p.brand===product.brand && p.id!==product.id);
+  const others = products.filter(p=>p.brand!==product.brand && p.id!==product.id);
+  const similar = [...sameBrand, ...others].slice(0,6);
+
+  const wrap = document.getElementById("pdSimilar");
+  if(similar.length===0){
+    wrap.innerHTML = `<div class="fav-empty">Keine ähnlichen Produkte gefunden.</div>`;
+    return;
+  }
+
+  wrap.innerHTML = similar.map(p=>{
+    const cheapest = deals
+      .filter(d=>d.productId===p.id && daysUntil(d.validUntil)>=0)
+      .sort((a,b)=>a.offerPrice-b.offerPrice)[0];
+    return `
+    <button class="similar-card" data-similar="${p.id}">
+      <img src="${p.img}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer">
+      <div class="similar-name">${p.name}</div>
+      <div class="similar-meta">${p.brand} · ${p.sizeMl} ml</div>
+      ${cheapest
+        ? `<div class="similar-price">ab ${euro(cheapest.offerPrice)} €</div>`
+        : `<div class="similar-price muted">Kein Angebot</div>`}
+    </button>`;
+  }).join("");
+
+  wrap.querySelectorAll("img").forEach(img=>{
+    img.addEventListener("error", function(){ this.src = FALLBACK_IMG; }, {once:true});
+  });
+  wrap.querySelectorAll("[data-similar]").forEach(btn=>{
+    btn.addEventListener("click", ()=> openProductDetail(btn.dataset.similar));
   });
 }
 

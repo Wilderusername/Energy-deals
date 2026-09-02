@@ -4,6 +4,29 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-02 — Wischgeste zum Schließen + Preisverlauf/Produktdetail getrennt
+
+**Umgesetzt:**
+- **Wischgeste zum Schließen** (`initSwipeToClose()` in `index.html`): Zusätzlich zum bestehenden Zurück-Pfeil lässt sich die Detailansicht (`#histOverlay`) sowie die neue Produktdetailansicht (`#productDetailOverlay`) per Herunterwischen schließen. Touch-Handler auf `.sheet` zieht nur, wenn `sheet.scrollTop<=0` UND die Bewegung eindeutig vertikal nach unten geht (Schwelle 8px, sonst gewinnt horizontales/normales Scrollen); unter 110px Zugdistanz federt die Sheet per CSS-Transition zurück, darüber schließt sie animiert. `.sheet.dragging{transition:none}` neu in CSS für ruckelfreies 1:1-Ziehen während der Geste.
+- **Preisverlauf und Produktbild-Klick getrennt**: Bisher öffneten beide denselben `#histOverlay`. Der Produktbild-Klick (`.thumb` in der Angebotskarte, jetzt mit `data-product-detail="{productId}"`) öffnet neu `openProductDetail(productId)` → eigenes Sheet `#productDetailOverlay` mit Nährwerten + „Ähnliche Produkte“; „Preisverlauf“ (`data-hist`) öffnet weiterhin ausschließlich `openHistory(dealId)` (Preisverlauf-Chart, Kontext bleibt preisbezogen: Bester-Preis-Badges, weitere Händler, Preisalarm — unverändert, nur zusätzlich mit klar sichtbarer Händler-Zeile `#histStoreRow`/`#histStoreLogo`/`#histStoreName` direkt unter dem Produktnamen ergänzt, damit Produkt + Shop auf einen Blick erkennbar sind).
+- **`openProductDetail(productId)`** (Produktkatalog-basiert, nicht angebots-/händlerspezifisch): zeigt Produktbild, Name, Marke/Menge, Nährwerte-Grid (Kalorien/Zucker/Koffein/Taurin, hochgerechnet auf die Dosengröße) sowie eine horizontal scrollende „Ähnliche Produkte“-Reihe (gleiche Marke zuerst, sonst andere Marken, max. 6) mit optionalem „ab X €“-Preis aus aktiven `deals`. Klick auf ein ähnliches Produkt öffnet rekursiv dessen eigene Produktdetailansicht.
+- **Nährwerte als klar markierte Mock-Daten**: `NUTRITION_MOCK_BY_PRODUCT` → `NUTRITION_MOCK_BY_BRAND` → `NUTRITION_FALLBACK_PER_100ML` (dieselbe Fallback-Ketten-Struktur wie `PFAND_FALLBACK`/`PACKAGING_FALLBACK`), da `deals.json` keine echten Nährwertdaten liefert. Zucker-/kalorienreduzierte Varianten (Red Bull Sugarfree/Zero, Monster Ultra Zero, effect Zero Sugarfree, 28 Black Açaí Zero) haben produktgenaue Ausnahmen (0 g Zucker), damit die Demo-Werte dem Produktnamen nicht offensichtlich widersprechen. In der UI mit Caption „Demo-Werte, keine geprüften Herstellerangaben“ gekennzeichnet — für eine echte Datenquelle genügt es, `NUTRITION_MOCK_BY_PRODUCT` zu befüllen oder `getNutritionPer100ml()` umzustellen.
+- Verifiziert über einen temporären lokalen Server (mobile Viewport 375×812): Angebotskarte → Bild-Klick öffnet Produktdetail (Nährwerte + ähnliche Produkte, keine Preisdaten/Chart); „Preisverlauf“-Klick öffnet weiterhin nur den Preisverlauf (Produktname + Händlerzeile + Chart, keine Nährwerte/Vorschläge); Zurück-Pfeil und simulierte Touch-Wischgesten (>110px → schließt, <110px → federt zurück, `scrollTop>0` → kein Drag) per dispatched `TouchEvent`s geprüft; keine Konsolenfehler.
+
+**Wichtige Entscheidungen:**
+- Bestehende Inhalte von `#histOverlay` (Badges, weitere Händler, Preisalarm, CTA) bewusst **nicht** entfernt — die Aufgabenstellung schließt explizit nur Nährwerte/Produktvorschläge/„zusätzliche Produktdetails“ aus der Preisverlauf-Ansicht aus; die bestehenden Preisvergleichs-Funktionen sind keine Produktdetails im engeren Sinn und sollten laut Vorgabe „bisher funktionierende Abläufe“ erhalten bleiben.
+- `openProductDetail()` ist an `productId` (Katalog) statt `dealId` (Angebot) adressiert, weil die neue Ansicht produktbezogen ist und auch für Produkte ohne aktuelles Angebot funktionieren soll (siehe „ähnliche Produkte“ ggf. ohne Preis).
+- Wischgeste per Touch-Events (nicht Pointer-Events) umgesetzt, konsistent mit dem Mobile-First-Charakter der App; Maus-Drag auf Desktop schließt die Sheet daher nicht (dort bleibt der Pfeil/Klick-außerhalb-Weg).
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht (auf ausdrücklichen Wunsch des Nutzers für diese Änderung).
+
+---
+
 ## 2026-09-02 — PWA-Icons neu generiert, SEO-Landingpages farblich angeglichen
 
 **Umgesetzt:**
