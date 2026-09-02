@@ -513,6 +513,20 @@ padding:9px 10px;
 font-size:12px
 }
 
+/* Mobile: eigene, einspaltige Anordnung der Angebotskarte (Produkt/Preis
+   oben, Händler/Angebot darunter) statt der zweispaltigen Desktop-Struktur.
+   Bewusst als Media Query, damit Desktop (>540px, deckt bereits alle
+   Tablet-/Desktop-Breiten ab, da .app ohnehin bei 560px deckelt) komplett
+   unangetastet bleibt. */
+@media (max-width:540px){
+.card-columns{grid-template-columns:1fr}
+.card-product .thumb{width:74px;height:74px}
+.card-store .actions{justify-content:space-between}
+.hero{padding:14px 18px 16px}
+.headline{margin-top:16px}
+.search{margin-top:12px}
+}
+
 .line{
 display:flex;
 justify-content:space-between;

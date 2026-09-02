@@ -4,19 +4,43 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
-## 2026-09-03 — Testweise: Zweispaltige Angebotskarte auf Smartphone erzwungen
+## 2026-09-03 — Eigene, einspaltige Mobile-Anordnung der Angebotskarte (löst „immer nebeneinander" ab)
 
 **Umgesetzt:**
-- Auf ausdrücklichen Wunsch des Nutzers (zum selbst Testen, noch nicht final entschieden): Die Media Query `@media (max-width:540px){.card-columns{grid-template-columns:1fr}}` entfernt — die Angebotskarte zeigt Produkt/Preis (links) und Händler/Angebot (rechts) jetzt **immer** nebeneinander, auch auf schmalen Smartphone-Bildschirmen.
+- Nutzer hat das erzwungene Nebeneinander-Layout beim echten Testen auf dem Smartphone doch wieder als „zu stark gequetscht" empfunden und explizit eine eigene, für Mobile optimierte Anordnung angefordert — bei ausdrücklicher, mehrfach betonter Auflage, die Desktop-Darstellung dabei über reine Media-Query-Scoping vollständig unangetastet zu lassen.
+- `@media (max-width:540px)`-Block wieder eingeführt (diesmal dauerhaft, nicht als Testzustand): schaltet `.card-columns` von `grid-template-columns:1.5fr 1fr` zurück auf `1fr` — auf Mobile stehen Produkt/Preis (bisherige linke Spalte) und Händler/Angebot (bisherige rechte Spalte) wieder untereinander, in genau der vom Nutzer vorgegebenen Reihenfolge (Produkt → Preis → Preisvorteil → Händler → Zeitraum → Preisverlauf → Aktionen), da diese Reihenfolge bereits so im HTML-Template steht und nur die Grid-Spalte umgebrochen wird.
+- Zusätzliche mobile-only Feinschliffe im selben Media-Query-Block: Produktbild in der Angebotskarte von 58px auf 74px vergrößert (`.card-product .thumb`, nur mobil, nur in der Angebotskarte — Preisalarm-/Hinweise-Karten bleiben bei 58px); Aktionszeile von zusammengruppiert-rechtsbündig auf `justify-content:space-between` umgestellt, damit Herz links und „Zum Angebot" rechts mit sichtbarem Abstand auseinanderstehen; Header-Innenabstände reduziert (`.hero`, `.headline`, `.search`), damit Logo/Slogan/Suche auf Mobile weniger vertikalen Platz beanspruchen (Logo bleibt optisch größer als Slogan, da nur Innenabstand/Außenabstand verändert wurde, keine Schriftgrößen).
+- „Preis geprüft" bewusst nicht wieder eingeführt — war bereits in einer früheren Runde komplett aus dem Karten-Template entfernt worden, bleibt es auch hier.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v24` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server: Mobile bei 320px und 375px (Light Mode) — einspaltige Reihenfolge wie gefordert, kein horizontaler Overflow (`scrollWidth === clientWidth` programmatisch bestätigt), Herz/„Zum Angebot" sichtbar auseinandergezogen, Marken-Chips/Filter-Sort-Leiste/Standortzeile/Liste-Karte-Umschalter/Bottom-Navigation weiterhin frei bedienbar und nicht von Karten/Toasts verdeckt. Desktop-Preset (≥560px) im Anschluss separat gegengeprüft: Screenshot zeigt unverändert das ursprüngliche zweispaltige Layout (BESTER-PREIS-Badge + Händlerblock rechts, Herz+„Zum Angebot" weiterhin gruppiert rechtsbündig statt auseinandergezogen), `bodyScrollWidth === bodyClientWidth` (kein Overflow), keine Konsolenfehler. Alarme-Tab (Preisalarm-/„Hinweise für dich"-Karten) stichprobenartig auf Mobile erneut geprüft — optisch unverändert, da `.card-product`/`.card-store` dort nicht verwendet werden.
+
+**Wichtige Entscheidungen:**
+- Löst die vorherige „immer nebeneinander, final bestätigt"-Entscheidung vom selben Tag ab. Grund: Der Nutzer hatte diese zunächst nach kurzem Test bestätigt, beim intensiveren realen Gebrauch auf dem Smartphone aber doch als zu gequetscht empfunden und wollte stattdessen eine für Mobile eigens optimierte, einspaltige Struktur — mit Desktop strikt über Media Query isoliert, damit frühere Entscheidungen zur Desktop-Ansicht (Zweispaltigkeit, gruppierte Aktionen) nicht angetastet werden.
+- Die in der vorherigen Runde eingeführten Overflow-Fixes (`min-width:0` auf `.card-store .store`/`.meta-row`, `flex-wrap:wrap` auf `.store-sub`, `overflow-wrap:break-word` auf `.card-store`) bewusst nicht zurückgebaut — sie schaden nicht und die einspaltige Mobile-Breite hat ohnehin mehr Platz, sodass sie kaum noch greifen, aber als Absicherung für sehr lange Händlernamen sinnvoll bleiben.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
+## 2026-09-03 — Zweispaltige Angebotskarte auf Smartphone erzwungen (bestätigt, final)
+
+**Umgesetzt:**
+- Nutzer hat nach eigenem Test auf dem iPhone bestätigt: Die erzwungene Nebeneinander-Darstellung bleibt dauerhaft so — kein Testzustand mehr, sondern finales Verhalten.
+- Die Media Query `@media (max-width:540px){.card-columns{grid-template-columns:1fr}}` entfernt — die Angebotskarte zeigt Produkt/Preis (links) und Händler/Angebot (rechts) jetzt **immer** nebeneinander, auch auf schmalen Smartphone-Bildschirmen.
 - Beim Testen bei 375px echten horizontalen Overflow entdeckt (Karte war ~45px breiter als ihr Container) — verursacht durch `.store` und `.meta-row`, die als Flex-Kinder von `.card-store` standardmäßig `min-width:auto` hatten und sich dadurch nicht unter ihre Inhaltsbreite verkleinern ließen. Behoben mit gezielten, rein defensiven Ergänzungen (keine Größen-/Abstandsänderung): `min-width:0` auf `.card-store .store`, `.card-store .store > div`, `.meta-row` sowie `flex-wrap:wrap` + `min-width:0` auf `.store-sub` (nur hier verwendet, unbedenklich) und `overflow-wrap:break-word` auf `.card-store`. Bei 375–560px danach kein Overflow mehr (`scrollWidth === clientWidth`, mehrfach programmatisch verifiziert); bei sehr schmalen 320px (praktisch nur noch iPhone SE 1. Generation, seit 2018 nicht mehr verkauft) bleibt ein kleiner Rest-Überlauf bei sehr langen Händlernamen wie "Kaufland" bestehen — nicht weiter verfolgt, da das reale Zielgerät des Nutzers (aktuelles iPhone) bereits bei 375px sauber ist.
 - `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v23` erhöht (Pflichtregel).
 - Verifiziert über einen temporären lokalen Server bei 320/375/414/560px sowie Light+Dark Mode: Karte bei 375px zweispaltig ohne Überlappung/Abschneiden (Textzeilen brechen dafür etwas mehr um, u. a. "Zum Angebot" teils zweizeilig); Favorisieren und „Preisverlauf" erneut funktionsfähig bestätigt; Preisalarm-/Hinweise-Karten im Alarme-Tab optisch unverändert (nur `.store-sub`/`.meta-row` betroffen, beide exklusiv in der Angebotskarte verwendet); keine Konsolenfehler.
 
 **Wichtige Entscheidungen:**
-- Dies ist ausdrücklich ein **Testzustand** — der Nutzer möchte sich das auf dem eigenen Smartphone ansehen und danach entscheiden, ob er dabei bleibt oder zum vorherigen Verhalten (Spalten brechen auf schmalen Screens um) zurückkehrt. Entsprechend wurde nur das Minimum geändert (Breakpoint entfernt + notwendige Overflow-Fixes), keine weiteren Anpassungen an Schriftgrößen/Abständen vorgenommen.
+- War zunächst ein Testzustand zum Ausprobieren auf dem eigenen Smartphone; nach Rückmeldung „sieht gut aus" jetzt final bestätigt. Es wurde nur das Minimum geändert (Breakpoint entfernt + notwendige Overflow-Fixes), keine weiteren Anpassungen an Schriftgrößen/Abständen vorgenommen.
 
 **Offen:**
-- Rückfrage an Nutzer (wie von ihm selbst gewünscht): Soll die erzwungene Nebeneinander-Darstellung auf dem Smartphone so bleiben, oder zurück zum vorherigen Verhalten (automatisches Umbrechen auf schmalen Bildschirmen unter 540px)?
+- Keine offenen Rückfragen — Entscheidung gefallen, Nebeneinander-Layout bleibt.
 
 **Bekannte Fehler / nächste Schritte:**
 - Sehr schmale Geräte (~320px, z. B. iPhone SE 1. Gen.) zeigen noch einen kleinen Rest-Overflow bei langen Händlernamen — nur relevant, falls das Nebeneinander-Layout dauerhaft beibehalten wird und dieses spezielle, mittlerweile seltene Gerät unterstützt werden soll.
