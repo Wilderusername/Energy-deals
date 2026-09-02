@@ -4,6 +4,31 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-02 — Toast-System: oben mit Safe-Area statt unten über der Navigation
+
+**Umgesetzt:**
+- Analyse ergab: Das zentrale Toast-System existierte bereits vollständig — `showToast(msg)` ist die **einzige** Stelle, die je eine Kurzmeldung anzeigt (22 Aufrufstellen: Favoriten, Preisalarm, Profil, Standort, Teilen, Konto-Demo-Hinweise, erreichte Preisalarme etc.), alle über dasselbe `#toast`-Element. Punkt 9 ("zentrale Lösung für alle Meldungen") war damit bereits erfüllt — hier ausschließlich CSS/Timing der bestehenden Komponente überarbeitet, keine der 22 Aufrufstellen verändert.
+- **Position von unten nach oben verschoben**: `.toast` stand bisher bei `bottom:24px` (kollidierte optisch mit der Bottom-Navigation). Jetzt `top:calc(env(safe-area-inset-top, 0px) + 14px)` — verwendet die tatsächliche Geräte-Safe-Area (Dynamic Island/Notch/Statusleiste) plus 14px zusätzlichen visuellen Abstand, mit `0px`-Fallback für Geräte/Browser ohne Safe-Area-Konzept. Bleibt weiterhin `position:fixed`, damit die Meldung unabhängig von der Scrollposition sichtbar ist (mit `scrollTo`-Test bei 1500px Scroll-Offset verifiziert: Toast bleibt oben im sichtbaren Viewport).
+- **Animation** von "Einblenden von unten" (`translateY(20px)→0`) auf "Einblenden von oben" (`translateY(-10px)→0`) gedreht, passend zur neuen Position; Transition-Dauer leicht beschleunigt (0,25s → 0,22s) für ein knackigeres Gefühl.
+- **Breite**: `max-width` von `80%` (auf Desktop potenziell sehr breit) auf `min(360px, calc(100% - 32px))` geändert — kompakt auf Desktop, mit garantiertem 16px-Seitenabstand auf schmalen Displays; Text bricht bei Bedarf mehrzeilig um (`line-height:1.4` ergänzt für saubere Lesbarkeit bei Zeilenumbruch).
+- **Anzeigedauer dynamisch**: `showToast()` berechnet jetzt `Math.min(2500, Math.max(1500, 1500 + msg.length * 12))` statt einer festen 2400ms für alle Meldungen — kurze Texte (~20 Zeichen) landen bei ~1,7s, lange Texte (~75+ Zeichen) werden bei 2,5s gedeckelt.
+- `pointer-events:none` (verhindert Blockieren von Klicks/Touches auf darunterliegende Elemente wie die Bottom-Navigation) war bereits vorhanden und wurde unverändert beibehalten — genau wie das bestehende Stapel-Verhalten (`clearTimeout` + Text-/Timer-Reset statt neuer DOM-Elemente), das mehrere schnelle Meldungen bereits korrekt nacheinander/ersetzend statt überlappend behandelt.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v18` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server (Mobile + Desktop, Light + Dark): Toast erscheint zuverlässig oben im sichtbaren Bereich, auch nach Scrollen um 1500px; Klick auf Bottom-Nav-Items funktioniert sofort auch während eine Meldung sichtbar ist (`navFav` wurde correctly aktiv, während `toast.show` noch `true` war); mehrere schnelle `showToast()`-Aufrufe hintereinander erzeugen nur ein einziges `.toast`-Element mit ersetztem Text, kein Stapeln; Anzeigedauer skaliert nachweislich mit der Textlänge (kurze/lange Meldung unterschiedlich lang sichtbar); guter Kontrast in Light UND Dark Mode (Toast sitzt auf dem durchgehend dunklen Header-Hintergrund, der in beiden Themes gleich bleibt); keine Konsolenfehler.
+
+**Wichtige Entscheidungen:**
+- Keine der 22 `showToast(...)`-Aufrufstellen angefasst — die zentrale Architektur war bereits korrekt, es fehlte nur an Positionierung/Timing der gemeinsamen Komponente selbst.
+- Hintergrundfarbe/Textfarbe des Toasts bewusst unverändert gelassen (`var(--brand-primary-dark)` + Weiß) — dieselbe feste dunkle Farbe wie der App-Header in beiden Themes, dadurch automatisch gutem Kontrast in Light und Dark Mode, ohne neue Farb-Logik einführen zu müssen.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-02 — Produktbild-Hintergrund im Dark Mode auf #12151C
 
 **Umgesetzt:**
