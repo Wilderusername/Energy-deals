@@ -4,6 +4,31 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-02 — PWA-Icons neu generiert, SEO-Landingpages farblich angeglichen
+
+**Umgesetzt:**
+- Auf Rückfrage (siehe „Offen“ im vorherigen Eintrag) hat der Nutzer beide offenen Punkte bestätigt: Icons neu generieren, Landingpages angleichen; Push zum Remote weiterhin **nicht** gewünscht.
+- **PWA-Icons neu generiert** (`icons/favicon-16.png`, `favicon-32.png`, `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon-180.png`): Aus dem Logo-SVG die drei eigenständigen `<path>`-Elemente außerhalb der Buchstaben-`<g>` isoliert (Dose + Standort-Pin-Symbol, ohne Schriftzug) und deren exakte Bounding Box per `getBBox()` im Browser ermittelt. Icons per `<canvas>` gerendert: flacher `--brand-primary-dark`-Hintergrund (kein Verlauf mehr, passend zum neuen flachen Design), Symbol in Weiß/`--brand-primary-blue`, dieselben Eckenradien-Proportionen wie zuvor (abgerundet für alle Größen außer `icon-maskable-512`, das als volles Quadrat ohne eigene Rundung für den OS-Maskierungs-Safe-Zone-Bereich exportiert wurde, mit kleinerem Symbol-Anteil). Visuell verglichen mit den alten Icons (gleiches Seitenverhältnis/Padding-Gefühl), Dateigrößen/Dimensionen verifiziert.
+- **`service-worker.js`**: `CACHE_NAME` von `canspot-cache-v2` auf `canspot-cache-v3` erhöht (Icons sind Teil des precached App-Shells; laut CLAUDE.md-Regel bei jeder relevanten Änderung an gecachten Dateien nötig, damit wiederkehrende Besucher/PWA-Installationen die neuen Icons statt der alten aus dem Cache bekommen).
+- **CLAUDE.md** aktualisiert: Icon-Beschreibung im PWA-Abschnitt (alter Blitz → neues Dose/Pin-Symbol, Generierungsweg dokumentiert) sowie die `CACHE_NAME`-Versionsangabe.
+- **7 SEO-Landingpages** (`arnsberg-59823.html`, `carabao.html`, `gonrgy.html`, `location.html`, `monster.html`, `red-bull.html`, `rockstar.html`) — alle teilen ein identisches, minimales inline-`<style>` (eigene alte Farbpalette, unabhängig vom Haupt-App-CSS, noch aus einer Vor-„CanSpot"-Iteration mit Titel „Energy Deals v3.2“). Deren 10 hartcodierte Hex-Werte 1:1 auf die neue Palette gemappt (u. a. Hero-Hintergrund/Text `#111827`→`#1b213f`, „BESTER PREIS“-Badge von Grün/Erfolg auf Amber/Highlight umgestellt, passend zur Hauptapp). `theme-color`-Meta ebenfalls aktualisiert. Reiner Farb-Swap — Markup, Inhalte, Links, Struktur sowie der (veraltete) „⚡ ENERGY DEALS“-Markentext/-Titel blieben unangetastet (war nicht Teil der Frage/Zustimmung, nur „farblich angleichen“).
+- Verifiziert über einen temporären lokalen Server: `index.html` lädt weiterhin fehlerfrei (50 Angebote, Dark/Light, Karte), Icon-Dateien haben korrekte Maße (16/32/192/512/512/180 px), `red-bull.html` und `location.html` stichprobenartig visuell geprüft.
+
+**Wichtige Entscheidungen:**
+- Icon-Hintergrund bewusst als flache Farbe statt des alten radialen Verlaufs umgesetzt — konsistent mit dem neuen, insgesamt flacheren Designsystem (auch der App-Header nutzt jetzt eine flache statt verlaufende Fläche).
+- Auf den Landingpages wurde ausschließlich die Farbpalette übertragen, nicht der Marken-Name/Text oder das Logo-Bild selbst (dort weiterhin „⚡ ENERGY DEALS“ statt des neuen „canspot“-Schriftzugs) — das war explizit nicht Teil der gestellten/beantworteten Frage („farblich angeglichen“). Bei Bedarf separat ansprechen.
+- Weiterhin **kein Push** zum GitHub-Remote — alle Änderungen bleiben lokal committet, bis der Nutzer das anfordert.
+
+**Offen:**
+- Marken-Name/-Logo auf den 7 Landingpages (aktuell noch „⚡ ENERGY DEALS“) — nur ansprechen, falls gewünscht.
+- Push zum Remote steht weiterhin aus.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nächster Schritt: warten auf weiteres Feedback oder die Freigabe zum Pushen.
+
+---
+
 ## 2026-09-02 — Neues Farb-/Design-System und Logo aus Referenzdatei übernommen
 
 **Umgesetzt:**
