@@ -267,7 +267,7 @@ display:inline-flex;
 align-items:center
 }
 .brand svg{
-height:22px;
+height:36px;
 width:auto;
 display:block
 }
@@ -324,7 +324,7 @@ transition:background .15s ease
 .loc:hover{background:rgba(255,255,255,.16)}
 
 .headline{
-font-size:var(--fs-display);
+font-size:20px;
 line-height:var(--lh-display);
 font-weight:var(--fw-display);
 letter-spacing:var(--ls-display);
@@ -2094,7 +2094,7 @@ animation:skeleton-pulse 1.1s ease-in-out infinite
 <div class="top-actions">
 <button class="iconbtn" id="profileBtn" aria-label="Mein Bereich"><svg class="icon icon-lg"><use href="#i-user"/></svg></button>
 <button class="iconbtn" id="notifBtn" aria-label="Benachrichtigungen"><svg class="icon icon-lg"><use href="#i-bell"/></svg><span class="dot" id="notifDot"></span></button>
-<button class="loc" id="locBtn"><svg class="icon icon-sm"><use href="#i-pin"/></svg> <span id="locLabel">59821 · 10 km</span></button>
+<button class="loc" id="locBtn" style="display:none"><svg class="icon icon-sm"><use href="#i-pin"/></svg> <span id="locLabel">59821 · 10 km</span></button>
 </div>
 </div>
 
@@ -2295,6 +2295,21 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 <div id="favList"></div>
 
 <button class="sheet-btn" data-close="notifOverlay">Speichern</button>
+</div>
+</div>
+</div>
+
+<!-- NEUIGKEITEN (Glocke) — ersetzt die vorherige Direktverknüpfung der
+     Glocke zu den Push-Einstellungen (weiterhin über Profil > Benachrichtigungen
+     erreichbar, siehe #profileNotifRow / notifOverlay oben, unverändert). -->
+<div class="overlay" id="newsOverlay">
+<div class="sheet">
+<div class="sheet-inner">
+<button class="sheet-close" data-close="newsOverlay"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
+<div class="handle"></div>
+<h2>Neuigkeiten</h2>
+<div class="desc">Relevante Hinweise zu deinen favorisierten Produkten.</div>
+<div id="newsList"></div>
 </div>
 </div>
 </div>
@@ -3877,7 +3892,7 @@ initSwipeToClose("productDetailOverlay");
 
 document.getElementById("locBtn").addEventListener("click",()=>openSheet("locOverlay"));
 document.getElementById("statusEdit").addEventListener("click",()=>openSheet("locOverlay"));
-document.getElementById("notifBtn").addEventListener("click",()=>openSheet("notifOverlay"));
+document.getElementById("notifBtn").addEventListener("click",()=>openNewsSheet());
 
 /* ---------------- PROFILE / MEIN BEREICH ---------------- */
 
@@ -4232,14 +4247,111 @@ document.getElementById("useGeoBtn").addEventListener("click", ()=>{
   );
 });
 
+/* ---------------- NEUIGKEITEN (Glocke) ----------------
+   Die Glocke öffnet jetzt diesen Neuigkeiten-Bereich statt direkt der
+   Push-Einstellungen (die bleiben unverändert über Profil > Benachrichtigungen
+   / #profileNotifRow erreichbar). getRelevantNotifications() ist bewusst so
+   gebaut, dass eine echte Angebots-Datenquelle sie später ohne
+   Strukturänderung füttern kann:
+   - "aktuell im Angebot" wird schon jetzt aus echten Daten berechnet
+     (favorites × deals, kein Mock nötig).
+   - "demnächst im Angebot" prüft bereits echte künftige validFrom-Daten in
+     deals.json — liefert aktuell aber nichts, weil die Demo-Daten kein
+     Angebot mit zukünftigem Start enthalten. Deshalb ergänzt die Funktion
+     GENAU EIN klar markiertes Platzhalter-Beispiel (Feld "demo:true"), das
+     automatisch wegfällt, sobald ein echtes "demnächst"-Angebot vorliegt. */
+
+function getRelevantNotifications(){
+  const notifications = [];
+
+  favorites.forEach(pid=>{
+    const activeDeals = deals.filter(d=>d.productId===pid && daysUntil(d.validUntil)>=0);
+    if(activeDeals.length===0) return;
+    const best = activeDeals.reduce((a,b)=> a.offerPrice<=b.offerPrice ? a : b);
+    notifications.push({
+      id: `active-${best.id}`,
+      icon: "i-tag",
+      cls: "green",
+      text: `${best.product} ist aktuell bei ${best.store} für ${euro(best.offerPrice)} € im Angebot.`
+    });
+  });
+
+  let hasUpcoming = false;
+  favorites.forEach(pid=>{
+    const upcoming = deals
+      .filter(d=>d.productId===pid && daysUntil(d.validFrom) > 0)
+      .sort((a,b)=>daysUntil(a.validFrom)-daysUntil(b.validFrom))[0];
+    if(!upcoming) return;
+    hasUpcoming = true;
+    notifications.push({
+      id: `upcoming-${upcoming.id}`,
+      icon: "i-hourglass",
+      cls: "gold",
+      text: `${upcoming.product} wird ab ${formatDateRange(upcoming.validFrom, upcoming.validUntil).split(" – ")[0]} bei ${upcoming.store} im Angebot sein.`
+    });
+  });
+
+  if(!hasUpcoming){
+    const demoProduct = products.find(p=>favorites.has(p.id));
+    if(demoProduct){
+      notifications.push({
+        id: `upcoming-demo-${demoProduct.id}`,
+        icon: "i-hourglass",
+        cls: "gold",
+        text: `${demoProduct.name} wird demnächst irgendwo im Angebot sein.`,
+        demo: true
+      });
+    }
+  }
+
+  return notifications;
+}
+
+const NEWS_READ_KEY = "canspot-news-read";
+function loadReadNewsIds(){
+  try{ return new Set(JSON.parse(localStorage.getItem(NEWS_READ_KEY) || "[]")); }
+  catch(e){ return new Set(); }
+}
+function saveReadNewsIds(ids){
+  localStorage.setItem(NEWS_READ_KEY, JSON.stringify([...ids]));
+}
+
+function updateNotifDot(){
+  const notifDot = document.getElementById("notifDot");
+  const readIds = loadReadNewsIds();
+  const hasUnread = getRelevantNotifications().some(n=>!readIds.has(n.id));
+  notifDot.style.display = hasUnread ? "block" : "none";
+}
+
+function renderNewsList(){
+  const notifications = getRelevantNotifications();
+  const list = document.getElementById("newsList");
+  if(notifications.length===0){
+    list.innerHTML = `<div class="fav-empty">Noch keine Neuigkeiten zu deinen Favoriten.</div>`;
+    return;
+  }
+  list.innerHTML = notifications.map(n=>`
+    <div class="event-row">
+      <svg class="icon icon-sm info-badge ${n.cls}" style="padding:6px;border-radius:8px"><use href="#${n.icon}"/></svg>
+      <span>${n.text}${n.demo ? ' <span style="color:var(--text-disabled);font-weight:600">(Beispiel)</span>' : ""}</span>
+    </div>
+  `).join("");
+}
+
+function openNewsSheet(){
+  renderNewsList();
+  saveReadNewsIds(new Set(getRelevantNotifications().map(n=>n.id)));
+  updateNotifDot();
+  openSheet("newsOverlay");
+}
+
 /* ---------------- NOTIFICATIONS SHEET ---------------- */
 
 function renderFavList(){
   const favList = document.getElementById("favList");
-  const notifDot = document.getElementById("notifDot");
   const favProducts = products.filter(p=>favorites.has(p.id));
 
-  notifDot.style.display = favProducts.length ? "block" : "none";
+  updateNotifDot();
 
   if(favProducts.length===0){
     favList.innerHTML = `<div class="fav-empty">Noch keine Favoriten. Tippe <svg class="icon icon-xs"><use href="#i-heart"/></svg> bei einem Angebot.</div>`;

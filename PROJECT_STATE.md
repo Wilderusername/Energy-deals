@@ -4,6 +4,31 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-02 — Header-Banner (Logo/Slogan/Standort) und Glocke → Neuigkeiten-Bereich
+
+**Umgesetzt:**
+- **Banner**: `.brand svg` (CanSpot-Logo) von `height:22px` auf `36px` vergrößert; `.headline` ("Dein Energy. Dein bester Preis.") von `var(--fs-display)` (26px) auf `20px` verkleinert (lokal auf der Regel überschrieben, die geteilte CSS-Variable `--fs-display` bleibt unangetastet, da sie sonst nirgends verwendet wird). Logo jetzt eindeutig größer/prominenter als der Slogan-Text, passt weiterhin sauber in die bestehende `.top`-Zeile (Höhe dort ohnehin von den 38px hohen Icon-Buttons vorgegeben).
+- **Standort-Pill im Banner entfernt**: `#locBtn` (die "59821 · 10 km"-Pille neben Profil/Glocke) per `style="display:none"` ausgeblendet. Element, `#locLabel`-Kind-Span und der bestehende Klick-Handler (`openSheet("locOverlay")`) bleiben unverändert im DOM/JS erhalten, da `updateStatus()` weiterhin `locLabel.textContent` setzt (hätte sonst bei komplettem Entfernen des Elements einen Fehler geworfen). Die Standortanzeige/-bearbeitung bleibt über die `.status`-Zeile unterhalb des Banners ("Ändern"-Button, `#statusEdit`, ebenfalls unverändert) voll erreichbar.
+- **Glocke öffnet jetzt einen Neuigkeiten-Bereich** (`#newsOverlay`, neu, folgt dem bestehenden Sheet-Muster) statt direkt der Push-Einstellungen. Neue Funktionen (bei `renderFavList()`/den Notifications-Funktionen einsortiert): `getRelevantNotifications()` berechnet für jeden Favoriten (a) ein "ist aktuell bei X für Y € im Angebot"-Hinweis aus echten Daten (`favorites` × `deals`, kein Mock nötig) und (b) prüft bereits echt auf zukünftig startende Angebote (`validFrom` in der Zukunft) — liefert damit aktuell nichts, da `deals.json` keine solchen Einträge enthält, ergänzt deshalb genau **ein** klar mit `demo:true` markiertes Platzhalter-Beispiel ("… wird demnächst irgendwo im Angebot sein.", in der UI mit "(Beispiel)"-Hinweis), das automatisch entfällt, sobald echte "demnächst"-Angebotsdaten vorhanden sind. `renderNewsList()` rendert die Liste (reine Wiederverwendung bestehender `.event-row`/`.info-badge`-Stile, keine neue CSS nötig). `openNewsSheet()` rendert, markiert alle aktuell gezeigten Benachrichtigungs-IDs als gelesen (neuer, eigener localStorage-Key `canspot-news-read`, unabhängig von den bestehenden `canspot-notif-*`-Push-Einstellungs-Keys) und öffnet das Sheet.
+- **Punkt an der Glocke** (`#notifDot`) neu verdrahtet: `updateNotifDot()` zeigt ihn nur, wenn `getRelevantNotifications()` mindestens eine ID liefert, die noch nicht im `canspot-news-read`-Set steht; verschwindet beim Öffnen des Neuigkeiten-Sheets. Vorher war die Sichtbarkeit einfach an "hat der Nutzer überhaupt Favoriten" gekoppelt (in `renderFavList()`) — diese eine Zeile wurde durch den Aufruf von `updateNotifDot()` ersetzt, der Rest von `renderFavList()` (Rendering von „Deine Favoriten" innerhalb der Push-Einstellungen) ist unverändert.
+- Push-Benachrichtigungseinstellungen (`#notifOverlay`, alle Switches, `#profileNotifRow` in Profil) **vollständig unverändert** und weiterhin erreichbar — nur der direkte Klick-Pfad von der Glocke wurde umgehängt.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v7` erhöht (Pflichtregel, da `index.html` geändert wurde).
+- Verifiziert über einen temporären lokalen Server (mobiler Viewport): Logo (36px) sichtbar größer als Slogan (20px); Standort-Pille im Banner weg, `.status`-Zeile mit „Ändern" funktioniert weiterhin; Glocke öffnet Neuigkeiten-Sheet (nicht mehr Push-Einstellungen); Push-Einstellungen weiterhin über Profil erreichbar; Punkt erscheint bei ungelesenen Neuigkeiten und verschwindet nach dem Öffnen; Alarme-Tab (`renderAlertsView`/`computeFavoriteEvents`, eigener `navAlertsDot`) unverändert und funktionsfähig; keine Konsolenfehler.
+
+**Wichtige Entscheidungen:**
+- `computeFavoriteEvents()`/`renderAlertsView()` (bestehende "Alarme"-Tab-Logik) bewusst **nicht** wiederverwendet oder verändert — konzeptionell ähnlich, aber ein separates bestehendes Feature; eine eigene, neue Funktion für die Glocke vermeidet jedes Regressionsrisiko dort.
+- Für "demnächst im Angebot" wurde die echte Erkennungslogik (zukünftiges `validFrom`) implementiert, nicht nur eine reine Mock-Liste — sobald `deals.json` einen entsprechenden Eintrag bekommt, greift automatisch der echte Zweig statt des Platzhalters, ohne Codeänderung.
+- `#locBtn` wurde ausgeblendet statt aus dem Markup entfernt, um `updateStatus()` (Standortlogik) exakt unangetastet zu lassen, wie vom Nutzer gefordert.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-02 — Preis-Eingabe: Punkt-Tastendruck jetzt schon vor Anzeige abgefangen
 
 **Umgesetzt:**
