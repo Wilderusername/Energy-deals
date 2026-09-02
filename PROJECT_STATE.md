@@ -4,6 +4,27 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-02 — Preis-Eingabe: Punkt-Tastendruck jetzt schon vor Anzeige abgefangen
+
+**Umgesetzt:**
+- Nutzer berichtete, dass beim Löschen und manuellen Neueintippen eines Preises weiterhin ein Punkt statt Komma erscheint, insbesondere beim Antippen der Dezimaltaste auf einer (virtuellen) Zahlentastatur — trotz des vorherigen Fixes (`type="text"`, `sanitizePriceInputValue()` im `input`-Handler). Vermutete Ursache: Der bisherige Fix korrigierte den Punkt erst *nachdem* er im Feld sichtbar geworden war (reaktiv im `input`-Event); auf manchen Geräten/Tastaturen (v. a. virtuelle Zahlentastatur mit `inputmode="decimal"`, die spec-bedingt oft grundsätzlich einen Punkt statt Komma liefert) kann das kurz aufblitzen oder durch Eigenheiten der jeweiligen Tastatur-Implementierung nicht zuverlässig greifen.
+- Härtung in `attachGermanPriceInput()` (`index.html`, direkt bei `euro()`): neuer `beforeinput`-Listener fängt ein getipptes „.“ bereits *vor* dem eigentlichen Einfügen ab (`e.preventDefault()`), fügt stattdessen direkt ein „,“ an der Cursorposition ein (nur falls noch kein Komma im Feld steht) und stößt danach synthetisch das bestehende `input`-Event an. Der bisherige `input`-Sanitizer bleibt als zweites Sicherheitsnetz bestehen (für Einfügen/Autofill/Browser ohne `beforeinput`-Unterstützung).
+- Per direkt dispatchten `beforeinput`-/`InputEvent`s (Chromiums `execCommand`-Testpfad feuert kein `beforeinput`, echte Tastatur-/Tap-Eingaben in echten Browsern aber schon) für beide betroffenen Felder (`#alertPriceInput`, `[data-quick-alert-input]`) verifiziert: ein getipptes „.“ wird abgefangen (`preventDefault` greift, `dispatchEvent`-Rückgabewert `false`) und durch „,“ ersetzt, Cursor korrekt danach positioniert.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v6` erhöht (neue Pflichtregel aus CLAUDE.md), da `index.html` erneut geändert wurde.
+
+**Wichtige Entscheidungen:**
+- Zusätzliche `beforeinput`-Absicherung bewusst *ergänzend*, nicht ersetzend zum bestehenden `input`-Sanitizer eingebaut — deckt so sowohl das direkte Tippen/Antippen als auch Einfügen/Autofill/ältere Browser ab, ohne bestehende Logik zu entfernen.
+- Der exakte, vom Nutzer beschriebene Fehlerfall ließ sich mit den in dieser Umgebung verfügbaren Test-Simulationsmethoden (`execCommand insertText` Zeichen für Zeichen) nicht reproduzieren — beide Ebenen wurden daher separat durch direkt konstruierte `beforeinput`-Events verifiziert, statt blind weitere Änderungen zu raten. Falls der Fehler nach diesem Fix weiterhin auftritt, sind Gerät/Browser sowie ob physische oder virtuelle Tastatur benutzt wurde, für die weitere Diagnose hilfreich.
+
+**Offen:**
+- Rückmeldung des Nutzers abwarten, ob das Problem nach diesem Fix behoben ist; falls nicht, genaue Geräte-/Browser-Angabe erbitten.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler in den automatisierten Tests dieser Session.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-02 — Preis-Eingabefelder auf deutsches Komma-Format umgestellt
 
 **Umgesetzt:**

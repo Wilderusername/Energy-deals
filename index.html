@@ -2917,6 +2917,26 @@ function sanitizePriceInputValue(raw){
 function attachGermanPriceInput(inputEl){
   if(!inputEl || inputEl.dataset.germanPriceBound) return;
   inputEl.dataset.germanPriceBound = "1";
+  /* beforeinput: fängt einen getippten Punkt ab, BEVOR er überhaupt im Feld
+     erscheint (u. a. die Dezimaltaste virtueller Zahlentastaturen liefert
+     meist einen Punkt) und fügt stattdessen direkt ein Komma ein — so blitzt
+     nie kurz ein Punkt auf. Die "input"-Sanitisierung darunter bleibt als
+     zweites Sicherheitsnetz für Einfügen/Autofill/Browser ohne beforeinput. */
+  inputEl.addEventListener("beforeinput", (e)=>{
+    if(e.data !== "."){
+      return;
+    }
+    e.preventDefault();
+    const start = inputEl.selectionStart, end = inputEl.selectionEnd;
+    const before = inputEl.value.slice(0, start);
+    const after = inputEl.value.slice(end);
+    if(before.includes(",") || after.includes(",")){
+      return;
+    }
+    inputEl.value = before + "," + after;
+    inputEl.setSelectionRange(start+1, start+1);
+    inputEl.dispatchEvent(new Event("input", {bubbles:true}));
+  });
   inputEl.addEventListener("input", ()=>{
     const sanitized = sanitizePriceInputValue(inputEl.value);
     if(sanitized !== inputEl.value) inputEl.value = sanitized;
