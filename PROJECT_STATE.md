@@ -4,6 +4,28 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-02 — Favoriten-Herz: sichtbarer Kasten entfernt, freistehendes Icon
+
+**Umgesetzt:**
+- `.btn.fav` (Herz-Button auf Angebotskarten `[data-fav]` sowie `#detailFavBtn` im Preisverlauf-Sheet) neu gestylt: `background:none; border:none; padding:0` entfernt den bisherigen sichtbaren Kasten (inkl. des roten Kastens im favorisierten Zustand, vorher `.btn.fav.active{background:var(--status-error-bg);border-color:...}`). Button bleibt `width:44px;height:44px;flex-shrink:0` groß als **unsichtbarer** Klickbereich (44×44 CSS-Px, wie gefordert), das Herz-Icon selbst wurde über `.btn.fav .icon{width:24px;height:24px}` von 16px auf 24px vergrößert (Richtwert 22–26px).
+- Farbe bewusst über bestehende, bereits theme-abhängige Design-Tokens gelöst statt neuer Werte: nicht favorisiert nutzt weiterhin `color:var(--text-primary)` (Light: `#1b213f` dunkles Navy, Dark: `#f2f3f6` Off-White — automatisch korrekt je Theme, keine Änderung nötig, war bereits so vererbt). Favorisiert nutzt `color:var(--status-error-text)` (Light: `#ae352d`, Dark: `#de8e89` — dieselben Rot-Töne, die im Rest der App bereits für Fehler-/Favoriten-Kontexte verwendet werden, z. B. das statische Herz in der Favoritenliste). Icon-Fill-Umschaltung (Outline ↔ ausgefüllt) war bereits vorhanden (`.btn.fav.active .icon{fill:currentColor;stroke:none}`) und wurde unverändert beibehalten.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v9` erhöht (Pflichtregel, da `index.html` geändert wurde).
+- Verifiziert über einen temporären lokalen Server in Light- UND Dark-Mode (via `localStorage["canspot-theme"]`): kein sichtbarer Kasten/Hintergrund/Rahmen in beiden Zuständen und beiden Themes; nicht favorisiert = dunkles Outline-Herz (Light) bzw. helles Outline-Herz (Dark); favorisiert = rotes ausgefülltes Herz in beiden Themes; Klickbereich exakt 44×44px gemessen (`getBoundingClientRect`); Favorisieren/Entfavorisieren per Klick funktioniert weiterhin unverändert (getestet über `[data-fav]` und `#detailFavBtn`); andere Buttons (`#detailShareBtn`, `.btn.primary`) unverändert mit sichtbarem Kasten; keine Konsolenfehler.
+
+**Wichtige Entscheidungen:**
+- Keine neuen Farbwerte eingeführt — ausschließlich bereits vorhandene, längst theme-adaptive Tokens (`--text-primary`, `--status-error-text`) wiederverwendet, die im Rest der App schon für exakt diese Bedeutung (Haupttext bzw. Favoriten-/Fehlerrot) stehen. Das erfüllt "orientiere dich am bestehenden Design" ohne jede Farb-Neuerfindung.
+- `flex-shrink:0` beim ersten Testlauf ergänzt, weil der Button in der Karten-Actions-Zeile (`display:flex`) sonst unter 44px zusammengedrückt wurde — notwendige Korrektur, um den geforderten 44×44px-Klickbereich zuverlässig einzuhalten.
+- Die statische, nicht klickbare Herz-Deko in der Favoritenliste (`favRowHtml`, immer rot gefüllt, kein `.btn`) bewusst nicht angefasst — sie hatte nie einen Kasten und ist kein Favoriten-Button im Sinne der Aufgabe.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-02 — Logo im Banner nochmals vergrößert, „Alarme"-Hinweise als Karten
 
 **Umgesetzt:**
