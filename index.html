@@ -395,38 +395,45 @@ color:#fff
 .controls{
 display:flex;
 align-items:center;
-gap:6px;
-padding:8px 18px 4px;
-font-size:12.5px;
-color:var(--text-muted);
+justify-content:space-between;
+gap:8px;
+padding:6px 18px 3px;
 flex-wrap:wrap
 }
 
 .toolbar-count{
-font-weight:700;
+font-size:14.5px;
+font-weight:600;
 color:var(--text-secondary);
 white-space:nowrap
 }
 
-.toolbar-dot{color:var(--text-disabled)}
+.toolbar-actions{
+display:flex;
+align-items:center;
+gap:6px;
+flex-shrink:0
+}
 
 .filter-btn{
 flex:0 0 auto;
-border:0;
-background:none;
+border:1px solid var(--border-subtle);
+background:var(--bg-surface);
 color:var(--text-secondary);
-width:30px;
-height:30px;
-padding:0;
-font-size:16px;
+border-radius:var(--radius-pill);
+padding:6px 10px;
+font-size:12.5px;
+font-weight:700;
 cursor:pointer;
 position:relative;
 display:flex;
 align-items:center;
-justify-content:center;
-transition:color .15s
+gap:4px;
+white-space:nowrap;
+font-family:inherit;
+transition:border-color .15s,color .15s
 }
-.filter-btn:hover{color:var(--brand-primary-blue)}
+.filter-btn:hover{border-color:var(--border-default);color:var(--brand-primary-blue)}
 
 select{
 flex:1;
@@ -443,7 +450,7 @@ padding:8px 18px 100px
 }
 
 .status{
-margin:6px 0;
+margin:4px 0;
 padding:2px 2px;
 font-size:12px;
 color:var(--text-muted);
@@ -601,6 +608,8 @@ object-fit:cover;
 padding:0
 }
 
+:root[data-theme="dark"] .thumb{background:#12151C}
+
 .price{
 font-size:25px;
 font-weight:900;
@@ -661,8 +670,7 @@ color:#ef4444
 .btn.fav.active:hover{background:none}
 .btn.fav.active .icon{
 fill:currentColor;
-stroke:none;
-filter:drop-shadow(0 0 4px rgba(239,68,68,.6))
+stroke:none
 }
 
 @keyframes fav-pop{
@@ -888,10 +896,11 @@ transition:background .15s,border-color .15s
 .sort-btn{
 display:flex;
 align-items:center;
-gap:3px;
-border:0;
-background:none;
-padding:2px 0;
+gap:4px;
+border:1px solid var(--border-subtle);
+background:var(--bg-surface);
+border-radius:var(--radius-pill);
+padding:6px 10px;
 font-size:12.5px;
 font-weight:700;
 color:var(--text-primary);
@@ -899,9 +908,9 @@ cursor:pointer;
 font-family:inherit;
 min-width:0;
 max-width:100%;
-transition:color .15s
+transition:border-color .15s,color .15s
 }
-.sort-btn:hover{color:var(--brand-primary-blue)}
+.sort-btn:hover{border-color:var(--border-default);color:var(--brand-primary-blue)}
 .sort-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 .sort-row{
@@ -1151,6 +1160,8 @@ flex-shrink:0
 .fav-row .fav-txt b{display:block;font-size:13px;color:var(--text-primary)}
 .fav-row .fav-txt span{font-size:11px;color:var(--text-muted)}
 
+:root[data-theme="dark"] .fav-row .fav-emoji{background:#12151C}
+
 .fav-empty{
 font-size:12px;
 color:var(--text-disabled);
@@ -1375,14 +1386,14 @@ text-align:center
 .view-toggle{
 display:flex;
 gap:8px;
-margin:2px 0 4px
+margin:2px 0 3px
 }
 .view-btn{
 flex:1;
 border:1px solid var(--border-subtle);
 background:var(--bg-surface);
 color:var(--text-muted);
-padding:7px;
+padding:6px;
 border-radius:var(--radius-md);
 font-size:12.5px;
 font-weight:700;
@@ -1718,6 +1729,8 @@ align-items:center;
 justify-content:center;
 margin-top:4px
 }
+
+:root[data-theme="dark"] .detail-hero{background:#12151C}
 .detail-img{
 width:140px;
 height:140px;
@@ -2254,16 +2267,18 @@ Aktuelle Energy-Drink-Angebote in deiner Nähe
 </select>
 
 <span class="toolbar-count"><span id="count">0</span> Angebote</span>
-<span class="toolbar-dot">·</span>
 
+<div class="toolbar-actions">
 <button class="sort-btn" id="sortBtn">
 <span id="sortBtnLabel">Günstigster Preis</span>
 <svg class="icon icon-xs"><use href="#i-chevron-down"/></svg>
 </button>
-
-<span class="toolbar-dot">·</span>
-
-<button class="filter-btn" id="filterBtn" aria-label="Weitere Filter"><svg class="icon icon-sm"><use href="#i-filter"/></svg><span class="count-badge" id="filterCount">0</span></button>
+<button class="filter-btn" id="filterBtn" aria-label="Weitere Filter">
+Filter
+<svg class="icon icon-sm"><use href="#i-filter"/></svg>
+<span class="count-badge" id="filterCount">0</span>
+</button>
+</div>
 </div>
 
 <main>
@@ -2472,12 +2487,12 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 <div class="field-label" style="margin-top:20px">Händler</div>
 <div class="filter-chip-row">
 <button class="chip on" data-store="Alle">Alle</button>
+<button class="chip" data-store="EDEKA">EDEKA</button>
 <button class="chip" data-store="Kaufland">Kaufland</button>
 <button class="chip" data-store="Lidl">Lidl</button>
-<button class="chip" data-store="EDEKA">EDEKA</button>
+<button class="chip" data-store="Netto">Netto</button>
 <button class="chip" data-store="Penny">Penny</button>
 <button class="chip" data-store="REWE">REWE</button>
-<button class="chip" data-store="Netto">Netto</button>
 </div>
 
 <div class="field-label" style="margin-top:20px">Verpackung</div>
@@ -4128,16 +4143,15 @@ function initSwipeToClose(overlayId){
 initSwipeToClose("histOverlay");
 initSwipeToClose("productDetailOverlay");
 
-/* Zusätzlich zum Pfeil und der Wischgeste: Tippen auf den Handle-Balken
-   oben mittig schließt ebenfalls. Bewusst nur für diese beiden Sheets
-   (Detail-/Preisverlauf-Fenster) verdrahtet, nicht global für alle
-   Overlays mit .handle. */
+/* Zusätzlich zu Pfeil/X und (bei Detail-/Preisverlauf-Fenster) der
+   Wischgeste: Tippen auf den Handle-Balken oben mittig schließt das Sheet —
+   einheitlich für alle Overlays mit .handle, ohne deren sonstige Funktionen
+   (Formulare, Toggles, Buttons etc.) zu verändern. */
 function initHandleTapToClose(overlayId){
   const handle = document.querySelector(`#${overlayId} .handle`);
   if(handle) handle.addEventListener("click", ()=>closeSheet(overlayId));
 }
-initHandleTapToClose("histOverlay");
-initHandleTapToClose("productDetailOverlay");
+["locOverlay","notifOverlay","newsOverlay","filterOverlay","sortOverlay","profileOverlay","histOverlay","productDetailOverlay","storeDetailOverlay"].forEach(initHandleTapToClose);
 
 document.getElementById("locBtn").addEventListener("click",()=>openSheet("locOverlay"));
 document.getElementById("statusEdit").addEventListener("click",()=>openSheet("locOverlay"));

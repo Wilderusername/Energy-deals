@@ -4,6 +4,97 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-02 — Produktbild-Hintergrund im Dark Mode auf #12151C
+
+**Umgesetzt:**
+- Alle drei Stellen, an denen ein Produktbild in einem eigenen Hintergrund-Container sitzt, nutzten bisher `background:var(--bg-surface-sunken)` (Dark-Mode-Wert `#080a0d`, wirkt nahezu schwarz): `.thumb` (Produktbild in Angebotskarten, Alarm-/Neuigkeiten-Karten, Favoriten-Zeilen — überall dieselbe Klasse), `.detail-hero` (großes Produktbild im Preisverlauf- und Produktdetail-Sheet) und `.fav-row .fav-emoji` (Produktbild in den Favoritenlisten von Profil und Push-Einstellungen).
+- `--bg-surface-sunken` selbst bewusst **nicht** angefasst, da diese Variable an 27 weiteren, produktbild-fremden Stellen verwendet wird (u. a. Status-Boxen, Chart-Hintergrund, Store-Detail-Logo) — eine Änderung dort hätte weit über die Produktbilder hinausgewirkt. Stattdessen drei gezielte, auf Dark Mode beschränkte Zusatzregeln ergänzt: `:root[data-theme="dark"] .thumb`, `:root[data-theme="dark"] .detail-hero`, `:root[data-theme="dark"] .fav-row .fav-emoji`, jeweils direkt `background:#12151C`. Light Mode (`:root` ohne `data-theme="dark"`) bleibt dadurch unverändert bei `var(--n100)`.
+- Store-/Händler-Logos (`.store-logo`, `.store-row-logo`, `.store-detail-logo`, Kartenpins) bewusst nicht verändert — der Nutzer bezog sich ausdrücklich auf Produktbilder, nicht auf Händlerlogos.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v17` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server: Im Dark Mode zeigen `.thumb` (Kartenliste), `.detail-hero` (Preisverlauf-Sheet) und `.fav-emoji` (Profil-Favoritenliste) übereinstimmend `rgb(18, 21, 28)` (= `#12151C`); im Light Mode unverändert `rgb(239, 239, 242)` (alter Wert); keine Konsolenfehler.
+
+**Wichtige Entscheidungen:**
+- Drei einzelne, eng zielgerichtete Selektor-Overrides statt einer Änderung an der gemeinsamen Variable — minimiert das Risiko, versehentlich andere (nicht produktbildbezogene) UI-Bereiche im Dark Mode mitzufärben.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
+## 2026-09-02 — Handle-Tap überall, Herz-Glow entfernt, Händler A–Z, zwei Rockstar-Bilder ersetzt
+
+**Umgesetzt:**
+- **Handle-Tap zum Schließen jetzt einheitlich für alle Sheets**: `initHandleTapToClose()` (bisher nur für `histOverlay`/`productDetailOverlay`) wird jetzt für alle neun Overlays mit `.handle` aufgerufen: `locOverlay`, `notifOverlay`, `newsOverlay`, `filterOverlay`, `sortOverlay`, `profileOverlay`, `histOverlay`, `productDetailOverlay`, `storeDetailOverlay`. Tippen auf den Balken ruft überall dasselbe, bereits bestehende `closeSheet(id)` auf — keine sonstige Funktion innerhalb dieser Sheets (Formulare, Toggles, Sub-Buttons) wurde angefasst. Wischgeste bleibt bewusst weiterhin nur bei den beiden Detail-Sheets (war nicht Teil dieser Anfrage).
+- **"Schein" am favorisierten Herz entfernt**: `filter:drop-shadow(...)`-Zeile aus `.btn.fav.active .icon` gestrichen. Die Pop-Animation (`@keyframes fav-pop`, `triggerFavPop()`) ist komplett unverändert und funktioniert weiterhin identisch — nur der Leucht-/Glow-Effekt um das gefüllte Herz ist weg, Farbe (kräftiges Rot) bleibt.
+- **Händler-Filterchips alphabetisch sortiert**: "Alle" bleibt als erste (Sonder-)Option, danach EDEKA, Kaufland, Lidl, Netto, Penny, REWE (vorher: Kaufland, Lidl, EDEKA, Penny, REWE, Netto). Reine Markup-Reihenfolge geändert, keine Logik.
+- **Rockstar Energy Original – neues Bild**: Altes Bild (`rockstarenergy.com`-CDN) war bereits in der Originaldatei so beschnitten, dass der Schriftzug links/rechts abgeschnitten war (verifiziert auch in der unverkleinerten Originalauflösung). `rockstarenergy.de` (offizielle DACH-Seite) ist durch Bot-Schutz (Incapsula) nicht abrufbar. Stattdessen ein aktuelles, professionelles "Packshot"-Bild der 500-ml-Dose von der offiziellen UK-Website (`rockstarenergy.co.uk`, gleiche 500-ml-EU-Dosenform wie in Deutschland verkauft) verwendet: `rockstar_packshot_500ml_Front_Original_NoRTB_157x420px.png`.
+- **Rockstar Punched Guava → "Rockstar Energy Punched Guava" + neues Bild**: Name in `deals.json` angepasst. Bisheriges Bild (openfoodfacts.org, Nutzer-Foto) durch dasselbe professionelle Packshot-Format von `rockstarenergy.co.uk` ersetzt (`rockstar_packshot_500ml_Front_TropicalGuava_NoRTB_157x420px.png`) — das aktuelle Verpackungsdesign dieser Guave-Sorte trägt dort die Aufschrift "Tropical Guava" statt "Punched" (bereits auf dem alten, ersetzten Foto so beschriftet — keine neue Diskrepanz, nur bessere Bildqualität). "Punched" existiert bei Rockstar aktuell nur noch als eigene US-Produktlinie mit anderen Sorten (u. a. Lime Freeze), nicht mehr als Guave-Geschmack.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v16` erhöht (Pflichtregel, `index.html` und `deals.json` geändert).
+- Verifiziert über einen temporären lokalen Server: alle 9 Overlays schließen per Handle-Tap zuverlässig (systematisch durchgetestet); Herz-Glow weg (`filter: none`), Pop-Animation weiterhin aktiv; Händler-Chips in korrekter A–Z-Reihenfolge; beide neuen Rockstar-Bilder laden erfolgreich (200, korrekte Maße 157×420) und werden in Karte, Produktdetail sowie "Ähnliche Produkte" korrekt und scharf angezeigt; neuer Produktname überall (Karte, Produktdetail-Titel, ähnliche Produkte) konsistent; keine Konsolenfehler.
+
+**Wichtige Entscheidungen:**
+- Für beide Rockstar-Bilder bewusst die offizielle UK-Website statt eines Drittanbieters/Stockfoto-Portals gewählt, um im Rahmen der bestehenden "nur offizielle Hersteller-/Händler-Quellen"-Konvention zu bleiben und das vom Nutzer explizit genannte rechtliche Risiko zu vermeiden — UK statt DE, weil die offizielle DACH-Seite technisch (Bot-Schutz) nicht erreichbar war, das Dosenformat (500 ml, EU-Design) aber identisch zum deutschen Markt ist.
+- Wischgeste bewusst NICHT auf weitere Sheets ausgeweitet — die Anfrage bezog sich explizit nur auf den Handle-Tap ("so wie z. B. bei dem Preisverlauf" bezog sich erkennbar auf das Antippen, nicht auf das Wischen).
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
+## 2026-09-02 — Sortierung/Filter: zwei eigenständige Pills statt einer gemeinsamen Gruppe
+
+**Umgesetzt:**
+- Vorherige gemeinsame `.toolbar-group`-Pille (Sortierung + Trenner + reines Filter-Icon) durch zwei eigenständige, klar unterscheidbare Pills ersetzt: `#sortBtn` ("Günstigster Preis ⌄") und `#filterBtn` ("Filter" + Trichter-Icon + Zähler-Badge), beide mit dezentem Rahmen/Hintergrund im bestehenden `.chip`-Look (`var(--bg-surface)`, `var(--border-subtle)`, `radius-pill`), nebeneinander in `.toolbar-actions` rechts ausgerichtet (`justify-content:space-between` auf `.controls`, kein `margin-left:auto`-Hack mehr nötig). „Filter" zeigt jetzt erstmals ein Text-Label (vorher nur ein reines Icon ohne Beschriftung).
+- Trennpunkt „·" zwischen „50 Angebote" und den Pills entfernt — passend zur neuen links/rechts-Aufteilung ohne verbindendes Satzzeichen (Layout jetzt „50 Angebote“ ... „Günstigster Preis ⌄“ „Filter ⚱“, exakt wie vom Nutzer vorgegeben).
+- „50 Angebote" (`.toolbar-count`) von `12.5px/700` auf `14.5px/600` angepasst — laut Vorgabe "ca. 14–15px, gut lesbar aber dezent".
+- Aktive-Filter-Anzeige unverändert über das bereits bestehende `#filterCount`/`updateFilterCount()` gelöst (kein neuer Zählmechanismus nötig) — Badge sitzt jetzt oben rechts an der breiteren "Filter"-Pille statt am kleinen quadratischen Icon-Button.
+- Nicht mehr benötigte `.toolbar-group`/`.toolbar-divider`-Regeln entfernt (nur noch für diese eine, jetzt ersetzte Struktur verwendet).
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v15` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server auf 320px, Desktop und mit aktiven Filtern: beide Pills öffnen weiterhin ihr jeweiliges bestehendes Sheet (Sortierung/Filter unverändert); Filter-Badge zeigt korrekt "2" bei zwei aktiven Filtern (Pfand-frei + Volumen) und verschwindet nach Zurücksetzen; Trefferzahl links aktualisiert sich dynamisch (0 bei den Testfiltern, 50 nach Reset); bei sehr langem Sortier-Label bricht die Zeile auf 320px sauber um (Count auf eigener Zeile, Pills darunter zusammen), nichts abgeschnitten/überlappend; keine Konsolenfehler.
+
+**Wichtige Entscheidungen:**
+- Für die Anzeige aktiver Filter bewusst beim bereits vorhandenen, funktionierenden Badge-Mechanismus geblieben (kleine Zahl oben rechts an der Pille) statt einer neuen "Filter · 2"-Text-Variante — beide waren laut Aufgabenstellung zulässig, die bestehende Lösung war Zero-Risk, da weder `updateFilterCount()` noch die Zählweise selbst angefasst werden mussten.
+- Beide Pills bewusst optisch identisch behandelt (gleicher Rahmen/Hintergrund/Radius/Padding) für ein einheitliches, ruhiges Erscheinungsbild, wie es der Nutzer als "modernes Shopping-App-Gefühl" beschrieben hat.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
+## 2026-09-02 — Feintuning: Sortierung/Filter als eine Gruppe, engere Abstände
+
+**Umgesetzt:**
+- **Sortierung + Filter visuell zusammengefasst**: Neuer `.toolbar-group`-Container (dezente `--bg-surface-sunken`-Füllung, `radius-pill`, dünner 1px-Rahmen) umschließt jetzt `#sortBtn` und `#filterBtn` gemeinsam, mit `margin-left:auto` an den rechten Rand der Toolbar-Zeile gerückt; ein schmaler `.toolbar-divider` (1px-Linie) trennt Sortierlabel und Filter-Icon innerhalb der Gruppe optisch dezent voneinander. Das Filter-Icon "schwebt" dadurch nicht mehr allein am Rand, sondern wirkt als Teil einer einzigen kleinen Steuerungseinheit. `#filterBtn` dabei von 30px auf 34px Klick-/Touch-Fläche leicht vergrößert (weiterhin unsichtbarer Hintergrund/kein Rahmen am Button selbst — nur die gemeinsame Gruppe hat die dezente Füllung). „50 Angebote" bleibt links außerhalb der Gruppe, durch „·" getrennt, gut lesbar.
+- **Vertikale Abstände reduziert**: `.controls`-Padding von `8px…4px` auf `6px…3px`, `.status`-Außenabstand von `6px 0` auf `4px 0`, `.view-toggle`-Abstand von `2px 0 4px` auf `2px 0 3px` — die vier Bereiche (Marken-Tabs, Toolbar, Standort, Liste/Karte) rücken dadurch dezent näher zusammen, bleiben aber klar als eigene Zeilen erkennbar.
+- **Liste/Karte ~14 % kompakter**: `.view-btn`-Padding von `7px` auf `6px` reduziert (Ausgangswert vor der vorherigen Änderung war `10px` — Nutzer bezog sich in dieser Runde auf eine weitere leichte Reduktion des bereits kompakteren Zwischenstands). Aktiver blauer Zustand, Farben und Funktion unverändert.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v14` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server auf 320px, 375px und Desktop-Breite: Gruppierung wirkt visuell zusammenhängend, kein "loses" Filter-Icon mehr; bei sehr langem Sortier-Label ("Günstigster €/Liter") bricht auf 320px nur die Gruppe sauber in eine zweite Zeile um (kein Abschneiden/Überlappen); Sortier- und Filter-Sheet öffnen weiterhin korrekt, Filter-Badge erscheint weiterhin korrekt in der Gruppe; erste Produktkarte erscheint noch etwas früher im Viewport als zuvor; keine Konsolenfehler.
+
+**Wichtige Entscheidungen:**
+- Bewusst nur eine KLEINE, eng am Inhalt anliegende Pille um Sortierung+Filter gelegt (kein flächiger Kasten über die ganze Zeile) — erfüllt den expliziten Wunsch nach visueller Gruppierung, ohne zur ursprünglichen großen Filter-Zeile zurückzukehren.
+- Alle Struktur-/Funktionsentscheidungen aus der vorherigen Kompaktierungs-Runde (Container-Klasse `.controls` unverändert für `showDealsView()`/`showAlertsView()`, `#count`-Span dauerhaft in der Toolbar, PLZ-Kürzung in `updateStatus()`) unangetastet gelassen — diese Runde war ausschließlich Spacing/Gruppierung, keine erneute Strukturänderung.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-02 — Bereich über den Produktkarten kompaktiert (Toolbar, Standort, Liste/Karte)
 
 **Umgesetzt:**
