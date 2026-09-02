@@ -4,6 +4,29 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-02 — Logo im Banner nochmals vergrößert, „Alarme"-Hinweise als Karten
+
+**Umgesetzt:**
+- **Banner**: `.brand svg` (Logo) von `36px` auf `50px` Höhe erhöht ("noch einmal deutlich größer"); `.headline`-Slogan von `20px` auf `17px` reduziert und der Abstand darüber (`margin-top`) von `18px` auf `24px` vergrößert, für klare Trennung/Hierarchie. Logo bleibt eindeutig das dominante Element, passt auf Mobile (375px) wie Desktop ohne Überlappung in die bestehende `.top`-Zeile (geprüft: Logo + Profil-/Glocken-Icons zusammen bleiben deutlich unter der verfügbaren Breite).
+- **„Alarme"-Bereich, Abschnitt „Hinweise für dich"**: Bisher eine einfache, einzeilige Text-/Icon-Liste (`.event-row`, 12,5px). Ersetzt durch kompakte Karten (`.news-card`, neue CSS-Klassen `.news-card*`) mit Produktbild, fett hervorgehobenem Produktnamen, Marke/Menge, groß hervorgehobenem Preis, Händler (+ Entfernung, falls vorhanden), farbigem Status-Badge oben ("Jetzt im Angebot" grün / "Demnächst im Angebot" gold / "Aktuell nicht verfügbar" grau — Farben reuse der bereits bestehenden `.info-badge`-Palette) sowie optionalen Zusatz-Badges ("Läuft {wann} ab", "{X} € unter Ø-Preis"). `computeFavoriteEvents()` liefert dafür jetzt EIN Status-Objekt pro Favorit statt bis zu drei loser Sätze — die zugrunde liegenden Regeln (läuft in ≤3 Tagen ab / >0,15 € günstiger als Ø / kein Angebot) sind unverändert, nur als Flags an das jeweilige Status-Objekt gehängt statt als eigene Zeilen. Neu (echt, nicht gemockt) ist die Erkennung eines "demnächst" startenden Angebots (`validFrom` in der Zukunft, analog zur Logik der Glocken-Neuigkeiten) — liefert mit den aktuellen Demo-Daten nichts, da `deals.json` keine zukünftig startenden Angebote enthält, kein Platzhalter ergänzt (Nutzer wollte explizit keine Dummy-Daten).
+- Bestehende Preisalarm-Karten (`.alert-card`, Zielpreis/Aktueller-Preis-Vergleich, Toggle, Löschen/Angebote-ansehen) sowie die Glocke/„Neuigkeiten"-Sheet (aus der vorherigen Änderung) **vollständig unangetastet** — beide nutzen andere, eigene Funktionen (`renderAlertsView`s zweiter Teil bzw. `getRelevantNotifications()`), die nicht verändert wurden.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v8` erhöht (Pflichtregel, da `index.html` geändert wurde).
+- Verifiziert über einen temporären lokalen Server (Mobile + Desktop): Logo sichtbar dominant, Slogan spürbar zurückhaltender, keine Überlappungen; Alarme-Karten mit echten Favoriten-Daten (Bild, Name, Preis, Händler, Entfernung, "unter Ø-Preis"-Badge) korrekt gerendert; alle drei Status-Varianten (aktuell/demnächst/nicht verfügbar) einzeln durchgetestet und sehen sauber aus, auch ohne Preis-/Store-Zeile bei "nicht verfügbar"; bestehende Preisalarm-Karten und Empty-State unverändert funktionsfähig; Glocke öffnet weiterhin unverändert das Neuigkeiten-Sheet; keine Konsolenfehler.
+
+**Wichtige Entscheidungen:**
+- Für die Produktbilder in den neuen Karten wurde bewusst die bestehende `.thumb`-Klasse wiederverwendet (statt einer neuen Bildklasse) — dadurch greift der bereits vorhandene Fehler-Fallback-Handler (`alertsView.querySelectorAll(".thumb")` → `FALLBACK_IMG`) automatisch mit, ohne zusätzlichen Code.
+- Kein Mock/Platzhalter für "demnächst im Angebot" im Alarme-Bereich ergänzt (anders als zuvor bewusst bei der Glocke) — Nutzer hat für diese Änderung explizit "keine Dummy-Daten, wenn keine benötigt werden" verlangt; die echte Erkennungslogik ist vorhanden und greift automatisch, sobald `deals.json` ein Angebot mit zukünftigem `validFrom` enthält.
+- `.alert-card` (Ziel-/Aktueller-Preis-Feature) bewusst nicht angefasst — war nicht der explizit kritisierte Teil ("einfache Textliste") und birgt bei Änderung unnötiges Regressionsrisiko für ein bereits gut funktionierendes Feature.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-02 — Header-Banner (Logo/Slogan/Standort) und Glocke → Neuigkeiten-Bereich
 
 **Umgesetzt:**

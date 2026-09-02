@@ -267,7 +267,7 @@ display:inline-flex;
 align-items:center
 }
 .brand svg{
-height:36px;
+height:50px;
 width:auto;
 display:block
 }
@@ -324,12 +324,12 @@ transition:background .15s ease
 .loc:hover{background:rgba(255,255,255,.16)}
 
 .headline{
-font-size:20px;
+font-size:17px;
 line-height:var(--lh-display);
 font-weight:var(--fw-display);
 letter-spacing:var(--ls-display);
 color:#fff;
-margin:18px 0 4px
+margin:24px 0 4px
 }
 
 .sub{
@@ -1560,6 +1560,90 @@ font-weight:600;
 color:var(--text-primary)
 }
 .event-row .icon{flex-shrink:0}
+
+/* ---------- ALARME: NEUIGKEITEN-KARTEN (statt einzeiliger Hinweise) ---------- */
+
+.news-card-list{
+display:flex;
+flex-direction:column;
+gap:10px;
+margin-bottom:4px
+}
+
+.news-card{
+background:var(--bg-surface-sunken);
+border:1px solid var(--border-subtle);
+border-radius:var(--radius-lg);
+padding:14px
+}
+
+.news-card-status{
+display:inline-flex;
+align-items:center;
+gap:5px;
+font-size:11px;
+font-weight:800;
+text-transform:uppercase;
+letter-spacing:.02em;
+padding:5px 9px;
+border-radius:var(--radius-pill);
+margin-bottom:10px
+}
+.news-card-status.green{background:var(--status-success-bg);color:var(--status-success-text)}
+.news-card-status.gold{background:var(--highlight-bg);color:var(--highlight-text)}
+.news-card-status.expired{background:var(--bg-surface-strong);color:var(--text-disabled)}
+
+.news-card-body{
+display:flex;
+align-items:center;
+gap:12px
+}
+
+.news-card-text{min-width:0}
+
+.news-card-name{
+font-size:16px;
+font-weight:800;
+color:var(--text-primary);
+line-height:1.25
+}
+
+.news-card-meta{
+font-size:12px;
+color:var(--text-muted);
+margin-top:2px
+}
+
+.news-card-price-row{
+display:flex;
+align-items:baseline;
+justify-content:space-between;
+gap:10px;
+margin-top:12px;
+padding-top:12px;
+border-top:1px solid var(--border-subtle)
+}
+
+.news-card-price{
+font-size:22px;
+font-weight:900;
+color:var(--text-primary);
+letter-spacing:-0.01em
+}
+
+.news-card-store{
+font-size:12.5px;
+font-weight:600;
+color:var(--text-secondary);
+text-align:right
+}
+
+.news-card-badges{
+display:flex;
+flex-wrap:wrap;
+gap:6px;
+margin-top:10px
+}
 
 .connection-banner{
 margin:12px 0 0;
@@ -3656,28 +3740,122 @@ function updateAlertsDot(){
   navAlertsDot.classList.toggle("show", hasActive);
 }
 
+/* computeFavoriteEvents(): gleiche zugrunde liegende Regeln wie zuvor
+   (läuft in <=3 Tagen ab / ist >0,15€ günstiger als der Ø-Preis / kein
+   Angebot vorhanden), nur jetzt zu EINEM Status-Objekt pro Favorit
+   gebündelt (statt bis zu drei losen Sätzen) und um eine "demnächst"-
+   Erkennung ergänzt (echtes validFrom in der Zukunft — liefert mit den
+   aktuellen Demo-Daten nichts, da keine zukünftig startenden Angebote
+   existieren, greift aber automatisch, sobald solche Daten vorhanden sind).
+   Notwendig, damit renderAlertsView() daraus die neuen Alarm-Karten mit
+   Bild/Name/Preis/Händler/Status bauen kann. */
 function computeFavoriteEvents(){
-  const events = [];
+  const items = [];
   favorites.forEach(pid=>{
     const product = products.find(p=>p.id===pid);
     if(!product) return;
-    const candidateDeals = deals.filter(d=>d.productId===pid);
-    if(candidateDeals.length===0){
-      events.push({icon:"i-x", cls:"expired", text:`${product.name} ist aktuell bei keinem Händler im Angebot.`});
+
+    const activeDeals = deals.filter(d=>d.productId===pid && daysUntil(d.validUntil)>=0);
+    if(activeDeals.length>0){
+      const best = activeDeals.reduce((a,b)=>a.offerPrice<b.offerPrice?a:b);
+      const daysLeft = daysUntil(best.validUntil);
+      const avg = best.history.reduce((a,b)=>a+b,0)/best.history.length;
+      items.push({
+        status: "active",
+        product,
+        deal: best,
+        expiringSoon: daysLeft<=3,
+        daysLeft,
+        goodPrice: (avg - best.offerPrice) > 0.15,
+        avgDiff: avg - best.offerPrice
+      });
       return;
     }
-    const best = candidateDeals.reduce((a,b)=>a.offerPrice<b.offerPrice?a:b);
-    const daysLeft = daysUntil(best.validUntil);
-    if(daysLeft>=0 && daysLeft<=3){
-      const when = daysLeft===0 ? "heute" : daysLeft===1 ? "morgen" : `in ${daysLeft} Tagen`;
-      events.push({icon:"i-hourglass", cls:"urgent", text:`${product.name} läuft ${when} ab.`});
+
+    const upcomingDeals = deals.filter(d=>d.productId===pid && daysUntil(d.validFrom)>0);
+    if(upcomingDeals.length>0){
+      const next = upcomingDeals.reduce((a,b)=> daysUntil(a.validFrom)<daysUntil(b.validFrom) ? a : b);
+      items.push({status:"upcoming", product, deal:next, daysUntilStart: daysUntil(next.validFrom)});
+      return;
     }
-    const avg = best.history.reduce((a,b)=>a+b,0)/best.history.length;
-    if(avg - best.offerPrice > 0.15){
-      events.push({icon:"i-tag", cls:"green", text:`${product.name} ist gerade ${euro(avg-best.offerPrice)} € günstiger als im Schnitt.`});
-    }
+
+    items.push({status:"unavailable", product, deal:null});
   });
-  return events.slice(0,4);
+  return items.slice(0,4);
+}
+
+/* newsCardHtml(): baut aus einem computeFavoriteEvents()-Eintrag eine
+   kompakte Alarm-Karte (Bild/Name/Preis/Händler/Status) statt der
+   vorherigen einzeiligen Text-Hinweise. Nutzt ausschließlich vorhandene
+   Felder aus deal/product — keine zusätzlichen Daten nötig. */
+function newsCardHtml(item){
+  const p = item.product;
+  const img = (item.deal ? item.deal.img : p.img) || p.img;
+
+  if(item.status==="unavailable"){
+    return `
+      <article class="news-card">
+        <div class="news-card-status expired"><svg class="icon icon-xs"><use href="#i-x"/></svg> Aktuell nicht verfügbar</div>
+        <div class="news-card-body">
+          <img class="thumb" src="${img}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer">
+          <div class="news-card-text">
+            <div class="news-card-name">${p.name}</div>
+            <div class="news-card-meta">${p.brand} · ${p.sizeMl} ml</div>
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
+  if(item.status==="upcoming"){
+    const d = item.deal;
+    const startParts = d.validFrom.split("-");
+    const startLabel = `${startParts[2]}.${startParts[1]}.`;
+    return `
+      <article class="news-card">
+        <div class="news-card-status gold"><svg class="icon icon-xs"><use href="#i-hourglass"/></svg> Demnächst im Angebot</div>
+        <div class="news-card-body">
+          <img class="thumb" src="${img}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer">
+          <div class="news-card-text">
+            <div class="news-card-name">${p.name}</div>
+            <div class="news-card-meta">${p.brand} · ${p.sizeMl} ml</div>
+          </div>
+        </div>
+        <div class="news-card-price-row">
+          <span class="news-card-price">${euro(d.offerPrice)} €</span>
+          <span class="news-card-store">ab ${startLabel} · ${d.store}${typeof d.distanceKm==="number" ? ` · ${d.distanceKm} km` : ""}</span>
+        </div>
+      </article>
+    `;
+  }
+
+  const d = item.deal;
+  const badges = [];
+  if(item.expiringSoon){
+    const when = item.daysLeft===0 ? "heute" : item.daysLeft===1 ? "morgen" : `in ${item.daysLeft} Tagen`;
+    badges.push(`<span class="info-badge urgent"><svg class="icon icon-xs"><use href="#i-hourglass"/></svg> Läuft ${when} ab</span>`);
+  }
+  if(item.goodPrice){
+    badges.push(`<span class="info-badge green"><svg class="icon icon-xs"><use href="#i-tag"/></svg> ${euro(item.avgDiff)} € unter Ø-Preis</span>`);
+  }
+
+  return `
+    <article class="news-card">
+      <div class="news-card-status green"><svg class="icon icon-xs"><use href="#i-tag"/></svg> Jetzt im Angebot</div>
+      <div class="news-card-body">
+        <img class="thumb" src="${img}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer">
+        <div class="news-card-text">
+          <div class="news-card-name">${p.name}</div>
+          <div class="news-card-meta">${p.brand} · ${p.sizeMl} ml</div>
+        </div>
+      </div>
+      <div class="news-card-price-row">
+        <span class="news-card-price">${euro(d.offerPrice)} €</span>
+        <span class="news-card-store">${d.store}${typeof d.distanceKm==="number" ? ` · ${d.distanceKm} km` : ""}</span>
+      </div>
+      ${badges.length ? `<div class="news-card-badges">${badges.join("")}</div>` : ""}
+    </article>
+  `;
 }
 
 function renderAlertsView(){
@@ -3693,9 +3871,7 @@ function renderAlertsView(){
   const events = computeFavoriteEvents();
   const eventsHtml = events.length===0 ? "" : `
     <div class="field-label">Hinweise für dich</div>
-    ${events.map(ev=>`
-      <div class="event-row"><svg class="icon icon-sm info-badge ${ev.cls}" style="padding:6px;border-radius:8px"><use href="#${ev.icon}"/></svg><span>${ev.text}</span></div>
-    `).join("")}
+    <div class="news-card-list">${events.map(newsCardHtml).join("")}</div>
   `;
 
   if(entries.length===0){
