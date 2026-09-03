@@ -4,6 +4,32 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-03 — Neuer Filter „Packungsgröße" (4er/6er/12er/24er-Multipacks), für Mobile und Webapp
+
+**Umgesetzt:**
+- **Neues Datenfeld `units`** in `deals.json`-Angeboten (Anzahl Dosen/Flaschen im Angebot; optional, Fallback `UNITS_FALLBACK = 1` in `index.html`, exakt nach dem bereits bestehenden Muster von `PFAND_FALLBACK`/`PACKAGING_FALLBACK`). Bei Mehrfachpackungen sind `regularPrice`/`offerPrice`/`pfand` in deals.json der **Gesamtpreis für die ganze Packung** (nicht pro Dose) — `_meta.fields.offers[]` entsprechend dokumentiert.
+- **10 neue Demo-Angebote** (`d51`–`d60`, bestehende 50 Angebote unverändert gelassen) als Multipacks für einen Querschnitt der bestehenden Produkte/Händler ergänzt: je 2× 4er-Pack, 3× 6er-Pack, 2× 12er-Pack, 3× 24er-Pack, mit realistischer Mengenrabatt-Bepreisung.
+- **Neuer Filter „Packungsgröße"** im „Weitere Filter"-Sheet (Chips: Alle/Einzeln/4er Pack/6er Pack/12er Pack/24er Pack — Benennung wie bei Amazon & Co. üblich), als eigener `unitsFilter`-State parallel zu `sizeFilter`/`packagingFilter` aufgebaut (gleiches Muster: Filterlogik in `render()` inkl. der "0 Treffer, aber X deutschlandweit"-Zählung, `updateFilterCount()`, `resetExtraFilters()`, Klick-Handler). Wirkt identisch auf Mobile und Webapp (gemeinsame Logik).
+- **Preisberechnungen um `units` erweitert**, damit Multipack-Angebote korrekte statt grob falsche Zahlen zeigen: `deal.totalMl` (= `sizeMl × units`) neu in `buildDeals()`, und **alle** Stellen, die bisher Literpreis aus `sizeMl` berechnet haben (Kartenanzeige, Sortierung „Bester Preis pro Liter", Favoriten-Vergleichsbadge an zwei Stellen), nutzen jetzt `totalMl`. Bei `units=1` (alle bisherigen 50 Angebote) ist `totalMl === sizeMl` — Ergebnis dort also bit-für-bit unverändert.
+- **Zwei Vergleichsstellen um `units` ergänzt**, um eine reale Verwechslungsgefahr zu vermeiden: `findBestDealFor()` und `renderOtherStores()` (Preisverlauf-Sheet → „Andere Händler") verglichen bisher nur Produkt+Volumen — ohne den Zusatz hätte z.B. eine einzelne Dose für 0,89 € neben einem 24er-Pack für 16,99 € als "günstigerer Preis" erschienen, obwohl der 24er-Pack pro Liter tatsächlich günstiger ist. Jetzt werden nur Angebote mit identischer Packungsgröße verglichen.
+- **Neue Anzeige-Hilfsfunktion `formatSize(deal)`**: zeigt bei Multipacks „N × Xml" (z.B. „6 × 250 ml") statt nur „Xml", eingesetzt auf der Angebotskarte, im Preisverlauf-Sheet (Untertitel) und im Händler-Detail-Sheet — überall dort, wo ein *konkretes Angebot* (nicht nur der Produktkatalog) angezeigt wird. Produktkatalog-Anzeigen ohne Bezug zu einem einzelnen Angebot (Produktdetail-Sheet, Ähnliche-Produkte, News-Karten, Such-Vorschläge) bewusst unverändert gelassen, da dort kein einzelnes Angebot/keine Packungsgröße gemeint ist.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v32` erhöht (Pflichtregel, da `deals.json` zu `APP_SHELL` gehört und sich inhaltlich geändert hat).
+- Verifiziert über einen temporären lokalen Server (Mobile 375px + Webapp/Desktop 577px): 60 statt 50 Angebote geladen; Literpreis/Gesamtpreis für alle vier neuen Packungsgrößen stichprobenartig von Hand nachgerechnet und korrekt (z.B. 24er-Pack 16,99 €/24×250ml → 2,83 €/L); Sortierung „Bester Preis pro Liter" mischt Einzeldosen und Multipacks jetzt korrekt nach echtem Literpreis; Filter-Chips (Klick, aktiver Zustand, Zähl-Badge, Zurücksetzen) über echte Klick-Events getestet; Preisverlauf-Sheet zeigt bei einem Multipack ohne weitere gleich große Angebote korrekt "Aktuell nur bei X im Angebot" statt fälschlich Einzeldosen als Alternative; Kartenlayout hält auch bei zweistelligen Preisen (z.B. „16,99 €") ohne Umbruch/Overflow; Karte/Favoriten/Alarme-Tab weiterhin fehlerfrei; keine Konsolenfehler.
+
+**Wichtige Entscheidungen:**
+- Multipack-Preise als Packungs-Gesamtpreis (nicht Preis pro Dose) modelliert, weil das der einzige Weg ist, mit dem "nach Packungsgröße filtern" tatsächlich sinnvolle/realistische Preise zeigt — eine reine Filter-Notiz ohne Preisanpassung hätte z.B. bei einem 24er-Pack einen absurd niedrigen "Dosenpreis" suggeriert.
+- Bewusst 10 neue Angebote HINZUGEFÜGT statt bestehende umzuwandeln, damit alle 50 bisherigen Angebote (Preise, IDs, Inhalte) unangetastet bleiben.
+- Preisalarme (`renderAlertsView()`, `Math.min` über alle Angebote eines Produkts) bewusst NICHT auf `units` umgestellt: Einzeldosen-Preise sind zahlenmäßig immer kleiner als Multipack-Gesamtpreise, wirken sich auf `Math.min` also ohnehin nie aus — Alarme bleiben dadurch unverändert auf Einzelpreise bezogen, was der bisherigen Bedeutung des selbst gesetzten Wunschpreises entspricht.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-03 — Suche: Schreibweisen-tolerant (Leerzeichen/Bindestrich-unabhängig), für alle Produkte generisch
 
 **Umgesetzt:**

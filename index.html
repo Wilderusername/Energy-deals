@@ -2693,6 +2693,16 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 <button class="chip" data-size="500">500 ml</button>
 </div>
 
+<div class="field-label" style="margin-top:20px">Packungsgröße</div>
+<div class="filter-chip-row">
+<button class="chip on" data-units="Alle">Alle</button>
+<button class="chip" data-units="1">Einzeln</button>
+<button class="chip" data-units="4">4er Pack</button>
+<button class="chip" data-units="6">6er Pack</button>
+<button class="chip" data-units="12">12er Pack</button>
+<button class="chip" data-units="24">24er Pack</button>
+</div>
+
 <div class="field-label" style="margin-top:20px">Angebotszeitraum</div>
 <select id="filterPeriod">
 <option value="Alle">Alle Angebote</option>
@@ -3066,6 +3076,14 @@ function routeMinutes(km){
 const PFAND_FALLBACK = 0.25;
 const PACKAGING_FALLBACK = "Dose";
 
+/* Packungsgröße: units = Anzahl Dosen/Flaschen im Angebot (z.B. 4/6/12/24
+   bei Multipacks). Fehlt das Feld in deals.json, gilt 1 = Einzelartikel —
+   dieselbe Fallback-Kette wie bei Pfand/Verpackung oben. Bei Multipacks
+   sind regularPrice/offerPrice/pfand in deals.json bereits der GESAMTPREIS
+   für die ganze Packung (nicht pro Dose), deshalb muss nur der Liter-/
+   Grundpreis um units erweitert werden (siehe deal.totalMl unten). */
+const UNITS_FALLBACK = 1;
+
 /* MOCK-DATEN: Nährwerte gibt es (noch) nicht in deals.json — es existiert
    keine echte Herstellerdatenquelle dafür im Prototyp. Werte unten sind
    branchenübliche Circa-Angaben pro 100 ml, keine geprüften Herstellerdaten
@@ -3141,6 +3159,8 @@ function buildDeals(offers){
       img: product.img,
       pfand: typeof d.pfand === "number" ? d.pfand : PFAND_FALLBACK,
       packaging: d.packaging || PACKAGING_FALLBACK,
+      units: typeof d.units === "number" ? d.units : UNITS_FALLBACK,
+      totalMl: (typeof d.units === "number" ? d.units : UNITS_FALLBACK) * product.sizeMl,
       history: Array.isArray(d.priceHistory) && d.priceHistory.length
         ? d.priceHistory
         : genHistory(d.offerPrice, d.regularPrice),
@@ -3205,6 +3225,7 @@ let hideExpired = true;
 let noPfandOnly = false;
 let sizeFilter = "Alle";
 let packagingFilter = "Alle";
+let unitsFilter = "Alle";
 let periodFilter = "Alle";
 let chartRangeDays = 30;
 
@@ -3235,6 +3256,12 @@ function euro(n){ return n.toFixed(2).replace(".",","); }
    da beide Seiten (Sucheingabe wie Produktdaten) gleich normalisiert werden. */
 function normalizeSearchText(str){
   return str.toLowerCase().replace(/[\s-]+/g, "");
+}
+
+/* Zeigt bei Multipacks "N × Xml" statt nur "Xml" an (z.B. "6 × 250 ml"),
+   bei Einzelartikeln (units=1, der Normalfall) unverändert nur "Xml". */
+function formatSize(deal){
+  return deal.units > 1 ? `${deal.units} × ${deal.sizeMl} ml` : `${deal.sizeMl} ml`;
 }
 
 /* Deutsches Zahlenformat (Komma) für Preis-Eingabefelder: parseGermanPrice()
@@ -3310,7 +3337,7 @@ function buildBadges(deal, isFav, favLiterMin){
     badges.push(`<span class="info-badge urgent"><svg class="icon icon-xs"><use href="#i-hourglass"/></svg> ${label}</span>`);
   }
   if(!isFav && favLiterMin !== Infinity){
-    const literPrice = deal.offerPrice / (deal.sizeMl/1000);
+    const literPrice = deal.offerPrice / (deal.totalMl/1000);
     const diff = favLiterMin - literPrice;
     if(diff > 0.01){
       badges.push(`<span class="info-badge green"><svg class="icon icon-xs"><use href="#i-tag"/></svg> ${euro(diff)} €/L günstiger als dein Favorit</span>`);
@@ -3355,6 +3382,9 @@ function render(){
   if(packagingFilter !== "Alle"){
     filtered = filtered.filter(d=>d.packaging===packagingFilter);
   }
+  if(unitsFilter !== "Alle"){
+    filtered = filtered.filter(d=>String(d.units)===unitsFilter);
+  }
   if(periodFilter==="soon"){
     filtered = filtered.filter(d=>{ const dl=daysUntil(d.validUntil); return dl>=0 && dl<=3; });
   } else if(periodFilter==="new"){
@@ -3365,7 +3395,7 @@ function render(){
     filtered.sort((a,b)=>a.offerPrice-b.offerPrice);
   } else if(sort.value==="liter"){
     filtered.sort((a,b)=>
-      (a.offerPrice/(a.sizeMl/1000)) - (b.offerPrice/(b.sizeMl/1000))
+      (a.offerPrice/(a.totalMl/1000)) - (b.offerPrice/(b.totalMl/1000))
     );
   } else if(sort.value==="distance"){
     filtered.sort((a,b)=>a.distanceKm-b.distanceKm);
@@ -3382,7 +3412,7 @@ function render(){
   let favLiterMin = Infinity;
   deals.forEach(d=>{
     if(favorites.has(d.productId)){
-      const lp = d.offerPrice / (d.sizeMl/1000);
+      const lp = d.offerPrice / (d.totalMl/1000);
       if(lp < favLiterMin) favLiterMin = lp;
     }
   });
@@ -3404,6 +3434,7 @@ function render(){
         if(noPfandOnly && d.pfand!==0) return false;
         if(sizeFilter!=="Alle" && String(d.sizeMl)!==sizeFilter) return false;
         if(packagingFilter!=="Alle" && d.packaging!==packagingFilter) return false;
+        if(unitsFilter!=="Alle" && String(d.units)!==unitsFilter) return false;
         if(periodFilter==="soon"){ const dl=daysUntil(d.validUntil); if(!(dl>=0 && dl<=3)) return false; }
         if(periodFilter==="new"){ const df=daysUntil(d.validFrom)*-1; if(!(df>=0 && df<=3)) return false; }
         return true;
@@ -3442,7 +3473,7 @@ function render(){
     filtered.forEach(deal=>{
       const isBest = deal.id === globalBestId;
       const isFav = favorites.has(deal.productId);
-      const literPrice = deal.offerPrice / (deal.sizeMl/1000);
+      const literPrice = deal.offerPrice / (deal.totalMl/1000);
       const savingPct = Math.round((1 - deal.offerPrice/deal.regularPrice) * 100);
       const badges = buildBadges(deal, isFav, favLiterMin);
       const pfand = deal.pfand;
@@ -3466,7 +3497,7 @@ function render(){
             <div class="card-head">
               <div class="product-name-col">
                 <div class="product">${deal.product}</div>
-                <div class="brandtxt">${deal.brand} · ${deal.sizeMl} ml</div>
+                <div class="brandtxt">${deal.brand} · ${formatSize(deal)}</div>
               </div>
               ${isBest ? `<button class="badge-best" data-link="${deal.link}"><svg class="icon icon-xs"><use href="#i-trophy"/></svg> BESTER PREIS</button>` : ""}
             </div>
@@ -3883,6 +3914,7 @@ function updateFilterCount(){
   if(storeFilter.value !== "Alle") n++;
   if(sizeFilter !== "Alle") n++;
   if(packagingFilter !== "Alle") n++;
+  if(unitsFilter !== "Alle") n++;
   if(periodFilter !== "Alle") n++;
   if(noPfandOnly) n++;
   if(!hideExpired) n++;
@@ -3907,6 +3939,7 @@ function resetExtraFilters(){
   noPfandOnly = false;
   sizeFilter = "Alle";
   packagingFilter = "Alle";
+  unitsFilter = "Alle";
   periodFilter = "Alle";
   radiusKm = 10;
   searchWide = false;
@@ -3917,6 +3950,7 @@ function resetExtraFilters(){
   filterPeriod.value = "Alle";
   document.querySelectorAll(".chip[data-size]").forEach(b=>b.classList.toggle("on", b.dataset.size==="Alle"));
   document.querySelectorAll(".chip[data-pack]").forEach(b=>b.classList.toggle("on", b.dataset.pack==="Alle"));
+  document.querySelectorAll(".chip[data-units]").forEach(b=>b.classList.toggle("on", b.dataset.units==="Alle"));
   germanyToggle.checked = false;
   radiusSlider.value = 10;
   radiusValue.textContent = 10;
@@ -3969,6 +4003,17 @@ document.querySelectorAll(".chip[data-pack]").forEach(btn=>{
     document.querySelectorAll(".chip[data-pack]").forEach(b=>b.classList.remove("on"));
     btn.classList.add("on");
     packagingFilter = btn.dataset.pack;
+    render();
+    updateStatus();
+    updateFilterCount();
+  });
+});
+
+document.querySelectorAll(".chip[data-units]").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".chip[data-units]").forEach(b=>b.classList.remove("on"));
+    btn.classList.add("on");
+    unitsFilter = btn.dataset.units;
     render();
     updateStatus();
     updateFilterCount();
@@ -4958,7 +5003,7 @@ document.querySelector('[data-close="notifOverlay"].sheet-btn').addEventListener
 
 function findBestDealFor(deal){
   const candidates = deals.filter(d=>
-    d.product===deal.product && d.sizeMl===deal.sizeMl && daysUntil(d.validUntil) >= 0
+    d.product===deal.product && d.sizeMl===deal.sizeMl && d.units===deal.units && daysUntil(d.validUntil) >= 0
   );
   if(candidates.length===0) return null;
   return candidates.reduce((a,b)=> a.offerPrice<=b.offerPrice ? a : b);
@@ -5012,7 +5057,7 @@ function openHistory(dealId){
   let favLiterMin = Infinity;
   deals.forEach(d=>{
     if(favorites.has(d.productId)){
-      const lp = d.offerPrice / (d.sizeMl/1000);
+      const lp = d.offerPrice / (d.totalMl/1000);
       if(lp < favLiterMin) favLiterMin = lp;
     }
   });
@@ -5080,7 +5125,7 @@ function renderDetailChart(){
   const high = Math.max(...slice);
   const avg = slice.reduce((a,b)=>a+b,0)/slice.length;
 
-  document.getElementById("histSub").textContent = `${deal.brand} · ${deal.sizeMl} ml · Letzte ${chartRangeDays} Tage`;
+  document.getElementById("histSub").textContent = `${deal.brand} · ${formatSize(deal)} · Letzte ${chartRangeDays} Tage`;
   document.getElementById("histLow").textContent = euro(low) + " €";
   document.getElementById("histHigh").textContent = euro(high) + " €";
   document.getElementById("histAvg").textContent = euro(avg) + " €";
@@ -5100,7 +5145,7 @@ document.querySelectorAll(".chip[data-range]").forEach(btn=>{
 function renderOtherStores(deal){
   const container = document.getElementById("detailStores");
   const others = deals
-    .filter(d=>d.product===deal.product && d.sizeMl===deal.sizeMl && d.id!==deal.id)
+    .filter(d=>d.product===deal.product && d.sizeMl===deal.sizeMl && d.units===deal.units && d.id!==deal.id)
     .sort((a,b)=>a.offerPrice-b.offerPrice);
 
   if(others.length===0){
@@ -5227,7 +5272,7 @@ function openStoreDetail(dealId){
   document.getElementById("storeDetailHours").textContent = branch ? formatHours(branch) : "–";
 
   document.getElementById("storeDetailProduct").textContent = deal.product;
-  document.getElementById("storeDetailProductMeta").textContent = `${deal.brand} · ${deal.sizeMl} ml · ${deal.distanceKm} km entfernt`;
+  document.getElementById("storeDetailProductMeta").textContent = `${deal.brand} · ${formatSize(deal)} · ${deal.distanceKm} km entfernt`;
   document.getElementById("storeDetailPrice").textContent = euro(deal.offerPrice) + " €";
 
   document.getElementById("storeDetailRouteBtn").href = branch
