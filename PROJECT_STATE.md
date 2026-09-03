@@ -4,6 +4,25 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-03 — Preisverlauf zurück zum Chart (statt Tages-Karussell), jetzt mit antippbarem/ziehbarem Scrubbing
+
+**Umgesetzt:**
+- Nutzerwunsch: Preisverlauf soll wieder ein **Diagramm** sein (wie vor der Karussell-Version), nur optisch moderner — orientiert an Preisvergleichs-/Finanz-Apps. Das Tages-Karussell (horizontal durchblätterbare Einzeltag-Karten, letzte Runde) ist entfernt; die Linien-Chart mit Gradient-Fläche, geglätteter Kurve und den zwei farbigen Punkten (Blau = aktueller Preis, Grün = günstigster Preis) samt Legende ist zurück — technisch identisch zur bereits zuvor modernisierten Chart-Version (Catmull-Rom-Glättung, viewBox exakt auf Pixelgröße gesetzt, damit die Punkte echte Kreise bleiben statt Ovale).
+- **Neu, über die vorherige Chart-Version hinaus** (nutzt die in der Karussell-Runde eingeführte datierte Preis-Datenstruktur `deal.priceHistoryPoints`, die bewusst NICHT wieder entfernt wurde): Der Chart ist jetzt interaktiv **scrubbar** — Antippen/Ziehen auf Mobile bzw. Hovern mit der Maus auf der Webapp zeigt eine gestrichelte Linie + hervorgehobenen Punkt + Tooltip-Blase mit Datum, Preis und Händler des jeweils nächstgelegenen Tages (z. B. „0,87 € · Di, 25.08. · Kaufland"), exakt wie bei modernen Aktien-/Preisvergleichs-Apps (Robinhood, Apple Aktien u. ä.). Desktop reagiert auf reines Hovern (kein Klick nötig), Touch erfordert ein aktives Ziehen (`pointerdown`→`pointermove`), damit nicht jede zufällige Berührung beim Scrollen den Tooltip auslöst. Beim Loslassen/Verlassen kehrt der Chart in die Normalansicht zurück.
+- `.day-carousel`/`.day-card`/`.day-nav-*`/`.day-progress`-CSS sowie `buildDayCardHtml()`, `renderDayCarousel()`, `goToDay()` und die zugehörigen Button-/Tastatur-/Scroll-Listener vollständig entfernt (kein toter Code). Das nur für die Karussell-Navigation ergänzte `i-arrow-right`-Icon-Symbol ebenfalls wieder entfernt, da nicht mehr verwendet.
+- `deal.priceHistoryPoints` (datierte Punkte) UND `deal.history` (abgeleitetes Zahlen-Array) bleiben unverändert bestehen — die austauschbare, datierte Datenquelle aus der letzten Runde ist also nicht verloren gegangen, nur die Visualisierung hat sich (auf Nutzerwunsch) wieder geändert. Alle anderen Funktionen unangetastet: Zeitraum-Chips, Tiefstpreis-/Höchstpreis-/Ø-Preis-Boxen, Preisalarm, „Weitere Händler", Favoriten-Button, Teilen.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v35` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server (Mobile 375px + Webapp/Desktop 577px, Light + Dark Mode): Chart zeigt bei 7/30/90 Tagen korrekt jeweils 3 Kreis-Marker (Low/Current/Scrub-Platzhalter) mit exakt pixelgroßer `viewBox`; Hover (Maus) zeigt sofort Tooltip mit korrektem Datum/Preis/Händler des nächstgelegenen Punkts; Touch-Move ohne vorheriges Antippen wird korrekt ignoriert, Touch-Down zeigt Tooltip, Touch-Up blendet ihn wieder aus; Fenster-Resize zeichnet den Chart korrekt in neuer Pixelgröße neu. Regressionstest bestehender Funktionen (Packungsgrößen-Filter, Such-Vorschläge inkl. Schreibweisen-Toleranz, Karte, Favoriten-Tab) weiterhin fehlerfrei, keine Konsolenfehler.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-03 — Preisverlauf komplett überarbeitet: Tages-Karussell statt Linien-Chart, datierte Preisverlaufs-Datenstruktur
 
 **Umgesetzt:**

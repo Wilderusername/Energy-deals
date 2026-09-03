@@ -1316,138 +1316,54 @@ margin-bottom:6px
 .hist-head .hp{font-size:22px;font-weight:900;color:var(--text-primary)}
 .hist-head .hlabel{font-size:11px;color:var(--text-muted)}
 
-/* Preisverlauf: ein Tag pro Ansicht, horizontal durchwischbar (CSS
-   scroll-snap - fühlt sich nativ an, funktioniert mit Touch, Trackpad UND
-   Maus-Rad, ohne eigene Gesten-/Animationslogik nachbauen zu müssen). Jede
-   Karte nutzt die volle Breite, damit Statistik-Inhalte nicht gequetscht
-   werden müssen (siehe renderDayCarousel()/buildDayCardHtml() in JS). */
-.day-carousel{
+.legend{
 display:flex;
-overflow-x:auto;
-scroll-snap-type:x mandatory;
-scroll-behavior:smooth;
--webkit-overflow-scrolling:touch;
-scrollbar-width:none;
-border-radius:var(--radius-lg);
-margin-top:10px;
-outline:none
+gap:14px;
+font-size:11px;
+color:var(--text-muted);
+margin:10px 0 4px
 }
-.day-carousel::-webkit-scrollbar{display:none}
-.day-carousel:focus-visible{box-shadow:var(--shadow-focus-ring)}
+.legend .dotline{
+display:inline-flex;align-items:center;gap:5px
+}
+.legend .sw{width:9px;height:9px;border-radius:50%}
 
-.day-card{
-flex:0 0 100%;
-scroll-snap-align:start;
-box-sizing:border-box;
+/* Preisverlauf-Chart: SVG-viewBox wird beim Zeichnen (siehe drawChart() in
+   JS) immer exakt auf die tatsächliche gerenderte Pixelgröße gesetzt, damit
+   1 Koordinaten-Einheit stets 1 CSS-Pixel in beide Richtungen entspricht -
+   die Kreis-Marker bleiben dadurch unabhängig von der Container-Breite
+   echte Kreise (nicht zu Ovalen verzerrt). touch-action:none verhindert,
+   dass ein Wisch/Drag auf dem Chart mit dem vertikalen Scrollen des Sheets
+   kollidiert, solange man den Chart zum Scrubben antippt/zieht. */
+.chart-wrap{
+position:relative;
 background:var(--bg-surface-sunken);
 border:1px solid var(--border-subtle);
 border-radius:var(--radius-lg);
-padding:18px
+padding:14px 10px 6px;
+margin-top:8px
+}
+#histChart{
+display:block;
+touch-action:none;
+cursor:crosshair
 }
 
-.day-card-date{
-font-size:13.5px;
-font-weight:800;
-color:var(--text-primary)
-}
-
-.day-card-price-row{
-display:flex;
-align-items:baseline;
-gap:10px;
-flex-wrap:wrap;
-margin-top:10px
-}
-.day-card-price{font-size:26px;font-weight:900;color:var(--text-primary)}
-.day-card-change{font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:3px}
-.day-card-change.up{color:var(--status-error-text)}
-.day-card-change.down{color:var(--status-success-text)}
-.day-card-change.neutral{color:var(--text-muted)}
-
-.day-card-store{
-display:flex;
-align-items:center;
-gap:8px;
-margin-top:12px;
-font-size:13px;
-font-weight:700;
-color:var(--text-primary)
-}
-.day-card-store img{
-width:26px;height:26px;
-object-fit:contain;
-border-radius:var(--radius-xs);
-background:#fff;
-border:1px solid var(--border-subtle);
-padding:2px;
-flex-shrink:0
-}
-
-.day-card-stats{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:10px;
-margin-top:14px
-}
-.day-card-stat{
+.chart-tooltip{
+position:absolute;
+top:6px;
+display:none;
 background:var(--bg-surface-elevated);
 border:1px solid var(--border-subtle);
-border-radius:var(--radius-md);
-padding:9px 10px
+border-radius:var(--radius-sm);
+padding:5px 10px;
+box-shadow:var(--shadow-md);
+pointer-events:none;
+white-space:nowrap;
+z-index:3
 }
-.day-card-stat span{display:block;font-size:10.5px;color:var(--text-muted)}
-.day-card-stat b{display:block;font-size:14px;color:var(--text-primary);margin-top:2px}
-
-.day-card-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
-
-.day-nav-row{
-display:flex;
-align-items:center;
-justify-content:center;
-gap:14px;
-margin-top:10px
-}
-.day-nav-btn{
-width:32px;height:32px;
-flex-shrink:0;
-border-radius:50%;
-border:1px solid var(--border-subtle);
-background:var(--bg-surface-elevated);
-color:var(--text-primary);
-display:flex;align-items:center;justify-content:center;
-cursor:pointer;
-transition:background .15s,opacity .15s
-}
-.day-nav-btn:hover{background:var(--bg-surface-strong)}
-.day-nav-btn:disabled{opacity:.35;cursor:default}
-
-.day-progress{
-display:flex;
-align-items:center;
-justify-content:center;
-gap:6px;
-min-height:8px
-}
-.day-progress .dot{
-width:6px;height:6px;
-border-radius:50%;
-background:var(--border-strong);
-border:0;
-padding:0;
-cursor:pointer;
-transition:background .15s,transform .15s
-}
-.day-progress .dot.on{background:var(--brand-primary-blue);transform:scale(1.3)}
-.day-progress .bar-label{font-size:11px;color:var(--text-muted);white-space:nowrap}
-.day-progress .bar-track{
-flex:1;
-max-width:140px;
-height:4px;
-border-radius:2px;
-background:var(--border-subtle);
-overflow:hidden
-}
-.day-progress .bar-fill{height:100%;background:var(--brand-primary-blue);border-radius:2px;transition:width .2s}
+.chart-tooltip b{display:block;font-size:13.5px;font-weight:900;color:var(--text-primary)}
+.chart-tooltip span{font-size:10.5px;color:var(--text-muted)}
 
 .chart-summary{
 display:flex;
@@ -2482,7 +2398,6 @@ animation:skeleton-pulse 1.1s ease-in-out infinite
 <symbol id="i-external" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="8 7 17 7 17 16"/></symbol>
 <symbol id="i-x" viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></symbol>
 <symbol id="i-arrow-left" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
-<symbol id="i-arrow-right" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
 <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.6" x2="15.4" y2="6.4"/><line x1="8.6" y1="13.4" x2="15.4" y2="17.6"/></symbol>
 <symbol id="i-wifi-off" viewBox="0 0 24 24"><line x1="2" y1="2" x2="22" y2="22"/><path d="M8.5 16.5a5 5 0 017 0"/><path d="M5 12.5a10 10 0 013.3-2.2"/><path d="M19 12.5a10 10 0 00-2.3-1.9"/><path d="M2 8.8a15 15 0 014.2-2.9"/><path d="M22 8.8a15 15 0 00-8-4.4"/><line x1="12" y1="20" x2="12.01" y2="20"/></symbol>
 <symbol id="i-chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
@@ -3019,11 +2934,14 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 <button class="chip range-chip" data-range="90">90 Tage</button>
 </div>
 
-<div class="day-carousel" id="dayCarousel" tabindex="0"></div>
-<div class="day-nav-row">
-<button class="day-nav-btn prev" id="dayPrevBtn" type="button" aria-label="Vorheriger Tag"><svg class="icon icon-sm"><use href="#i-arrow-left"/></svg></button>
-<div class="day-progress" id="dayProgress"></div>
-<button class="day-nav-btn next" id="dayNextBtn" type="button" aria-label="Nächster Tag"><svg class="icon icon-sm"><use href="#i-arrow-right"/></svg></button>
+<div class="legend">
+<span class="dotline"><span class="sw" style="background:var(--brand-primary-blue)"></span>Preis</span>
+<span class="dotline"><span class="sw" style="background:var(--status-success-text)"></span>günstigster Preis</span>
+</div>
+
+<div class="chart-wrap">
+<svg id="histChart" viewBox="0 0 300 140" width="100%" height="140"></svg>
+<div class="chart-tooltip" id="chartTooltip"></div>
 </div>
 
 <div class="chart-summary">
@@ -3261,8 +3179,8 @@ const DEMO_TODAY_STR = dateStrAddDays(DEMO_TODAY, 0);
    (ein history-Array gehört immer zu genau einem Produkt+Händler+Gebinde),
    müssen also nicht auf jedem einzelnen Punkt wiederholt werden.
    Diese Datenpunkte sind die alleinige Quelle für die Preisverlaufs-Ansicht
-   (renderDayCarousel() weiter unten) — die UI selbst enthält keine fest
-   einprogrammierten Beispielpreise. */
+   (drawChart()/initChartScrub() weiter unten) — die UI selbst enthält keine
+   fest einprogrammierten Beispielpreise. */
 
 const HISTORY_DAYS = 90;
 
@@ -5315,7 +5233,7 @@ function renderDetailChart(){
   document.getElementById("histHigh").textContent = euro(high) + " €";
   document.getElementById("histAvg").textContent = euro(avg) + " €";
 
-  renderDayCarousel(deal, low, avg);
+  drawChart(deal.priceHistoryPoints.slice(-chartRangeDays), low, high);
 }
 
 document.querySelectorAll(".chip[data-range]").forEach(btn=>{
@@ -5502,165 +5420,154 @@ document.getElementById("alertSetBtn").addEventListener("click", ()=>{
   showToast(`Preisalarm gesetzt: ${deal.product} unter ${euro(val)} €`);
 });
 
-/* ---------------- PREISVERLAUF: TAGES-KARUSSELL ----------------
-   Ersetzt die frühere Linien-Chart (die alle Tage gleichzeitig gequetscht
-   auf einem Bildschirm zeigte). Stattdessen: ein Tag pro Ansicht, horizontal
-   durchwischbar (CSS scroll-snap, siehe .day-carousel-CSS weiter oben) —
-   funktioniert nativ mit Touch (Mobile) UND Maus-Rad/Trackpad/Tastatur
-   (Webapp/Desktop). Einzige Datenquelle ist deal.priceHistoryPoints (siehe
-   genPriceHistory()/normalizePriceHistory() weiter oben) — keine im UI-Code
-   fest einprogrammierten Beispielpreise. */
+/* ---------------- PREISVERLAUF: CHART ----------------
+   Linien-Chart mit Gradient-Fläche und antippbarem/ziehbarem "Scrubbing"
+   (wie bei Aktien-/Preisvergleich-Apps: Finger/Maus über den Chart bewegen
+   zeigt Datum+Preis des jeweiligen Tages in einer Tooltip-Blase). Einzige
+   Datenquelle ist deal.priceHistoryPoints (siehe genPriceHistory()/
+   normalizePriceHistory() weiter oben) — keine im UI-Code fest
+   einprogrammierten Beispielpreise; jeder Punkt der Linie ist einem echten
+   Datum zugeordnet, das beim Scrubben angezeigt wird. */
 
-const WEEKDAYS_DE = ["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+const WEEKDAYS_SHORT_DE = ["So","Mo","Di","Mi","Do","Fr","Sa"];
 
-function formatDayLabel(dateStr){
+function formatChartTooltipDate(dateStr){
   if(dateStr === DEMO_TODAY_STR) return "Heute";
   if(dateStr === dateStrAddDays(DEMO_TODAY, -1)) return "Gestern";
   const d = new Date(dateStr + "T00:00:00");
-  const [y,m,day] = dateStr.split("-");
-  return `${WEEKDAYS_DE[d.getDay()]}, ${day}.${m}.${y}`;
+  const [,m,day] = dateStr.split("-");
+  return `${WEEKDAYS_SHORT_DE[d.getDay()]}, ${day}.${m}.`;
 }
 
-function buildDayCardHtml(point, globalIndex, fullPoints, rangeLow, rangeAvg){
-  const prev = fullPoints[globalIndex-1];
-  let changeHtml = "";
-  if(prev){
-    const diff = point.price - prev.price;
-    if(Math.abs(diff) < 0.005){
-      changeHtml = `<span class="day-card-change neutral">± 0,00 € ggü. Vortag</span>`;
-    } else {
-      const pct = Math.abs((diff/prev.price)*100);
-      changeHtml = `<span class="day-card-change ${diff>0?"up":"down"}">${diff>0?"▲":"▼"} ${euro(Math.abs(diff))} € (${pct.toFixed(0)}%) ggü. Vortag</span>`;
-    }
+/* Catmull-Rom -> kubische Bezierkurve: verbindet die Punkte mit einer
+   sanften, geglätteten Linie statt kantiger Geradenstücke (Standard-Technik
+   moderner Chart-Bibliotheken für Kurs-/Preisverläufe). */
+function smoothLinePath(coords){
+  if(coords.length < 3){
+    return coords.map((c,i)=> (i===0?"M":"L") + c[0].toFixed(1) + "," + c[1].toFixed(1)).join(" ");
   }
-  const avgDiff = rangeAvg - point.price;
-  const avgDiffLabel = Math.abs(avgDiff) < 0.005
-    ? "genau Ø Preis"
-    : (avgDiff > 0 ? `${euro(avgDiff)} € unter Ø` : `${euro(Math.abs(avgDiff))} € über Ø`);
-  const isLow = Math.abs(point.price - rangeLow) < 0.005;
-  const logo = storeLogos[point.retailer] || STORE_FALLBACK_IMG;
-
-  return `
-    <div class="day-card">
-      <div class="day-card-date">${formatDayLabel(point.date)}</div>
-      <div class="day-card-price-row">
-        <div class="day-card-price">${euro(point.price)} €</div>
-        ${changeHtml}
-      </div>
-      <div class="day-card-store">
-        <img src="${logo}" alt="${point.retailer}" loading="lazy" referrerpolicy="no-referrer">
-        <span>${point.retailer}</span>
-      </div>
-      <div class="day-card-stats">
-        <div class="day-card-stat"><span>Literpreis</span><b>${euro(point.unitPrice)} €/L</b></div>
-        <div class="day-card-stat"><span>Pfand</span><b>${euro(point.deposit)} €</b></div>
-        <div class="day-card-stat"><span>Preisvergleich</span><b>${avgDiffLabel}</b></div>
-        <div class="day-card-stat"><span>Gesamt an der Kasse</span><b>${euro(point.price+point.deposit)} €</b></div>
-      </div>
-      ${isLow || !point.available ? `<div class="day-card-badges">
-        ${isLow ? `<span class="info-badge gold"><svg class="icon icon-xs"><use href="#i-medal"/></svg> Tiefstpreis in diesem Zeitraum</span>` : ""}
-        ${!point.available ? `<span class="info-badge expired">Nicht verfügbar</span>` : ""}
-      </div>` : ""}
-    </div>
-  `;
+  let d = `M${coords[0][0].toFixed(1)},${coords[0][1].toFixed(1)}`;
+  for(let i=0;i<coords.length-1;i++){
+    const p0 = coords[i-1] || coords[i];
+    const p1 = coords[i];
+    const p2 = coords[i+1];
+    const p3 = coords[i+2] || p2;
+    const cp1x = p1[0] + (p2[0]-p0[0])/6;
+    const cp1y = p1[1] + (p2[1]-p0[1])/6;
+    const cp2x = p2[0] - (p3[0]-p1[0])/6;
+    const cp2y = p2[1] - (p3[1]-p1[1])/6;
+    d += ` C${cp1x.toFixed(1)},${cp1y.toFixed(1)} ${cp2x.toFixed(1)},${cp2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+  }
+  return d;
 }
 
-let currentDayIndex = 0;
-let currentDayCount = 0;
+/* Ermöglicht Scrubbing: Antippen/Ziehen (Touch) bzw. Hovern (Maus) über den
+   Chart zeigt eine gestrichelte Linie + Punkt + Tooltip mit Datum/Preis/
+   Händler des jeweils nächstgelegenen Tages - Desktop reagiert bereits auf
+   reines Hovern (kein Klick nötig), Touch braucht ein aktives Ziehen (sonst
+   würde jedes zufällige Berühren beim Scrollen den Tooltip auslösen). */
+function initChartScrub(svg, coords, pointsSlice, w){
+  const tooltip = document.getElementById("chartTooltip");
+  const scrubLine = svg.querySelector(".chart-scrub-line");
+  const scrubDot = svg.querySelector(".chart-dot-scrub");
+  const lastDot = svg.querySelector(".chart-dot-last");
+  let dragging = false;
 
-function renderDayCarousel(deal, rangeLow, rangeAvg){
-  const fullPoints = deal.priceHistoryPoints;
-  const slice = fullPoints.slice(-chartRangeDays);
-  const offsetIntoFull = fullPoints.length - slice.length;
-
-  const carousel = document.getElementById("dayCarousel");
-  carousel.innerHTML = slice.map((pt,i)=> buildDayCardHtml(pt, offsetIntoFull+i, fullPoints, rangeLow, rangeAvg)).join("");
-  carousel.querySelectorAll(".day-card-store img").forEach(img=>{
-    img.addEventListener("error", function(){ this.src = STORE_FALLBACK_IMG; }, {once:true});
-  });
-
-  currentDayCount = slice.length;
-  renderDayProgress();
-  goToDay(currentDayCount - 1, false);
-}
-
-function goToDay(index, smooth=true){
-  const carousel = document.getElementById("dayCarousel");
-  currentDayIndex = Math.max(0, Math.min(currentDayCount-1, index));
-  carousel.scrollTo({left: carousel.clientWidth * currentDayIndex, behavior: smooth ? "smooth" : "instant"});
-  updateDayNavButtons();
-  updateDayProgressActive();
-}
-
-function updateDayNavButtons(){
-  document.getElementById("dayPrevBtn").disabled = currentDayIndex <= 0;
-  document.getElementById("dayNextBtn").disabled = currentDayIndex >= currentDayCount-1;
-}
-
-/* Bei kurzen Zeiträumen (7 Tage) echte Punkte zum direkten Antippen, bei
-   längeren Zeiträumen (30/90 Tage) ein schlanker Fortschrittsbalken statt
-   z.B. 90 winziger Punkte - "optional kleine Seiten-/Punktanzeige" aus der
-   Anforderung, aber ohne bei langen Zeiträumen unübersichtlich zu werden. */
-function renderDayProgress(){
-  const el = document.getElementById("dayProgress");
-  if(currentDayCount <= 10){
-    el.innerHTML = Array.from({length: currentDayCount}).map((_,i)=>
-      `<button type="button" class="dot" data-day-index="${i}" aria-label="Tag ${i+1} von ${currentDayCount}"></button>`
-    ).join("");
-    el.querySelectorAll(".dot").forEach(dot=>{
-      dot.addEventListener("click", ()=> goToDay(+dot.dataset.dayIndex));
+  function nearestIndex(clientX){
+    const rect = svg.getBoundingClientRect();
+    const x = clientX - rect.left;
+    let nearest = 0, minDist = Infinity;
+    coords.forEach((c,i)=>{
+      const dist = Math.abs(c[0]-x);
+      if(dist < minDist){ minDist = dist; nearest = i; }
     });
-  } else {
-    el.innerHTML = `<span class="bar-label" id="dayProgressLabel"></span><span class="bar-track"><span class="bar-fill" id="dayProgressFill"></span></span>`;
+    return nearest;
   }
-  updateDayProgressActive();
-}
 
-function updateDayProgressActive(){
-  const el = document.getElementById("dayProgress");
-  if(currentDayCount <= 10){
-    el.querySelectorAll(".dot").forEach((dot,i)=> dot.classList.toggle("on", i===currentDayIndex));
-  } else {
-    const label = document.getElementById("dayProgressLabel");
-    const fill = document.getElementById("dayProgressFill");
-    if(label) label.textContent = `Tag ${currentDayIndex+1}/${currentDayCount}`;
-    if(fill) fill.style.width = `${((currentDayIndex+1)/currentDayCount)*100}%`;
+  function showAt(index){
+    const [x,y] = coords[index];
+    const pt = pointsSlice[index];
+    scrubLine.setAttribute("x1", x); scrubLine.setAttribute("x2", x);
+    scrubLine.style.display = "block";
+    scrubDot.setAttribute("cx", x); scrubDot.setAttribute("cy", y);
+    scrubDot.style.display = "block";
+    lastDot.style.opacity = index === pointsSlice.length-1 ? "1" : "0.35";
+
+    tooltip.innerHTML = `<b>${euro(pt.price)} €</b><span>${formatChartTooltipDate(pt.date)} · ${pt.retailer}</span>`;
+    tooltip.style.display = "block";
+    const tw = tooltip.offsetWidth;
+    tooltip.style.left = Math.max(4, Math.min(w - tw - 4, x - tw/2)) + "px";
   }
-}
 
-document.getElementById("dayPrevBtn").addEventListener("click", ()=> goToDay(currentDayIndex - 1));
-document.getElementById("dayNextBtn").addEventListener("click", ()=> goToDay(currentDayIndex + 1));
+  function hide(){
+    scrubLine.style.display = "none";
+    scrubDot.style.display = "none";
+    lastDot.style.opacity = "1";
+    tooltip.style.display = "none";
+  }
 
-document.getElementById("dayCarousel").addEventListener("keydown", (e)=>{
-  if(e.key === "ArrowLeft"){ e.preventDefault(); goToDay(currentDayIndex - 1); }
-  else if(e.key === "ArrowRight"){ e.preventDefault(); goToDay(currentDayIndex + 1); }
-});
-
-/* Native Wisch-/Scroll-Bewegung (Touch, Trackpad) mit dem Index abgleichen,
-   damit Buttons/Punktanzeige auch bei manuellem Wischen synchron bleiben -
-   rAF-gedrosselt statt bei jedem scroll-Event einzeln neu zu rechnen. */
-let dayCarouselScrollRaf = null;
-document.getElementById("dayCarousel").addEventListener("scroll", ()=>{
-  if(dayCarouselScrollRaf) return;
-  dayCarouselScrollRaf = requestAnimationFrame(()=>{
-    dayCarouselScrollRaf = null;
-    const carousel = document.getElementById("dayCarousel");
-    const cardWidth = carousel.clientWidth || 1;
-    const idx = Math.round(carousel.scrollLeft / cardWidth);
-    if(idx !== currentDayIndex && idx >= 0 && idx < currentDayCount){
-      currentDayIndex = idx;
-      updateDayNavButtons();
-      updateDayProgressActive();
-    }
+  svg.addEventListener("pointerdown", (e)=>{
+    if(e.pointerType === "touch"){ dragging = true; svg.setPointerCapture(e.pointerId); }
+    showAt(nearestIndex(e.clientX));
   });
-});
+  svg.addEventListener("pointermove", (e)=>{
+    if(e.pointerType === "touch" && !dragging) return;
+    showAt(nearestIndex(e.clientX));
+  });
+  svg.addEventListener("pointerup", (e)=>{ if(e.pointerType === "touch"){ dragging = false; hide(); } });
+  svg.addEventListener("pointercancel", ()=>{ dragging = false; hide(); });
+  svg.addEventListener("pointerleave", (e)=>{ if(e.pointerType !== "touch" || dragging){ dragging = false; hide(); } });
+}
 
-/* Bei Fenster-Resize (z.B. Wechsel Mobile<->Webapp-Breite) auf denselben
-   Tag neu einrasten (nicht auf "Heute" zurückspringen) - die Pixelbreite
-   pro Karte ändert sich, sonst würde scrollLeft plötzlich einem anderen
-   Tag entsprechen. */
+/* Zeichnet viewBox immer exakt in den tatsächlich gerenderten Pixelmaßen des
+   SVG (statt einer festen 300x140-Box mit preserveAspectRatio="none", die
+   je nach Container-Breite gestaucht/gestreckt würde) - dadurch entspricht
+   1 Koordinaten-Einheit immer exakt 1px in beide Richtungen, und die
+   Kreis-Marker bleiben echte Kreise statt zu Ovalen verzerrt zu werden. */
+function drawChart(pointsSlice, low, high){
+  const svg = document.getElementById("histChart");
+  const rect = svg.getBoundingClientRect();
+  const w = Math.max(rect.width, 1), h = Math.max(rect.height, 1), pad = 10;
+  svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+
+  const range = (high - low) || 1;
+  const scalePad = range * 0.12;
+  const scaleLow = low - scalePad;
+  const scaleRange = range + scalePad*2;
+
+  const coords = pointsSlice.map((pt,i)=>{
+    const x = pad + (i/(pointsSlice.length-1)) * (w - pad*2);
+    const y = h - pad - ((pt.price - scaleLow)/scaleRange) * (h - pad*2);
+    return [x,y];
+  });
+
+  const linePath = smoothLinePath(coords);
+  const lastCoord = coords[coords.length-1];
+  const areaPath = linePath + ` L${lastCoord[0].toFixed(1)},${h-pad} L${coords[0][0].toFixed(1)},${h-pad} Z`;
+
+  const lowIdx = pointsSlice.reduce((best,pt,i)=> pt.price < pointsSlice[best].price ? i : best, 0);
+  const lowCoord = coords[lowIdx];
+
+  svg.innerHTML = `
+    <defs>
+      <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="var(--brand-primary-blue)" stop-opacity="0.28"/>
+        <stop offset="100%" stop-color="var(--brand-primary-blue)" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+    <path d="${areaPath}" fill="url(#areaGrad)"/>
+    <path d="${linePath}" fill="none" stroke="var(--brand-primary-blue)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <line class="chart-scrub-line" x1="0" y1="${pad}" x2="0" y2="${h-pad}" stroke="var(--border-strong)" stroke-width="1" stroke-dasharray="3,3" style="display:none"/>
+    <circle class="chart-dot-low" cx="${lowCoord[0]}" cy="${lowCoord[1]}" r="4.5" fill="var(--status-success-text)" stroke="var(--bg-surface-elevated)" stroke-width="2"/>
+    <circle class="chart-dot-last" cx="${lastCoord[0]}" cy="${lastCoord[1]}" r="5" fill="var(--brand-primary-blue)" stroke="var(--bg-surface-elevated)" stroke-width="2.5"/>
+    <circle class="chart-dot-scrub" cx="0" cy="0" r="5.5" fill="var(--brand-primary-blue)" stroke="var(--bg-surface-elevated)" stroke-width="2.5" style="display:none"/>
+  `;
+
+  initChartScrub(svg, coords, pointsSlice, w);
+}
+
 window.addEventListener("resize", ()=>{
-  if(document.getElementById("histOverlay").classList.contains("open")) goToDay(currentDayIndex, false);
+  if(document.getElementById("histOverlay").classList.contains("open")) renderDetailChart();
 });
 
 /* ---------------- INIT ---------------- */
