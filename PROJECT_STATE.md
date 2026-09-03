@@ -4,6 +4,53 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-03 — Favoriten-Herz als Pin auf dem Produktbild (statt in der Kopfzeile neben dem Namen)
+
+**Umgesetzt:**
+- Herz-Button aus `.card-head` (der Zeile mit Produktname/Marke) herausgenommen und stattdessen direkt auf dem Produktbild platziert: neuer Wrapper `.thumb-frame` (`position:relative`) um `.thumb`, das Herz sitzt darin `position:absolute;top:-10px;right:-10px` — pinnt es an die obere rechte Ecke des Bildes, leicht überlappend, exakt wie in der vom Nutzer bereitgestellten Referenz. Dadurch steht der Produktname/Marke-Text jetzt direkt neben dem Bild, ohne dass das Herz optisch dazwischensteht.
+- Herz-Icon bekommt zusätzlich `filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))` (nur an dieser Stelle, scoped über `.thumb-frame .btn.fav`), damit die Outline-Variante (nicht favorisiert) auf unterschiedlich hellen/dunklen Produktbildern lesbar bleibt — weiterhin ohne sichtbaren Kasten/Hintergrund, nur ein dezenter Schlagschatten. Größe (44×44px Touch-Ziel, 26px Icon), Farblogik (Outline in Light/Dark, rot gefüllt wenn aktiv) und die Fav-Funktion selbst (Event-Delegation, `saveFavorites()`, Pop-Animation) komplett unverändert übernommen.
+- `.card-head` dadurch jetzt nur noch Produktname-Spalte + optional BESTER-PREIS-Badge (`justify-content:space-between` statt `margin-left:auto` am Badge, da nur noch 2 statt 3 Elemente in der Zeile).
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v27` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server: Desktop bei 541px (kritische untere Breakpoint-Grenze, weiterhin alle drei Elemente der unteren Zeile in einer Reihe), 577px; Mobile bei 320/375px (Herz sitzt genauso auf dem kleineren 74px-Bild); Light+Dark Mode. Kein horizontaler Overflow, keine Konsolenfehler. Funktional erneut vollständig durchgetestet: Favorisieren/Entfavorisieren (inkl. Pop-Animation) über das neu positionierte Herz, „Preisverlauf"-Sheet, „Zum Angebot" → Händler-Sheet, Produktdetail-Sheet (Klick aufs Bild — funktioniert weiterhin trotz des überlappenden Herz-Buttons, da beide als separate Elemente mit eigenen Klick-Handlern koexistieren), Fav-Button im Preisverlauf-Sheet (`#detailFavBtn`, unverändert). Alarme-Tab („Hinweise für dich"-Karten, nutzen weiterhin `.thumb-price`, nicht `.thumb-frame`) unverändert bestätigt.
+
+**Wichtige Entscheidungen:**
+- Herz per `position:absolute` auf das Bild gepinnt statt als Flex-Geschwister in der Kopfzeile — einzige Möglichkeit, gleichzeitig „Herz exakt wie im Bild platziert" UND „Text direkt neben dem Bild" zu erfüllen, da beide Vorgaben ein Element zwischen Bild und Text ausschließen.
+- `drop-shadow`-Filter statt eines sichtbaren Hintergrund-Kastens hinter dem Herz gewählt, um die aus einer früheren Runde stammende Vorgabe „kein sichtbarer Kasten" zu respektieren, während die Lesbarkeit auf wechselnden Produktbild-Hintergründen trotzdem sichergestellt ist.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
+## 2026-09-03 — Angebotskarte komplett neu aufgebaut: oben Bild+Info, unten eine Händler-/Aktionszeile (nach Design-Vorlage)
+
+**Umgesetzt:**
+- Karten-Template grundlegend umstrukturiert, nach vom Nutzer bereitgestelltem Design-Bild ("neues design.png"): weg vom bisherigen Zwei-Spalten-Modell (`.card-columns` Grid mit unabhängiger linker/rechter Spalte, oft viel Leerraum unten rechts), hin zu einem einfacheren Aufbau mit nur zwei vertikal gestapelten Blöcken:
+  - `.card-top` (Flex-Zeile): Produktbild links (jetzt 100px statt 58px, deutlich prominenter wie im Design) + `.card-top-info` rechts, darin `.card-head` (Herz → Produktname/Marke → optional BESTER-PREIS-Badge rechtsbündig per `margin-left:auto`) gefolgt von Preis, Literpreis/Gesamtpreis, Ersparnis, Ø-Preis-Vergleich und Badges-Zeile.
+  - `.card-bottom` (Flex-Zeile, `justify-content:space-between`): Händlerblock (Logo+Name+Entfernung+Route/Status) — Zeitraum+Preisverlauf (Mitte) — „Zum Angebot" (rechts), alle in einer Zeile statt in einer eigenen, oft halbleeren rechten Spalte.
+  - Vorher wurde per Klärungsfrage abgesichert, dass der Produktname (im ersten Entwurfsbild des Nutzers nicht sichtbar) trotzdem erhalten bleiben soll — der Nutzer hat daraufhin ein zweites, präziseres Referenzbild mit sichtbarem Produktnamen geliefert, das genau diese Struktur zeigt.
+- **Mobile** dadurch stark vereinfacht: die bisherige `display:contents`+`order`-Trickserei (nötig für das alte Grid-Layout) entfällt komplett, da `.card-top` und `.card-bottom` als eigenständige Blöcke schon in der richtigen Reihenfolge im DOM stehen. Media Query (`max-width:540px`) macht nur noch: Produktbild zurück auf 74px, BESTER-PREIS-Badge bekommt `flex-basis:100%` (eigene Zeile statt neben Herz+Name zu quetschen) und `.card-bottom` wechselt von Zeile auf Spalte (Händler → Zeitraum/Preisverlauf → Zum Angebot untereinander) — Reihenfolge entspricht weiterhin der bereits zuvor bestätigten mobilen Priorität.
+- Beim Testen an der kritischen unteren Breakpoint-Grenze (541–545px, direkt oberhalb der 540px-Mobile-Grenze) ist die neue `.card-bottom`-Zeile (Händler + Zeitraum/Preisverlauf + Zum-Angebot-Button nebeneinander) hauchdünn umgebrochen (Inhalt minimal breiter als verfügbarer Platz) — behoben durch Reduzieren von `gap:12px` auf `gap:6px`; ab da bei 541px, 545px, 560px programmatisch bestätigt: alle drei Elemente bleiben in einer Zeile, kein horizontaler Overflow.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v26` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server: Desktop bei 541/545/560/577px (Layout exakt wie im Referenzbild: großes Bild links, Herz+Name+BESTER-PREIS oben, Preis/Ersparnis darunter, Händler/Zeitraum/Preisverlauf/Zum-Angebot als eine kompakte untere Zeile ohne Leerraum), Mobile bei 320/375px (Bild+Herz+Name nebeneinander, BESTER PREIS eigene Zeile, Händler/Zeitraum/Preisverlauf/Zum Angebot untereinander, bereits zuvor bestätigte Reihenfolge unverändert), Light+Dark Mode beide geprüft. Funktional erneut bestätigt: Favorisieren/Entfavorisieren (inkl. Pop-Animation), „Preisverlauf"-Sheet (weiterhin ohne „Preis geprüft"), „Zum Angebot" → Händler-Sheet, sowie der Fav-Button im Preisverlauf-Sheet (`#detailFavBtn`, weiterhin unverändert 24px, von der neuen `.card-head .btn.fav .icon`-Regel nicht betroffen). Alarme-Tab („Hinweise für dich"-Karten, nutzen weiterhin unverändert `.thumb-price`) stichprobenartig unverändert bestätigt. Kein horizontaler Overflow und keine Konsolenfehler in allen getesteten Zuständen.
+
+**Wichtige Entscheidungen:**
+- Vor der Umsetzung gezielt nachgefragt, ob der im ersten Mockup fehlende Produktname wirklich entfernt werden soll, statt das stillschweigend zu übernehmen — Produktname/Marke sind zentrale Unterscheidungsmerkmale zwischen sehr ähnlich aussehenden Varianten (z. B. Red Bull Zero vs. Sugarfree) und ihr Wegfall wäre eine funktionale Verschlechterung, nicht nur eine optische Änderung gewesen. Der Nutzer hat daraufhin ein zweites Bild mit Produktname geliefert, das die Grundlage für die Umsetzung ist.
+- Bei der Breakpoint-Kante bewusst den `gap` verkleinert statt z. B. Schriftgrößen oder Button-Padding zu ändern — kleinster, am wenigsten sichtbarer Eingriff, der das exakte Umbruchproblem behebt, ohne die vom Referenzbild vorgegebene Optik sonst zu verändern.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-03 — Angebotskarte neu strukturiert: links Produkt/Preis/Favorit, rechts Händler/Angebot
 
 **Umgesetzt:**
