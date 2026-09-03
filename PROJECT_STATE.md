@@ -4,6 +4,24 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-03 — Preisverlauf-Chart (nur Mobile): Punkt bleibt nach Antippen eines Tages stehen statt zurückzuspringen
+
+**Umgesetzt:**
+- Nutzerwunsch, explizit nur für die Mobile Version: Der Auswahl-Punkt im Preisverlauf-Chart soll durch Antippen eines Datums dorthin verschoben werden, den Preis dort anzeigen — und dort **stehen bleiben**, statt beim Loslassen zur „Heute"-Position zurückzuspringen.
+- In `initChartScrub()` die Touch-`pointerup`-Behandlung angepasst: ruft nicht mehr `hide()` auf, sondern setzt nur noch das interne `dragging`-Flag zurück — der zuletzt angetippte/gezogene Tag (gestrichelte Linie, hervorgehobener Punkt, Tooltip mit Datum+Preis+Händler) bleibt sichtbar, bis der nächste Tipp auf einen anderen Tag erfolgt. `pointercancel` verhält sich für Touch identisch (kein automatisches Ausblenden). Die Unterscheidung läuft über `pointerType === "touch"` — die Maus-Hover-Vorschau der Webapp/Desktop (verschwindet beim Verlassen der Chart-Fläche) ist dadurch selektiv unangetastet geblieben; Design, Chart-Optik, Legende, Statistik-Boxen und alle sonstigen Funktionen unverändert.
+- **Bug gefunden und behoben** (beim Testen aufgefallen, betraf potenziell auch schon die vorherige Scrubbing-Version): `svg.setPointerCapture(e.pointerId)` kann in bestimmten Fällen eine Exception werfen (`NotFoundError`, z. B. wenn kein vom Browser als „aktiv" erkannter Zeiger mit dieser ID vorliegt) — das brach die komplette `pointerdown`-Behandlung ab, sodass der Tooltip beim Antippen gar nicht erst erschien. `setPointerCapture` jetzt in try/catch gekapselt: Punkt-Erfassung ist nur eine Verbesserung (Zeigerbewegung weiterverfolgen, auch wenn der Finger die Chart-Fläche verlässt), ein Fehlschlag darf die Kernfunktion (Tag antippen → Preis anzeigen) nicht mehr verhindern.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v36` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server: Simuliertes Antippen (Touch-Pointer-Events) bei 375px Breite zeigt Tooltip mit Datum/Preis/Händler des angetippten Tages und dieser bleibt nach `pointerup` sichtbar stehen; zweites Antippen an anderer Stelle bewegt Punkt+Tooltip dorthin; Maus-Hover auf breiterem Viewport (Webapp) weiterhin unverändert — erscheint bei Hovern, verschwindet beim Verlassen der Chart-Fläche. Regressionstest bestehender Funktionen (Packungsgrößen-Filter, Suche, Karte, Zeitraum-Wechsel) weiterhin fehlerfrei, keine Konsolenfehler.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-03 — Preisverlauf zurück zum Chart (statt Tages-Karussell), jetzt mit antippbarem/ziehbarem Scrubbing
 
 **Umgesetzt:**

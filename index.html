@@ -5506,17 +5506,39 @@ function initChartScrub(svg, coords, pointsSlice, w){
     tooltip.style.display = "none";
   }
 
+  /* Mobile/Touch verhält sich bewusst anders als Maus (Webapp/Desktop):
+     Antippen wählt einen Tag aus und der Punkt bleibt dort stehen (kein
+     Zurückspringen beim Loslassen) - Ziehen bei weiter gedrückter Fläche
+     darf die Auswahl noch verschieben, aber nichts blendet beim Loslassen
+     automatisch wieder aus. Die Maus-Hover-Vorschau auf der Webapp
+     (verschwindet beim Verlassen der Chart-Fläche) bleibt unverändert. */
   svg.addEventListener("pointerdown", (e)=>{
-    if(e.pointerType === "touch"){ dragging = true; svg.setPointerCapture(e.pointerId); }
+    if(e.pointerType === "touch"){
+      dragging = true;
+      /* try/catch: setPointerCapture ist nur eine Verbesserung (Zeigerbewegung
+         weiter verfolgen, auch wenn der Finger die Chart-Fläche verlässt) -
+         ein Fehlschlag darf die Kernfunktion (Tag antippen -> Punkt zeigt
+         Preis dort an) nicht verhindern. */
+      try{ svg.setPointerCapture(e.pointerId); }catch(err){}
+    }
     showAt(nearestIndex(e.clientX));
   });
   svg.addEventListener("pointermove", (e)=>{
     if(e.pointerType === "touch" && !dragging) return;
     showAt(nearestIndex(e.clientX));
   });
-  svg.addEventListener("pointerup", (e)=>{ if(e.pointerType === "touch"){ dragging = false; hide(); } });
-  svg.addEventListener("pointercancel", ()=>{ dragging = false; hide(); });
-  svg.addEventListener("pointerleave", (e)=>{ if(e.pointerType !== "touch" || dragging){ dragging = false; hide(); } });
+  svg.addEventListener("pointerup", (e)=>{
+    if(e.pointerType === "touch"){ dragging = false; }
+  });
+  svg.addEventListener("pointercancel", (e)=>{
+    dragging = false;
+    if(e.pointerType !== "touch") hide();
+  });
+  svg.addEventListener("pointerleave", (e)=>{
+    if(e.pointerType === "touch") return;
+    if(dragging){ dragging = false; }
+    hide();
+  });
 }
 
 /* Zeichnet viewBox immer exakt in den tatsächlich gerenderten Pixelmaßen des
