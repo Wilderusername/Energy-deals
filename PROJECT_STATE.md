@@ -4,6 +4,24 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-03 — Mobile Feintuning: „BESTER PREIS"-Badge nicht mehr gestreckt, Herz ragt nicht mehr ins Produktbild
+
+**Umgesetzt:**
+- `.card-head .badge-best{margin-left:0;flex-basis:100%}` aus dem mobilen Media Query entfernt — diese Regel hat das Badge auf `flex-basis:100%` gezwungen, wodurch es (obwohl der Text „BESTER PREIS" nur einen Bruchteil davon braucht) die komplette Zeilenbreite eingenommen hat und wie ein langgezogener, leerer orangener Balken wirkte. Ohne diese Regel erbt Mobile jetzt dieselbe Basisregel wie die Webapp-Version (`display:inline-flex;margin-left:auto`): Badge ist nur noch so breit wie „BESTER PREIS" selbst und sitzt direkt neben dem Produktnamen (bzw. bricht bei langen Namen automatisch in eine eigene, aber nicht gestreckte Zeile um).
+- Herz-Button auf dem Produktbild: Bild (`.card-top .thumb`) im mobilen Media Query von 64px auf 72px vergrößert (etwas Luft war noch vorhanden), gleichzeitig Herz-Button/-Icon nur für diesen mobilen Kontext (`.thumb-frame .btn.fav`, wirkt nicht auf andere `.btn.fav`-Vorkommen wie den Fav-Button im Preisverlauf-Sheet) von 44px/26px auf 36px/20px verkleinert und der Versatz von `-10px` auf `-7px` reduziert — dadurch sitzt das Herz jetzt sauber in der oberen rechten Bildecke, ohne spürbar auf das eigentliche Produktfoto zu ragen. Keine Logik/Funktion angefasst, nur Größen/Position per CSS.
+- Webapp-/Desktop-Version (>540px) bewusst komplett unangetastet gelassen — beide Änderungen stehen ausschließlich im `@media(max-width:540px)`-Block; dort diente die Desktop-Darstellung nur als optische Orientierung („Badge sitzt kompakt neben dem Namen"), ohne dass an der Desktop-Regel selbst etwas geändert wurde.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v29` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server bei 375px (mehrere Karten, mit und ohne BESTER-PREIS-Badge, lange und kurze Produktnamen): kein horizontaler Overflow, „Zum Angebot"-Zeile weiterhin ohne Umbruch/Overflow trotz des größeren Produktbilds. Desktop (577px) per Screenshot bestätigt unverändert.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-03 — Mobile Kartenlayout an Referenz „mobil-neu" angeglichen (Zum-Angebot-Button neben Rabattzeile, Händler/Zeitraum nebeneinander)
 
 **Umgesetzt:**
