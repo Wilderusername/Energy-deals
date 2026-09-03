@@ -522,30 +522,26 @@ flex-wrap:wrap
 
 .card-bottom{
 display:flex;
-align-items:center;
+align-items:flex-start;
 justify-content:space-between;
-flex-wrap:wrap;
-gap:6px;
+gap:10px;
 margin-top:14px
 }
-.card-bottom .store{margin-top:0;min-width:0}
+.card-bottom .store{margin-top:0;min-width:0;flex:1}
 .card-bottom .store > div{min-width:0}
-.card-bottom .meta-row{min-width:0}
+.card-bottom .meta-row{min-width:0;align-items:flex-end;flex-shrink:0}
+.card-bottom .meta-row .meta{text-align:right}
 
-/* Mobile: Kopfzeile behält Bild+Text nebeneinander, aber BESTER PREIS
-   bekommt eine eigene Zeile (statt neben Herz+Name zu quetschen) und die
-   untere Zeile (Händler/Zeitraum/Zum Angebot) steht untereinander statt
-   nebeneinander. Bewusst als Media Query, damit Desktop (>540px, deckt
-   bereits alle Tablet-/Desktop-Breiten ab, da .app ohnehin bei 560px
-   deckelt) komplett unangetastet bleibt. */
-@media (max-width:540px){
-.card-top .thumb{width:74px;height:74px}
-.card-head .badge-best{margin-left:0;flex-basis:100%}
-.card-bottom{flex-direction:column;align-items:stretch}
-.hero{padding:14px 18px 16px}
-.headline{margin-top:16px}
-.search{margin-top:12px}
+.price-cta-row{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:10px;
+margin-top:6px
 }
+.price-cta-info{min-width:0}
+.price-cta-info .saving{margin-top:0}
+.price-cta-row .actions{flex-shrink:0;margin-top:0}
 
 .line{
 display:flex;
@@ -2220,6 +2216,45 @@ animation:skeleton-pulse 1.1s ease-in-out infinite
 50%{opacity:1}
 }
 
+/* Mobile: Kopfzeile behält Bild+Text nebeneinander, aber BESTER PREIS
+   bekommt eine eigene Zeile (statt neben Herz+Name zu quetschen). Händler
+   (links) und Zeitraum/Preisverlauf (rechts) sowie Rabattinfo (links) und
+   "Zum Angebot" (rechts) bleiben als Zeilen nebeneinander (wie im
+   Referenzdesign "mobil-neu") - dafür werden Schrift-/Icon-/Abstandsgrößen
+   auf schmalen Screens leicht reduziert, statt die Elemente untereinander
+   zu stapeln. Bewusst als Media Query am Ende des Stylesheets (damit sie
+   gleich-spezifische Basisregeln zuverlässig überschreibt, unabhängig von
+   deren Position weiter oben), und bewusst als max-width Query, damit
+   Desktop (>540px, deckt bereits alle Tablet-/Desktop-Breiten ab, da .app
+   ohnehin bei 560px deckelt) komplett unangetastet bleibt. */
+@media (max-width:540px){
+.card{padding:12px}
+.card-top{gap:9px}
+.card-top .thumb{width:64px;height:64px}
+.card-head .badge-best{margin-left:0;flex-basis:100%}
+.card .price{font-size:19px}
+.unit{font-size:10px}
+.price-cta-row{gap:6px}
+.saving{font-size:9.5px;gap:3px}
+.old-price{white-space:nowrap}
+.saving-percent{font-size:8px;padding:2px 5px;white-space:nowrap}
+.avg-context{font-size:10px}
+.price-cta-row .actions{flex-shrink:0}
+.price-cta-row .btn.primary{font-size:10.5px;padding:7px 8px;gap:4px;white-space:nowrap}
+.price-cta-row .btn.primary .icon{width:10px;height:10px}
+.card-bottom{gap:6px}
+.card-bottom .store-logo{width:36px;height:36px;padding:2px}
+.card-bottom .store{font-size:11.5px;gap:6px}
+.card-bottom .store-sub{font-size:10px}
+.card-bottom .meta{font-size:10px;white-space:nowrap}
+.card-bottom .meta .icon{width:9px;height:9px}
+.card-bottom .history-link{font-size:9.5px;padding:5px 8px;gap:3px}
+.card-bottom .history-link .icon{width:10px;height:10px}
+.hero{padding:14px 18px 16px}
+.headline{margin-top:16px}
+.search{margin-top:12px}
+}
+
 </style>
 </head>
 
@@ -3351,11 +3386,20 @@ function render(){
               <span class="pfand-note">+ ${euro(pfand)} € Pfand</span>
             </div>
             <div class="unit">${euro(literPrice)} €/L · Gesamt an der Kasse: ${euro(deal.offerPrice+pfand)} €</div>
-            <div class="saving">
-              <span class="old-price">${euro(deal.regularPrice)} €</span>
-              <span class="saving-percent">${savingPct}% GÜNSTIGER</span>
+            <div class="price-cta-row">
+              <div class="price-cta-info">
+                <div class="saving">
+                  <span class="old-price">${euro(deal.regularPrice)} €</span>
+                  <span class="saving-percent">${savingPct}% GÜNSTIGER</span>
+                </div>
+                ${avgDiff > 0.05 ? `<div class="avg-context">${euro(avgDiff)} € unter Ø Preis (${euro(avgHist)} €)</div>` : ""}
+              </div>
+              <div class="actions">
+                ${isExpired
+                  ? `<button class="btn disabled-cta" disabled>Abgelaufen</button>`
+                  : `<button class="btn primary" data-store-detail="${deal.id}">Zum Angebot <svg class="icon icon-sm"><use href="#i-external"/></svg></button>`}
+              </div>
             </div>
-            ${avgDiff > 0.05 ? `<div class="avg-context">${euro(avgDiff)} € unter Ø Preis (${euro(avgHist)} €)</div>` : ""}
             ${badges ? `<div class="badges-row">${badges}</div>` : ""}
           </div>
         </div>
@@ -3371,11 +3415,6 @@ function render(){
           <div class="meta-row">
             <div class="meta"><svg class="icon icon-xs"><use href="#i-calendar"/></svg> ${formatDateRange(deal.validFrom, deal.validUntil)}</div>
             <button class="history-link" data-hist="${deal.id}"><svg class="icon icon-sm"><use href="#i-trend"/></svg> Preisverlauf</button>
-          </div>
-          <div class="actions">
-            ${isExpired
-              ? `<button class="btn disabled-cta" disabled>Abgelaufen</button>`
-              : `<button class="btn primary" data-store-detail="${deal.id}">Zum Angebot <svg class="icon icon-sm"><use href="#i-external"/></svg></button>`}
           </div>
         </div>
       `;

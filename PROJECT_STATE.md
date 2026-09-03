@@ -4,6 +4,30 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-03 — Mobile Kartenlayout an Referenz „mobil-neu" angeglichen (Zum-Angebot-Button neben Rabattzeile, Händler/Zeitraum nebeneinander)
+
+**Umgesetzt:**
+- Auf Wunsch des Nutzers (zwei Referenz-Screenshots „mobil-alt"/„mobil-neu") das Karten-Layout erneut angepasst — diesmal weg vom komplett gestapelten mobilen Layout aus der vorherigen Runde, hin zu einer Anordnung näher am ursprünglichen Zwei-Spalten-Gefühl, aber ohne das alte Grid-Modell wiederherzustellen:
+  - `.actions` (der „Zum Angebot"-Button) aus `.card-bottom` herausgenommen und in einen neuen Wrapper `.price-cta-row` (Flex-Zeile, `justify-content:space-between`, `align-items:center`) direkt unter `.unit` in `.card-top-info` verschoben — er sitzt jetzt rechts neben `.price-cta-info` (Rabattzeile `.saving` + optional `.avg-context`), vertikal zentriert zu diesem Zwei-Zeilen-Block, statt wie zuvor ganz unten in eigener Zeile/Spalte.
+  - `.card-bottom` enthält jetzt nur noch zwei Kinder (`.store` links, `.meta-row` rechts) und bleibt auf allen Breiten eine Flex-Zeile (`justify-content:space-between`, `align-items:flex-start`) — `.meta-row` (Zeitraum + „Preisverlauf") ist jetzt rechtsbündig (`align-items:flex-end`). Die bisherige `@media(max-width:540px){.card-bottom{flex-direction:column}}`-Regel (stapelte Händler/Zeitraum/Button untereinander) wurde entfernt, da das neue Referenzdesign explizit nebeneinander verlangt.
+- Da bei ~375px Breite nur noch ~230px für Preistext+Button bzw. Händler+Meta zur Verfügung stehen (Produktbild+Gap nehmen den Rest), wurden auf schmalen Screens gezielt Schrift-, Icon- und Innenabstandsgrößen reduziert (Produktbild 74→64px, Preis 24→19px, Rabatt-Pill/„Zum Angebot"-Button/Preisverlauf-Pill kompakter), statt die Anordnung zu verändern — wie vom Nutzer explizit gefordert („intelligent skalieren statt umstrukturieren").
+- **Bug beim Umsetzen gefunden und behoben:** die `@media(max-width:540px)`-Regel stand im Stylesheet vor den Basis-Regeln für `.saving`, `.price`, `.unit` etc. (weiter unten im „BUTTONS"-Abschnitt definiert) — bei gleicher Selektor-Spezifität gewinnt die später im Stylesheet stehende Regel, wodurch die Media-Query-Overrides für genau diese Properties trotz zutreffender Bedingung ignoriert wurden (nur die zufällig vor der Media Query stehenden Basis-Regeln, z. B. `.card-top .thumb`, griffen). Behoben, indem der gesamte Mobile-Media-Query-Block ans Ende des `<style>`-Blocks verschoben wurde (steht jetzt direkt vor `</style>`) — dadurch gewinnt er zuverlässig, unabhängig von der Position der jeweiligen Basis-Regel im Stylesheet.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v28` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server bei 375px (Start- und Favoriten-Tab, mehrere Karten inkl. Karten mit Badges-Zeile „Nur noch 2 Tage gültig" und ohne Ø-Preis-Vergleich): kein horizontaler Overflow, kein Textumbruch mitten im Wort (`white-space:nowrap` auf Preis/Rabatt-Pill/Button/Datum), Preisformat weiterhin korrekt mit Komma. Desktop/Tablet (>540px, App-Shell weiterhin bei 560px gedeckelt) ungestört geprüft — Button sitzt dort ebenfalls neben der Rabattzeile statt wie zuvor ganz unten, was angesichts der ohnehin auf ~560px gedeckelten App-Breite konsistent wirkt und nicht „kaputt".
+
+**Wichtige Entscheidungen:**
+- Bewusst kein Duplizieren von HTML-Templates für Mobile/Desktop — die neue Anordnung (Button neben Rabattzeile, Händler/Meta nebeneinander) gilt jetzt einheitlich für alle Breiten, da die `.app`-Shell ohnehin durchgehend auf 560px gedeckelt ist und „Desktop" hier de facto dieselbe schmale Kartenbreite wie ein Smartphone hat.
+- „0,20 € unter Ø Preis (…)" darf bei langen Beträgen weiterhin auf zwei Zeilen umbrechen (kein `nowrap` erzwungen) — laut Vorgabe des Nutzers niedrigste Priorität („keine unnötigen Umbrüche" kommt nach Layout-Treue und Lesbarkeit), bewusst nicht durch noch kleinere Schrift erzwungen.
+
+**Offen:**
+- Exakte Pixelwerte (Abstände/Schriftgrößen) der Referenz „mobil-neu" konnten nur visuell abgeschätzt werden, nicht pixelgenau vermessen (Referenzbild ohne Metadaten/Maßangaben) — die Anordnung/Struktur wurde exakt übernommen, Feintuning einzelner Abstände ggf. nach Rückmeldung des Nutzers nötig.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-03 — Favoriten-Herz als Pin auf dem Produktbild (statt in der Kopfzeile neben dem Namen)
 
 **Umgesetzt:**
