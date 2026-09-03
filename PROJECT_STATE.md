@@ -4,6 +4,25 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-03 — Suche: Schreibweisen-tolerant (Leerzeichen/Bindestrich-unabhängig), für alle Produkte generisch
+
+**Umgesetzt:**
+- Neue Hilfsfunktion `normalizeSearchText(str)` (klein schreiben + alle Leerzeichen/Bindestriche entfernen). Damit gelten z. B. „Redbull", „Red Bull" und „Red-Bull" als identisch, ebenso „Rockstar" und „Rock Star" — generisch für alle Produkte/Marken im Katalog, kein Wörterbuch mit fest hinterlegten Einzelfällen nötig, da bei jedem Vergleich beide Seiten (Sucheingabe UND Produkt-/Marken-/Händlername) gleich normalisiert werden.
+- In `render()` (Haupt-Filterlogik der Angebotsliste, inkl. der Zähl-Logik für den „aber X Angebote deutschlandweit"-Hinweis bei 0 Treffern) sowie in `getSearchSuggestions()` (Autocomplete-Vorschläge aus der letzten Runde) auf `normalizeSearchText()` umgestellt statt nur `.toLowerCase()`.
+- `highlightMatch()` (Hervorhebung des Treffers in den Vorschlägen) entsprechend angepasst: der Abgleich läuft normalisiert, die Hervorhebung erscheint aber weiterhin an der korrekten Stelle in der Original-Schreibweise (inkl. enthaltenem Leerzeichen) — z. B. markiert Eingabe „redbull" den kompletten Abschnitt „Red Bull" in einem Stück, nicht nur ein Teilwort.
+- Betrifft Mobile und Webapp gleichermaßen (gemeinsame Logik, kein Media Query/keine Verzweigung).
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v31` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server (Mobile 375px + Webapp/Desktop 577px): „Redbull" → 5 Red-Bull-Vorschläge + 10 passende Angebote in der Liste; „Rock Star" → 2 Rockstar-Vorschläge + 3 passende Angebote; Hervorhebung zeigt korrekt „Red Bull"/„Rockstar" als zusammenhängenden Block; bereits vorher funktionierende Fälle (Händlersuche „kaufland", leere Suche → volle Liste + geschlossenes Dropdown) weiterhin unverändert korrekt. Keine Konsolenfehler.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-03 — Suchfeld: Textfarbe korrigiert + Live-Vorschläge (Autocomplete) für Mobile und Webapp
 
 **Umgesetzt:**

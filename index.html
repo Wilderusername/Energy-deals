@@ -3228,6 +3228,15 @@ function formatDateRange(from, until){
 
 function euro(n){ return n.toFixed(2).replace(".",","); }
 
+/* Schreibweisen-tolerante Suche: normalizeSearchText() entfernt Leer- und
+   Bindestriche und macht klein, damit z.B. "Redbull"/"Red Bull"/"Red-Bull"
+   oder "Rockstar"/"Rock Star" beim Vergleich als identisch gelten - für
+   ALLE Produkte/Marken generisch (kein Wörterbuch mit Einzelfällen nötig),
+   da beide Seiten (Sucheingabe wie Produktdaten) gleich normalisiert werden. */
+function normalizeSearchText(str){
+  return str.toLowerCase().replace(/[\s-]+/g, "");
+}
+
 /* Deutsches Zahlenformat (Komma) für Preis-Eingabefelder: parseGermanPrice()
    liest den getippten Text (egal ob Komma oder Punkt getippt wurde) zu einer
    JS-Zahl ein, sanitizePriceInputValue()/attachGermanPriceInput() sorgen
@@ -3313,7 +3322,7 @@ function buildBadges(deal, isFav, favLiterMin){
 function render(){
 
   let filtered = [...deals];
-  const searchText = search.value.toLowerCase().trim();
+  const searchText = normalizeSearchText(search.value.trim());
 
   if(viewFavoritesOnly){
     filtered = filtered.filter(d=>favorites.has(d.productId));
@@ -3326,9 +3335,9 @@ function render(){
   }
   if(searchText){
     filtered = filtered.filter(d=>
-      d.product.toLowerCase().includes(searchText) ||
-      d.brand.toLowerCase().includes(searchText) ||
-      d.store.toLowerCase().includes(searchText)
+      normalizeSearchText(d.product).includes(searchText) ||
+      normalizeSearchText(d.brand).includes(searchText) ||
+      normalizeSearchText(d.store).includes(searchText)
     );
   }
   if(!searchWide){
@@ -3390,7 +3399,7 @@ function render(){
         if(viewFavoritesOnly && !favorites.has(d.productId)) return false;
         if(selectedBrand!=="Alle" && d.brand!==selectedBrand) return false;
         if(storeFilter.value!=="Alle" && d.store!==storeFilter.value) return false;
-        if(searchText && !(d.product.toLowerCase().includes(searchText) || d.brand.toLowerCase().includes(searchText) || d.store.toLowerCase().includes(searchText))) return false;
+        if(searchText && !(normalizeSearchText(d.product).includes(searchText) || normalizeSearchText(d.brand).includes(searchText) || normalizeSearchText(d.store).includes(searchText))) return false;
         if(hideExpired && daysUntil(d.validUntil)<0) return false;
         if(noPfandOnly && d.pfand!==0) return false;
         if(sizeFilter!=="Alle" && String(d.sizeMl)!==sizeFilter) return false;
@@ -3546,11 +3555,11 @@ document.querySelectorAll(".tabs .chip").forEach(button=>{
 /* ---------------- SUCH-VORSCHLÄGE (AUTOCOMPLETE) ---------------- */
 
 function getSearchSuggestions(query){
-  const q = query.toLowerCase().trim();
+  const q = normalizeSearchText(query.trim());
   if(!q) return [];
   const scored = products.map(p=>{
-    const name = p.name.toLowerCase();
-    const brand = p.brand.toLowerCase();
+    const name = normalizeSearchText(p.name);
+    const brand = normalizeSearchText(p.brand);
     let score;
     if(name.startsWith(q)) score = 0;
     else if(brand.startsWith(q)) score = 1;
@@ -3563,10 +3572,27 @@ function getSearchSuggestions(query){
   return scored.slice(0,6).map(x=>x.product);
 }
 
+/* Hebt die Trefferstelle in der ORIGINAL-Schreibweise (mit Leerzeichen/
+   Bindestrichen) hervor, obwohl der Abgleich selbst normalisiert (Leer-
+   zeichen-/Groß-Kleinschreibung-unabhängig) erfolgt: normText/origIndex
+   bilden jede normalisierte Position auf ihre Position im Original-Text ab,
+   sodass z.B. bei Eingabe "redbull" in "Red Bull" der komplette Abschnitt
+   "Red Bull" (inkl. Leerzeichen) markiert wird statt nur eines Teilstücks. */
 function highlightMatch(text, query){
-  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  const normQuery = normalizeSearchText(query.trim());
+  if(!normQuery) return text;
+  const normChars = [];
+  const origIndex = [];
+  for(let i=0;i<text.length;i++){
+    if(/[\s-]/.test(text[i])) continue;
+    normChars.push(text[i].toLowerCase());
+    origIndex.push(i);
+  }
+  const idx = normChars.join("").indexOf(normQuery);
   if(idx === -1) return text;
-  return text.slice(0,idx) + "<mark>" + text.slice(idx, idx+query.length) + "</mark>" + text.slice(idx+query.length);
+  const start = origIndex[idx];
+  const end = origIndex[idx + normQuery.length - 1] + 1;
+  return text.slice(0,start) + "<mark>" + text.slice(start,end) + "</mark>" + text.slice(end);
 }
 
 function hideSearchSuggestions(){
