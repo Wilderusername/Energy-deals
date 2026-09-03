@@ -4,6 +4,27 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-03 — Suchfeld: Textfarbe korrigiert + Live-Vorschläge (Autocomplete) für Mobile und Webapp
+
+**Umgesetzt:**
+- **Bug behoben:** `.search input{color:var(--text-primary)}` verwendete die themenabhängige Textfarbe. Die Suchbox selbst ist aber bewusst immer hell (`rgba(255,255,255,.96)`, unabhängig vom Theme). Im Dark Mode ist `--text-primary` fast weiß → eingegebener Text war praktisch unsichtbar (weißer Text auf weißem Feld). Fix: Eingabetext und Platzhalter nutzen jetzt die themenunabhängigen Palette-Variablen `var(--n700)` (dunkles Navy) bzw. `var(--n500)` (mittleres Grau) statt der Theme-Variablen — dadurch immer gut lesbar, unabhängig von Light/Dark Mode. Betrifft Mobile und Webapp gleichermaßen (eine gemeinsame Regel, kein Media Query).
+- **Neu: Live-Suchvorschläge** unterhalb des Suchfelds, wie bei gängigen Shopping-/Preisvergleichsseiten: Bei jeder Eingabe (`input`-Event) werden bis zu 6 passende Produkte aus dem Produktkatalog gesucht (Treffer nach Produktname/Marke, `startsWith` vor `includes`, alphabetisch sortiert) und als Dropdown-Karte mit Bild, Name (Treffer farblich hervorgehoben via `<mark>`) und Marke/Menge angezeigt.
+  - Klick auf einen Vorschlag übernimmt den vollen Produktnamen ins Suchfeld, schließt das Dropdown und filtert die bestehende Angebotsliste sofort auf dieses eine Produkt (nutzt die bereits vorhandene Such-/Filterlogik in `render()` — keine neue Navigation, kein neuer View, damit der eigentliche Zweck der App — Preisvergleich — im Fokus bleibt statt z. B. zu einem reinen Produktinfo-Sheet zu springen).
+  - Kein Treffer → dezenter Hinweis „Keine passenden Produkte gefunden" statt leerem/verwirrendem Dropdown.
+  - Dropdown schließt bei Klick außerhalb, bei Escape und nach Auswahl; öffnet sich erneut beim Fokussieren des Feldes, falls noch Text drinsteht. Wird zusätzlich an den beiden bestehenden Stellen geschlossen, an denen `search.value` programmatisch geleert wird (Filter zurücksetzen, „Start"-Tab).
+  - Neue Funktionen `getSearchSuggestions()`, `highlightMatch()`, `renderSearchSuggestions()`, `hideSearchSuggestions()` sowie zugehörige Event-Listener ergänzt; bestehende Fav-/Card-/Sheet-Logik nicht verändert.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v30` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server: Mobile (375px) und Webapp/Desktop (577px), Light + Dark Mode — Eingabetext/Platzhalter in beiden Themes gut lesbar; Vorschläge korrekt sortiert/gefiltert (getestet u. a. mit „Re", „Mo", „Ca"); Klick auf Vorschlag füllt Suchfeld und filtert Liste korrekt (z. B. „Re" → Auswahl „Red Bull Blue Edition (Heidelbeere)" → Liste zeigt nur noch die 2 Angebote dieses Produkts); Schließen per Klick außerhalb und per Escape bestätigt; kein horizontaler Overflow; keine Konsolenfehler.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-03 — Mobile Feintuning: „BESTER PREIS"-Badge nicht mehr gestreckt, Herz ragt nicht mehr ins Produktbild
 
 **Umgesetzt:**
