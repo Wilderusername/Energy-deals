@@ -4,6 +4,49 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-03 — Name-/E-Mail-Bearbeitung + neue Adressverwaltung nach "Konto verwalten" verschoben
+
+**Umgesetzt (Mobile + Webapp):**
+- **"Mein Bereich"-Hauptbildschirm vereinfacht**: Avatar und Name bleiben wie gefordert direkt sichtbar (unverändert an derselben Stelle), aber der Name ist dort jetzt reiner Anzeigetext (`.profile-name-display`, kein Stift-Icon mehr) — das komplette E-Mail-Feld ist von dort entfernt.
+- **Neuer Abschnitt „Persönliche Daten" unter „Konto verwalten"**: enthält jetzt Name (Bearbeiten-Mechanik 1:1 hierher verschoben, identisches Verhalten) und E-Mail-Adresse (komplettes Feld verschoben). Der Name wird intern an zwei Stellen synchron gehalten (Anzeige in „Mein Bereich" + Eingabefeld unter „Konto verwalten") — beim Speichern aktualisieren sich beide sofort.
+- **Neu: Adressverwaltung** („Adresse"-Feld unter „Persönliche Daten", nach Vorbild typischer Shopping-Apps wie Amazon/Zalando): Straße & Hausnummer, PLZ, Ort, Land (Land vorbelegt mit „Deutschland"). Zeigt im Ansichtsmodus eine Kurzfassung („Musterstraße 12, 59821 Arnsberg, Deutschland") oder „Noch keine Adresse hinterlegt", falls nichts gespeichert ist; im Bearbeiten-Modus ein gestapeltes Formular (PLZ+Ort nebeneinander, restliche Felder je eigene Zeile, Speichern-Button über volle Breite) — neue CSS-Variante `.field-edit-row.stacked` für mehrfeldige Formulare, ergänzt die bestehende einzeilige Variante (Name/E-Mail), ohne diese zu verändern. Persistiert als JSON unter dem neuen localStorage-Key `canspot-address`, nach demselben Muster wie `canspot-name`/`canspot-email`.
+- Bearbeiten-/Speichern-Mechanik (`[data-edit]`/`[data-save]`-Handler, `setFieldEditing()`) generisch erweitert (Fokus-Ziel-Zuordnung jetzt als kleine Map statt hartcodierter Zwei-Wege-Verzweigung), damit sie ohne Sonderfall auch für „address" funktioniert — Verhalten für „name"/„email" dabei unverändert.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v40` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server (Mobile 375px + Webapp/Desktop 577px, Light + Dark Mode): Hauptbildschirm zeigt Avatar+Name ohne Bearbeiten-Möglichkeit und ohne E-Mail-Feld; „Konto verwalten" zeigt Name/E-Mail/Adresse mit funktionierendem Bearbeiten+Speichern; Namensänderung dort aktualisiert nachweislich sofort auch die Anzeige in „Mein Bereich"; Adresse speichert korrekt in `localStorage`, Kurzfassung wird korrekt gebildet, bleibt nach Neuladen erhalten, zeigt „Noch keine Adresse hinterlegt" wenn leer; Profilbild-Bearbeitung/-Entfernen, „Abmelden", „Konto löschen" weiterhin unverändert funktionsfähig; Filter/Suche unverändert fehlerfrei; keine Konsolenfehler.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
+## 2026-09-03 — "Bester Preis" öffnet Händler-Fenster, Banner-Profil-Button entfernt, Suche fokussiert zuverlässiger, "Mein Bereich" neu sortiert
+
+**Umgesetzt (alles für Mobile + Webapp, wo nicht anders vermerkt):**
+- **"BESTER PREIS"-Badge**: öffnete bisher per `window.open(deal.link, "_blank")` direkt einen externen Tab. Jetzt `data-store-detail="${deal.id}"` statt `data-link` — nutzt denselben, bereits vorhandenen In-App-Mechanismus wie „Zum Angebot"/Händler-Logo (öffnet das Händler-Fenster; von dort aus weiterhin über „Angebot online öffnen" erreichbar, falls gewünscht). Alter, jetzt toter `.badge-best`-Klick-Handler entfernt.
+- **„Mein Bereich"-Button oben rechts im Banner entfernt** — war redundant zum „Mein Bereich"-Tab in der unteren Navigation, der unverändert funktioniert. Zugehörigen (sonst verwaisten) Event-Listener mit entfernt, um einen `null`-Fehler beim Laden zu vermeiden.
+- **„Suche"-Tab**: `search.focus()` wird jetzt VOR dem `window.scrollTo({top:0})` aufgerufen statt danach — mobile Browser scrollen ein neu fokussiertes Feld automatisch mit ins Bild, sobald die virtuelle Tastatur erscheint, was einen vorher gestarteten Scroll-zum-Seitenanfang sonst wieder überschreiben könnte; `focus()` bleibt weiterhin synchron im Klick-Handler (Voraussetzung dafür, dass mobile Browser die Tastatur überhaupt automatisch öffnen). **Nebenbei gefundenen Bug behoben**: der Tab hat bisher `setActiveNav("home")` statt `setActiveNav("search")` aufgerufen — beim Antippen von „Suche" wurde also fälschlich „Start" hervorgehoben statt „Suche" selbst.
+- **„Mein Bereich" neu sortiert** (an gängigen Shopping-App-Kontoseiten orientiert, z.B. Amazon/Zalando-Stil: Kern-Einstellungen direkt sichtbar, riskante Kontoaktionen einen Tipp tiefer):
+  - „Erscheinungsbild" bleibt wie gefordert direkt sichtbar, unverändert an derselben Stelle.
+  - Neue Gruppenüberschrift „Einstellungen" über „Standort & Umkreis" und „Push-Benachrichtigungen" (beide inhaltlich unverändert, nur jetzt klar gruppiert statt ohne Überschrift zu schweben).
+  - Neue Gruppenüberschrift „Meine Aktivität" über „Favoriten (N)"/„Preisalarme (N)" (jetzt als kleinere `.field-sublabel`-Unterüberschriften innerhalb der Gruppe statt zwei gleichrangige Überschriften direkt hintereinander) — Inhalte/Listen selbst unverändert.
+  - „Konto löschen" aus der Hauptansicht entfernt und in ein neues Untermenü „Konto verwalten" verschoben (erreichbar über eine neue Zeile unter „Abmelden", das sichtbar bleibt) — dort unter einer „Gefahrenzone"-Überschrift mit Warnhinweis, wie bei den meisten Shopping-Apps üblich für destruktive Kontoaktionen. Button/ID/Klick-Verhalten (Demo-Toast) unverändert, nur der Ort hat sich geändert.
+  - Neues Untermenü folgt exakt demselben Sheet-Muster wie alle anderen Fenster (`.overlay > .sheet > .sheet-inner`, X-Button, Handle) und ist in beide bereits bestehenden Listen für „Wisch nach unten zum Schließen" und „Tippen auf Handle zum Schließen" eingetragen — dieselbe Erwartung, die für alle anderen Fenster bereits gilt.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v39` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server (Mobile 375px + Webapp/Desktop 577px, Light + Dark Mode): „BESTER PREIS" öffnet nachweislich das Händler-Fenster statt eines neuen Tabs; Banner zeigt nur noch die Glocke; „Suche" scrollt zuverlässig nach oben, fokussiert das Suchfeld UND markiert jetzt korrekt „Suche" (nicht mehr „Start") als aktiven Tab; „Mein Bereich" zeigt „Konto löschen" nicht mehr direkt, „Konto verwalten" öffnet das neue Untermenü korrekt, Löschen-Button dort weiterhin funktionsfähig (Demo-Toast), Untermenü schließt per X, Wisch-Geste und Handle-Tipp; Name-/E-Mail-Bearbeitung, Theme-Umschalter, Favoriten-/Preisalarm-Listen weiterhin unverändert funktionsfähig; Filter/Suche/Karte-Tab unverändert fehlerfrei; keine Konsolenfehler.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-03 — Klickziele auf der Angebotskarte präzisiert (Mobile + Webapp): kein Klick auf leere Fläche mehr, Händler öffnet Karte, Herz nur exakt getroffen
 
 **Umgesetzt:**
