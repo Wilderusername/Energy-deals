@@ -4,6 +4,22 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-04 — "Konto verwalten" und "Abmelden" vertauscht
+
+**Umgesetzt (Mobile + Webapp):**
+- Reihenfolge im „Konto"-Abschnitt von „Mein Bereich" getauscht: „Konto verwalten" steht jetzt vor „Abmelden" (zuvor umgekehrt). Reine Markup-Umstellung, IDs/Klick-Verhalten beider Buttons unverändert.
+- Verifiziert über einen temporären lokalen Server (Mobile 375px + Webapp/Desktop 577px): neue Reihenfolge sichtbar, beide Buttons weiterhin funktionsfähig (Konto verwalten öffnet Untermenü, Abmelden zeigt Demo-Toast), keine Konsolenfehler.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v41` erhöht (Pflichtregel).
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-03 — Name-/E-Mail-Bearbeitung + neue Adressverwaltung nach "Konto verwalten" verschoben
 
 **Umgesetzt (Mobile + Webapp):**
