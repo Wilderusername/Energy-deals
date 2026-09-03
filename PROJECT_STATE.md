@@ -4,6 +4,24 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-03 — Wisch-nach-unten-zum-Schließen für ALLE Sheets (nur Mobile), fehlte bei 7 von 9
+
+**Umgesetzt:**
+- Nutzerhinweis: Nicht jedes Sheet ließ sich per Wisch nach unten schließen. Geprüft: von 9 Overlays (`locOverlay`/Standort, `notifOverlay`/Benachrichtigungen, `newsOverlay`/Neuigkeiten, `filterOverlay`/Weitere Filter, `sortOverlay`/Sortierung, `profileOverlay`/Mein Bereich, `histOverlay`/Preisverlauf, `productDetailOverlay`/Produktdetail, `storeDetailOverlay`/Händler-Detail) hatten nur `histOverlay` und `productDetailOverlay` die echte Wisch-Geste (`initSwipeToClose`) — die übrigen 7 hatten nur `initHandleTapToClose` (Tippen auf den kleinen Handle-Balken oben, keine Wischgeste). `initSwipeToClose` jetzt für alle 9 Overlays aktiviert.
+- **Bug gefunden und behoben, der beim naiven Übertragen aufgetreten wäre**: `initSwipeToClose` prüfte bisher nur `sheet.scrollTop`, um zu erkennen "ist der Nutzer noch ganz oben, oder scrollt er gerade im Inhalt?". Manche Sheets scrollen aber nicht direkt über `.sheet`, sondern über ein inneres `.sheet-scroll` (verwendet bei Sheets mit fest stehendem Footer-Button, z. B. `locOverlay` mit "Aktualisieren" und `filterOverlay` mit "Anwenden" — siehe CLAUDE.md-Markup-Konvention). Ohne Fix hätte ein Wisch nach unten das Sheet geschlossen, obwohl der Nutzer nur innerhalb des gescrollten Inhalts nach oben wischen wollte. Behoben: `initSwipeToClose` ermittelt jetzt `overlay.querySelector(".sheet-scroll") || sheet` und prüft dessen `scrollTop` statt immer `.sheet` selbst — für die beiden bereits vorher funktionierenden Sheets (kein `.sheet-scroll`) exakt dasselbe Verhalten wie zuvor (Regressionsrisiko minimiert), für die neu hinzugekommenen mit `.sheet-scroll` (`locOverlay`, `filterOverlay`) jetzt korrekt.
+- Betrifft nur echte Touch-Geräte (Mobile) — auf Maus-basierten Desktop-/Webapp-Bildschirmen feuern `touchstart`/`touchmove`/`touchend` ohnehin nie, daher wie gewünscht keine Auswirkung auf die Webapp-Version.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v37` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server mit simulierten Touch-Events (375px Breite): alle 7 zuvor fehlenden Sheets schließen jetzt korrekt per Wisch-Geste; `histOverlay`/`productDetailOverlay` weiterhin unverändert funktionsfähig (kein Regressions-Bruch); horizontales Ziehen am Umkreis-Regler (`locOverlay`) löst weiterhin korrekt NICHT das Schließen aus (Geste wird anhand Vertikal-/Horizontal-Dominanz unterschieden); Wisch nach unten bei bereits heruntergescrolltem Inhalt (`filterOverlay`, `scrollTop=200`) schließt korrekt NICHT (bestätigt den `.sheet-scroll`-Fix); Filter-Chips, Sortier-Zeilen und Benachrichtigungs-Toggle innerhalb der betroffenen Sheets weiterhin normal klickbar; Suche, Karte, Favoriten-Tab weiterhin fehlerfrei; keine Konsolenfehler.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-03 — Preisverlauf-Chart (nur Mobile): Punkt bleibt nach Antippen eines Tages stehen statt zurückzuspringen
 
 **Umgesetzt:**

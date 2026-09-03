@@ -4536,6 +4536,14 @@ document.querySelectorAll(".overlay").forEach(ov=>{
 function initSwipeToClose(overlayId){
   const overlay = document.getElementById(overlayId);
   const sheet = overlay.querySelector(".sheet");
+  /* Manche Sheets scrollen direkt über .sheet (kein eigener Footer-Button),
+     andere über ein inneres .sheet-scroll, damit ein .sheet-footer (z.B.
+     "Anwenden"/"Aktualisieren") beim Scrollen fix stehen bleibt (siehe
+     CLAUDE.md-Markup-Konvention). Für die "ist noch ganz oben?"-Prüfung
+     muss deshalb das TATSÄCHLICH scrollende Element geprüft werden, sonst
+     würde die Wischgeste ausgelöst, obwohl man nur innerhalb des Inhalts
+     nach oben scrollt. */
+  const scrollEl = overlay.querySelector(".sheet-scroll") || sheet;
   const CLOSE_THRESHOLD = 110;
   let startY = 0, startX = 0, lastY = 0, tracking = false, dragging = false;
 
@@ -4543,7 +4551,7 @@ function initSwipeToClose(overlayId){
     if(e.touches.length !== 1) return;
     startY = lastY = e.touches[0].clientY;
     startX = e.touches[0].clientX;
-    tracking = sheet.scrollTop <= 0;
+    tracking = scrollEl.scrollTop <= 0;
     dragging = false;
   }, {passive:true});
 
@@ -4556,7 +4564,7 @@ function initSwipeToClose(overlayId){
 
     if(!dragging){
       if(deltaY < 8 || Math.abs(deltaX) > Math.abs(deltaY)) return;
-      if(sheet.scrollTop > 0){ tracking = false; return; }
+      if(scrollEl.scrollTop > 0){ tracking = false; return; }
       dragging = true;
       sheet.classList.add("dragging");
     }
@@ -4585,8 +4593,14 @@ function initSwipeToClose(overlayId){
   sheet.addEventListener("touchcancel", endDrag);
 }
 
-initSwipeToClose("histOverlay");
-initSwipeToClose("productDetailOverlay");
+/* Wisch-nach-unten-zum-Schließen gilt für JEDES Sheet/Fenster der App, nicht
+   nur für Preisverlauf/Produktdetail wie zuvor - Standort, Benachrich-
+   tigungen, Neuigkeiten, Weitere Filter, Sortierung, Mein Bereich und
+   Händler-Detail bekommen dieselbe Geste. Wirkt sich (wie schon zuvor bei
+   den ersten beiden Sheets) nur auf echte Touch-Geräte aus - auf Maus-
+   basierten Desktop-/Webapp-Bildschirmen feuern touchstart/-move/-end
+   ohnehin nie, daher betrifft dies ausschließlich die mobile Nutzung. */
+["locOverlay","notifOverlay","newsOverlay","filterOverlay","sortOverlay","profileOverlay","histOverlay","productDetailOverlay","storeDetailOverlay"].forEach(initSwipeToClose);
 
 /* Zusätzlich zu Pfeil/X und (bei Detail-/Preisverlauf-Fenster) der
    Wischgeste: Tippen auf den Handle-Balken oben mittig schließt das Sheet —
