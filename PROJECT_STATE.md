@@ -4,6 +4,31 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-03 — Klickziele auf der Angebotskarte präzisiert (Mobile + Webapp): kein Klick auf leere Fläche mehr, Händler öffnet Karte, Herz nur exakt getroffen
+
+**Umgesetzt:**
+- **"Klick auf leere Fläche öffnet Produktansicht" entfernt**: Der `dealsContainer`-Klick-Handler hatte am Ende einen Catch-all-Fallback (`const card = e.target.closest(".card"); if(card...) openHistory(...)`), der auf JEDEN Klick irgendwo auf der Karte reagierte, der nicht bereits von einem spezifischeren Handler abgefangen wurde. Ersatzlos entfernt — ein Klick auf Preis, Rabatt-Badges, Zeitraum, Ersparnis usw. löst jetzt bewusst keine Aktion mehr aus.
+- **Händler-Logo/-Name öffnet jetzt die Händler-Karte statt (fälschlich) die Produktansicht**: `data-store-detail="${deal.id}"` auf das Händler-Logo (`.store-logo`) und den Händlernamen-Text ergänzt — nutzt den bereits vorhandenen `openStoreDetail()`-Mechanismus (identisch zum "Zum Angebot"-Button), keine neue Klick-Logik nötig.
+- **Neu: Mini-Karte im Händler-Fenster** ("Standort"-Abschnitt, oberhalb von Adresse/Öffnungszeiten): zeigt denselben radialen "Du in der Mitte, Pin nach Winkel+Distanz positioniert"-Stil wie der bestehende Karte-Tab (`renderMap()`), hier mit genau einem Pin für den jeweiligen Händler (`renderStoreDetailMap()`, neue Funktion) — dieselben `.map-canvas`/`.map-pin`/`.map-ring`/`.map-user`-CSS-Klassen wiederverwendet, keine neue Kartendarstellung/Bibliothek nötig, dadurch optisch konsistent zum Rest der App.
+- **Produktname jetzt zusätzlich anklickbar**: `data-product-detail="${deal.productId}"` auf den Produktnamen-Text ergänzt (das Produktbild hatte dieses Attribut bereits) — öffnet die Produktseite mit den Inhaltsstoffen, wie beim Bild.
+- **Herz favorisiert jetzt wirklich nur bei direktem Treffer**: Die Klickfläche des Herz-Buttons (`.thumb-frame .btn.fav`) war deutlich größer als das sichtbare Icon (Webapp: 44px Button um ein 26px Icon, 9px unsichtbarer Rand je Seite; Mobile: 36px um 20px, 8px Rand) — ein Klick "in der Nähe" des Herzens, aber eigentlich auf dem Produktbild, favorisierte trotzdem. Klickfläche auf 30px (Webapp) bzw. 24px (Mobile) verkleinert, nur noch 2px Rand um das weiterhin gleich große, gleich positionierte Icon — Position/Optik des Herzens dadurch unverändert (nachgerechnet: exakt dieselbe Pixel-Position wie zuvor), nur der unsichtbare Klickbereich ist jetzt eng genug, dass ein Klick daneben ans darunterliegende Bild durchgereicht wird (öffnet dort korrekt die Produktseite statt zu favorisieren).
+- Cursor:pointer für die neuen Klickziele ergänzt (`[data-product-detail]`, `[data-store-detail]`) als dezente Hover-Rückmeldung, sonst keine optischen Änderungen.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v38` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server (Mobile 375px + Webapp/Desktop 577px, Light + Dark Mode): Klick auf leere Kartenbereiche (Preiszeile, Ersparnis-Zeile, Karte selbst) öffnet nachweislich nichts mehr; Produktname UND -bild öffnen die Produktseite; Händler-Logo UND -Name öffnen das Händler-Fenster mit korrekt gerenderter Mini-Karte; Herz-Klick favorisiert weiterhin zuverlässig bei direktem Treffer, ein Klick auf das Bild (aber nicht mehr auf das jetzt kleinere Herz-Ziel) favorisiert nicht mehr und öffnet stattdessen korrekt die Produktseite; „Zum Angebot"-Button, „Preisverlauf"-Button sowie der Produktlink im Alarme-Tab weiterhin funktionsfähig; Filter/Suche/Karte-Tab unverändert fehlerfrei; keine Konsolenfehler.
+
+**Wichtige Entscheidungen:**
+- Für die Händler-Mini-Karte bewusst die exakt gleiche Positionierungsformel (Winkel aus `hashStr(store)`, Radius aus `distanceKm`/`radiusKm`) wie im bestehenden Karte-Tab wiederverwendet statt einer eigenen Logik — dadurch bei nahen Händlern (verglichen mit dem Standard-Suchradius von 10 km) ein Pin nah am Zentrum, exakt wie im Haupt-Kartentab schon der Fall (kein neues/inkonsistentes Verhalten, nur an einer zweiten Stelle sichtbar gemacht).
+- Herz-Klickfläche nicht auf exakte Icon-Größe (0px Rand) reduziert, sondern auf ca. 2px Rand — verhindert das beschriebene Fehlverhalten zuverlässig, ohne die Fläche so klein zu machen, dass ein exakt gemeinter Klick versehentlich knapp danebengeht.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-03 — Wisch-nach-unten-zum-Schließen für ALLE Sheets (nur Mobile), fehlte bei 7 von 9
 
 **Umgesetzt:**
