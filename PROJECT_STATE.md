@@ -4,6 +4,49 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-03 — Preisverlauf komplett überarbeitet: Tages-Karussell statt Linien-Chart, datierte Preisverlaufs-Datenstruktur
+
+**Umgesetzt:**
+- **Kernänderung**: Die Linien-Chart im Preisverlauf-Sheet (zeigte alle Tage des gewählten Zeitraums gleichzeitig gequetscht auf einem Bildschirm) ist ersetzt durch ein **horizontal durchwischbares Tages-Karussell** — ein Tag pro Ansicht, volle verfügbare Breite, kein Zusammenpressen von Schrift/Statistik. Umgesetzt mit nativem CSS `scroll-snap` (fühlt sich auf Mobile wie eine native Wisch-Geste an, funktioniert auf der Webapp zusätzlich mit Maus-Rad/Trackpad) plus Prev-/Next-Buttons und Tastatur-Pfeiltasten (◀/▶) für Nicht-Touch-Bedienung. Kartenreihenfolge chronologisch (ältester Tag links, „Heute" rechts) — dadurch entspricht Wischen nach rechts (Finger bewegt sich nach rechts, Inhalt rutscht nach rechts, Vortag wird sichtbar) exakt „zum vorherigen Tag", wie in der Anforderung beschrieben.
+- **Neue Datenstruktur**: Jeder Preis-Datenpunkt ist jetzt ein eigenständiges, datiertes Objekt statt einer nackten Zahl: `{ date, price, retailer, deposit, unitPrice, available }`. Das Datum ist damit fest mit dem Preis verknüpft (nicht dekorativ) — bein Wischen zu einem anderen Tag werden dessen tatsächliche Daten geladen und angezeigt (Preis, Preisänderung ggü. Vortag, Literpreis, Pfand, Preisvergleich zum Ø, „Gesamt an der Kasse", ggf. Tiefstpreis-/Nicht-verfügbar-Badge — alles pro Tag live berechnet, nicht fest verdrahtet).
+- **Sauber austauschbare Datenquelle** (Hauptanliegen der Anfrage): `genPriceHistory()` generiert weiterhin 90 Tage synthetische Demo-Daten als Fallback, aber `normalizePriceHistory()` übernimmt ein von `deals.json` geliefertes `priceHistory`-Array 1:1 und ergänzt nur fehlende optionale Felder (`retailer`→`store` des Angebots, `deposit`→`pfand`, `unitPrice`→aus `price` berechnet, `available`→`true`) — eine künftige echte Datenquelle muss also nur minimale `{date, price}`-Paare liefern, keine Preisverlaufs-Logik neu bauen. Das alte, undatierte `number[]`-Format wird weiterhin akzeptiert (Rückwärtskompatibilität; Daten werden dann vom heutigen Tag rückwärts gezählt), ist aber nicht mehr die empfohlene Form. `deals.json`'s `_meta.fields` und `CLAUDE.md` entsprechend aktualisiert (neuer Eintrag `priceHistory[].fields`).
+- **Bestehende Logik bewusst NICHT verändert**: `deal.history` (reines Zahlen-Array) bleibt als abgeleitetes Array (`priceHistoryPoints.map(p => p.price)`) exakt bestehen — alle bisherigen Verbraucher (Tiefstpreis-Badge auf der Karte, Ø-Preis-Vergleichsbadge, die drei „Tiefstpreis/Höchstpreis/Ø Preis"-Boxen im Sheet, `findBestDealFor()`, `renderOtherStores()`) laufen unverändert weiter, ohne selbst etwas von der neuen Datenstruktur zu wissen. Zeitraum-Chips (7/30/90 Tage), Preisalarm, Favoriten-Button, „Weitere Händler"-Liste, Teilen-Button — alles unangetastet.
+- **Bug gefunden und behoben**: Die erste Implementierung von `dateStrAddDays()` (Datum ± N Tage) nutzte `Date.prototype.toISOString()` auf einem lokal konstruierten `Date`-Objekt — das rechnet intern nach UTC um und kippt dadurch in jeder Zeitzone östlich von UTC (z. B. UTC+2, wie dieser Test-Server) den letzten Tag eines Zeitraums fälschlich auf den Vortag zurück (aus „Heute" wurde "Gestern" im Datensatz). Behoben durch ausschließliche Rechnung in UTC-Millisekunden (`Date.UTC(...)`), unabhängig von der Zeitzone des aufrufenden Geräts.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v34` erhöht (Pflichtregel).
+- Verifiziert über einen temporären lokalen Server (Mobile 375px + Webapp/Desktop 577px, Light + Dark Mode): Karussell zeigt bei „Heute" tatsächlich das korrekte heutige Datum (nach dem Zeitzonen-Fix); Wischen/Buttons/Tastaturpfeile navigieren korrekt und zeigen dabei jeweils die echten Daten des angezeigten Tages (Preis, Preisänderung, Store — an einem Beispieltag im Vergleich zu „Heute" unterschiedlich und korrekt neu berechnet); 7-Tage-Zeitraum zeigt anklickbare Punkte, 30/90-Tage zeigen stattdessen einen schlanken Fortschrittsbalken „Tag X/Y" (vermeidet 90 winzige Punkte); Wechsel des Zeitraums bzw. Öffnen eines anderen Angebots springt korrekt zurück auf „Heute"; Fenster-Resize (Mobile↔Webapp-Breite) bei offenem Sheet bleibt auf demselben Tag stehen statt zurückzuspringen; `normalizePriceHistory()` mit synthetischem Test sowohl im neuen datierten Format als auch im alten `number[]`-Format erfolgreich geprüft. Regressionstest bestehender Funktionen (Filter inkl. Packungsgröße, Suche/Autocomplete, Karte, Favoriten-/Alarme-Tab) weiterhin fehlerfrei, keine Konsolenfehler.
+
+**Wichtige Entscheidungen:**
+- `deal.history` bewusst als abgeleitetes Array beibehalten statt alle bisherigen Verbraucher auf die neue Punkt-Struktur umzustellen — deutlich risikoärmer („bestehende Funktionen dürfen nicht beschädigt werden") und die einzig wirklich nötige Änderung ist ohnehin die zeitliche Zuordnung fürs Karussell, nicht die bereits funktionierenden Aggregat-Statistiken.
+- Retailer/Pfand nicht auf jedem einzelnen Preis-Datenpunkt zur Pflicht gemacht, sondern als optionale, vom Angebot geerbte Defaults behandelt — ein `priceHistory`-Array gehört immer zu genau einem `offers[]`-Eintrag (= ein Produkt+Händler+Gebinde), Wiederholung auf jedem Punkt wäre redundant.
+- Bei langen Zeiträumen (30/90 Tage) bewusst weiterhin JEDEN Tag als eigene Karte durchblätterbar gelassen (nicht zu Wochen/Monaten aggregiert) — für die aktuelle Datenmenge performant genug, und die Anforderung erlaubte Aggregation nur optional, nicht zwingend. Nur die Positionsanzeige wechselt bei >10 Tagen von Punkten auf einen Fortschrittsbalken, um visuelles Chaos zu vermeiden.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
+## 2026-09-03 — Preisverlauf-Chart: ovaler Punkt behoben, moderneres Kurven-Design (Mobile + Webapp)
+
+**Umgesetzt:**
+- **Bug behoben:** Der Preis-Punkt im Preisverlauf-Chart (`#histChart`) war oval statt rund. Ursache: das SVG hatte eine feste `viewBox="0 0 300 140"` mit `preserveAspectRatio="none"`, während die tatsächliche gerenderte Breite je nach Sheet-/Bildschirmbreite stark abweicht (z.B. 313px mobil, 483px auf breiteren Screens) — dadurch wurde die interne 300er-Koordinatenbreite non-uniform auf die echte Pixelbreite gestreckt, was die `<circle>`-Marker (gleicher Radius in beide Richtungen) zu Ellipsen verzerrt hat.
+- **Fix:** `drawChart()` misst jetzt bei jedem Zeichnen die tatsächliche gerenderte Pixelgröße des SVG (`getBoundingClientRect()`) und setzt die `viewBox` exakt darauf — 1 Koordinaten-Einheit entspricht dadurch immer exakt 1 CSS-Pixel in beide Richtungen, wodurch Kreis-Marker unabhängig von der Container-Breite immer echte Kreise bleiben. `preserveAspectRatio="none"` aus der statischen HTML-Markup entfernt (nicht mehr nötig). Neuer `resize`-Listener zeichnet das Chart neu, während das Preisverlauf-Sheet offen ist (z.B. bei Fenster-Resize zwischen Mobile- und Webapp-Breite).
+- **Chart-Darstellung modernisiert** (an gängige Kurs-/Preis-Charts wie in Aktien-/Finanz-Apps angelehnt), ohne sonst etwas an der Sheet-Struktur zu verändern: Linie läuft jetzt als sanft geglättete Kurve durch die Datenpunkte (Catmull-Rom → kubische Bezierkurven, Standardtechnik moderner Chart-Bibliotheken) statt als kantige Geradenstücke; y-Achse bekommt zusätzlich ca. 12% Puffer über/unter dem tatsächlichen Tiefst-/Höchstpreis, damit Linie und Punkte nicht mehr am oberen/unteren Rand der Chart-Box kleben; der aktuelle-Preis-Punkt am Linienende etwas größer (r 4.5→5) und mit dickerem Rand für mehr Präsenz, passend zum bereits vorhandenen Farbschema (Blau = aktueller Preis, Grün = günstigster Preis) und zur bestehenden Legende — Farben, Gradient-Füllung, Legende, Zeitraum-Chips (7/30/90 Tage) und alles andere in der Preisverlauf-Ansicht bewusst unverändert gelassen.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v33` erhöht (Pflichtregel).
+- **Regressionstest über alle Kernfunktionen** durchgeführt (Mobile 375px + Webapp/Desktop 577px, Light + Dark Mode): Preisverlauf-Chart bei 7/30/90 Tagen sowie bei Fenster-Resize (Chart bleibt kreisrund, `viewBox` folgt exakt der Pixelgröße); Tiefstpreis/Höchstpreis/Ø-Preis-Zahlen weiterhin unverändert aus den Rohdaten berechnet (nur die visuelle Skalierung im Chart bekam den Puffer, keine Auswirkung auf angezeigte Werte); Favoriten-Toggle und Preisalarm-Setzen im Preisverlauf-Sheet; „Weitere Händler"-Liste; Filter-Kombination (Packungsgröße + Volumen gemeinsam); Such-Vorschläge (inkl. Schreibweisen-Toleranz aus vorheriger Runde); Kartenansicht; Favoriten-/Alarme-Tab — alles fehlerfrei, keine Konsolenfehler, kein horizontaler Overflow.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-03 — Neuer Filter „Packungsgröße" (4er/6er/12er/24er-Multipacks), für Mobile und Webapp
 
 **Umgesetzt:**
