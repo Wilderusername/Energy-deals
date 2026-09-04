@@ -2636,6 +2636,109 @@ border-radius:0
 border-top:1px solid var(--border-subtle)
 }
 
+/* Mini-Navigation innerhalb des Drawers (Menü ↔ Neuigkeiten ↔ Detailansicht),
+   siehe showMenuView() im Script. Dezente Slide-Animation statt Öffnen eines
+   weiteren Fensters: die neu eingeblendete Ansicht kommt mit einem kurzen,
+   kleinen Versatz aus der jeweiligen Richtung ("vorwärts" = von rechts,
+   "zurück" = von links) plus Fade herein - kein neues Layout-System nötig,
+   da immer nur genau eine .menu-view sichtbar ist (die anderen display:none). */
+.menu-view-enter-right{animation:menuViewEnterRight .22s ease}
+.menu-view-enter-left{animation:menuViewEnterLeft .22s ease}
+@keyframes menuViewEnterRight{
+from{transform:translateX(16px);opacity:0}
+to{transform:translateX(0);opacity:1}
+}
+@keyframes menuViewEnterLeft{
+from{transform:translateX(-16px);opacity:0}
+to{transform:translateX(0);opacity:1}
+}
+
+.menu-back{
+display:flex;
+align-items:center;
+gap:6px;
+border:0;
+background:none;
+color:var(--brand-primary-blue);
+font-size:13px;
+font-weight:700;
+font-family:inherit;
+cursor:pointer;
+padding:0;
+margin-top:18px
+}
+.menu-back:hover{color:var(--brand-primary-hover)}
+.menu-back .icon{width:16px;height:16px}
+
+/* Neuigkeiten-Postfach: kompakte, leichte Nachrichtenliste statt großer
+   Karten - dezente Trennlinie zwischen Einträgen, kein Rahmen/Schatten pro
+   Zeile. Ungelesen = gefüllter blauer Punkt + kräftigerer Text, gelesen =
+   nur umrandeter Punkt + gedämpfter Text. */
+.news-inbox-row{
+display:flex;
+align-items:flex-start;
+gap:10px;
+width:100%;
+text-align:left;
+background:none;
+border:0;
+border-bottom:1px solid var(--border-subtle);
+padding:13px 2px;
+cursor:pointer;
+font-family:inherit;
+border-radius:var(--radius-sm)
+}
+.news-inbox-row:last-child{border-bottom:0}
+.news-inbox-row:hover{background:var(--bg-surface-interactive-hover)}
+.news-inbox-dot{
+width:8px;
+height:8px;
+border-radius:50%;
+background:var(--brand-primary-blue);
+margin-top:5px;
+flex-shrink:0
+}
+.news-inbox-row.read .news-inbox-dot{
+background:transparent;
+border:1.5px solid var(--text-disabled)
+}
+.news-inbox-text{flex:1;min-width:0}
+.news-inbox-text .msg{
+font-size:13px;
+font-weight:700;
+color:var(--text-primary);
+line-height:1.4
+}
+.news-inbox-row.read .news-inbox-text .msg{
+font-weight:500;
+color:var(--text-muted)
+}
+.news-inbox-meta{font-size:11px;color:var(--text-muted);margin-top:3px}
+
+.news-inbox-empty{padding:18px 0;text-align:center}
+.news-inbox-empty-title{font-size:13px;font-weight:700;color:var(--text-primary)}
+.news-inbox-empty-sub{font-size:12px;color:var(--text-muted);margin-top:4px}
+
+/* Neuigkeit-Detailansicht: kompakte Variante der bekannten Angebotsfelder
+   (Preis/Normalpreis/Ersparnis/Gültigkeit), auf die schmale Drawer-Breite
+   zugeschnitten statt der großen Produktdetail-Hero-Ansicht. */
+.news-detail-img-wrap{display:flex;justify-content:center;margin:14px 0}
+.news-detail-img{
+width:120px;
+height:120px;
+object-fit:contain;
+background:var(--bg-surface-sunken);
+border:1px solid var(--border-subtle);
+border-radius:var(--radius-lg);
+padding:10px
+}
+.news-detail-store{font-size:13px;font-weight:700;color:var(--text-primary);margin-top:12px}
+.news-detail-price-row{display:flex;align-items:baseline;gap:8px;margin-top:4px}
+.news-detail-price{font-size:22px;font-weight:900;color:var(--text-primary)}
+.news-detail-unit{font-size:12px;color:var(--text-muted)}
+.news-detail-old{font-size:12.5px;color:var(--text-muted);text-decoration:line-through;margin-top:8px}
+.news-detail-savings{font-size:12.5px;font-weight:700;color:var(--status-success-text);margin-top:2px}
+
 </style>
 </head>
 
@@ -3361,6 +3464,11 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 <div class="sheet">
 <div class="sheet-inner">
 <button class="sheet-close" data-close="menuOverlay"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
+
+<!-- Mini-Navigation innerhalb des Drawers: genau eine der drei .menu-view
+     Ansichten ist sichtbar (siehe showMenuView() im Script), Wechsel per
+     dezenter Slide-Animation statt eines neuen Fensters/Overlays. -->
+<div class="menu-view" id="menuViewMain">
 <h2>Menü</h2>
 
 <button class="profile-row" id="menuNewsRow" style="margin-top:18px">
@@ -3454,6 +3562,30 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 <div class="profile-version">CanSpot Demo-Prototyp · Version 1.0.0</div>
 </div>
 </div>
+</div>
+
+</div>
+
+<!-- NEUIGKEITEN-POSTFACH (innerhalb des Drawers, siehe menuNewsRow oben).
+     Ersetzt für die Mobile-Ansicht das frühere separate newsOverlay-Sheet -
+     die Desktop-/Webapp-Glocke (#notifBtn) nutzt newsOverlay unverändert
+     weiter (siehe openNewsSheet() im Script), da es dort kein Burger-Menü
+     gibt. Beide Ansichten teilen sich dieselbe Datenquelle/denselben
+     Gelesen-Status (getRelevantNotifications()/NEWS_READ_KEY). -->
+<div class="menu-view" id="menuViewNews" style="display:none">
+<button class="menu-back" id="menuNewsBackBtn"><svg class="icon icon-md"><use href="#i-arrow-left"/></svg> Neuigkeiten</button>
+<h2>Neuigkeiten</h2>
+<div class="desc">Neue Angebote und Updates für dich.</div>
+<div id="menuNewsInboxList"></div>
+</div>
+
+<!-- NEUIGKEIT-DETAILANSICHT (innerhalb des Drawers). "Zum Angebot" nutzt
+     openStoreDetail(dealId) - dieselbe Funktion/Ansicht, die auch die
+     "Zum Angebot"-Buttons der Angebotskarten öffnen, keine doppelte
+     Angebotslogik. -->
+<div class="menu-view" id="menuViewNewsDetail" style="display:none">
+<button class="menu-back" id="menuNewsDetailBackBtn"><svg class="icon icon-md"><use href="#i-arrow-left"/></svg> Neuigkeiten</button>
+<div id="menuNewsDetailContent"></div>
 </div>
 
 </div>
@@ -5016,10 +5148,12 @@ function closeSheet(id){
     if(profileTab && profileTab.classList.contains("active")) setActiveNav("home");
   }
   if(id==="menuOverlay"){
-    /* Aufgeklappte Accordion-Abschnitte beim Schließen zurücksetzen, damit
-       das Menü beim nächsten Öffnen wieder im Ausgangszustand startet. */
+    /* Aufgeklappte Accordion-Abschnitte und die Postfach-/Detail-Navigation
+       beim Schließen zurücksetzen, damit das Menü beim nächsten Öffnen wieder
+       im Ausgangszustand (Hauptmenü) startet. */
     document.querySelectorAll("#menuOverlay .menu-acc-toggle").forEach(row=>row.setAttribute("aria-expanded","false"));
     document.querySelectorAll("#menuOverlay .menu-acc-panel").forEach(panel=>panel.classList.remove("open"));
+    showMenuView("menuViewMain");
   }
 }
 
@@ -5128,17 +5262,24 @@ document.getElementById("notifBtn").addEventListener("click",()=>openNewsSheet()
 
 /* ---------------- BURGER-MENÜ (nur Mobile) ----------------
    Ersetzt die Glocke ausschließlich unterhalb von 540px (siehe .iconbtn-menu
-   in <style>). "Neuigkeiten" öffnet weiterhin dieselbe openNewsSheet()-Logik
-   wie die Glocke in der Webapp-Ansicht (eigenes Sheet, da es sich um einen
-   eigenständigen Inhaltsbereich handelt). Alle anderen Zeilen klappen ihren
-   Inhalt stattdessen DIREKT im Menü auf (toggleMenuAccordion), statt ein
-   weiteres Fenster zu öffnen - nach dem Vorbild vieler Apps mit
-   Accordion-Untermenüs statt tief verschachtelter Navigation. */
+   in <style>). "Neuigkeiten" navigiert INNERHALB des Drawers zum
+   Postfach (menuViewNews, siehe showMenuView()) statt ein weiteres Fenster zu
+   öffnen - die Desktop-/Webapp-Glocke (#notifBtn, oben) nutzt weiterhin
+   unverändert openNewsSheet()/newsOverlay, da es dort kein Burger-Menü gibt.
+   Alle anderen Zeilen klappen ihren Inhalt DIREKT im Menü auf
+   (toggleMenuAccordion), statt ein weiteres Fenster zu öffnen. */
 document.getElementById("menuBtn").addEventListener("click",()=>openSheet("menuOverlay"));
 
 document.getElementById("menuNewsRow").addEventListener("click",()=>{
-  closeSheet("menuOverlay");
-  openNewsSheet();
+  renderNewsInboxList();
+  showMenuView("menuViewNews","forward");
+});
+document.getElementById("menuNewsBackBtn").addEventListener("click",()=>{
+  showMenuView("menuViewMain","back");
+});
+document.getElementById("menuNewsDetailBackBtn").addEventListener("click",()=>{
+  renderNewsInboxList();
+  showMenuView("menuViewNews","back");
 });
 
 /* Klappt genau einen Menüabschnitt auf und alle anderen wieder ein (klassisches
@@ -5625,7 +5766,9 @@ function getRelevantNotifications(){
       id: `active-${best.id}`,
       icon: "i-tag",
       cls: "green",
-      text: `${best.product} ist aktuell bei ${best.store} für ${euro(best.offerPrice)} € im Angebot.`
+      text: `${best.product} ist aktuell bei ${best.store} für ${euro(best.offerPrice)} € im Angebot.`,
+      dealId: best.id,
+      productId: pid
     });
   });
 
@@ -5640,7 +5783,9 @@ function getRelevantNotifications(){
       id: `upcoming-${upcoming.id}`,
       icon: "i-hourglass",
       cls: "gold",
-      text: `${upcoming.product} wird ab ${formatDateRange(upcoming.validFrom, upcoming.validUntil).split(" – ")[0]} bei ${upcoming.store} im Angebot sein.`
+      text: `${upcoming.product} wird ab ${formatDateRange(upcoming.validFrom, upcoming.validUntil).split(" – ")[0]} bei ${upcoming.store} im Angebot sein.`,
+      dealId: upcoming.id,
+      productId: pid
     });
   });
 
@@ -5652,7 +5797,8 @@ function getRelevantNotifications(){
         icon: "i-hourglass",
         cls: "gold",
         text: `${demoProduct.name} wird demnächst irgendwo im Angebot sein.`,
-        demo: true
+        demo: true,
+        productId: demoProduct.id
       });
     }
   }
@@ -5700,6 +5846,130 @@ function openNewsSheet(){
   saveReadNewsIds(new Set(getRelevantNotifications().map(n=>n.id)));
   updateNotifDot();
   openSheet("newsOverlay");
+}
+
+/* ---------------- NEUIGKEITEN-POSTFACH (Burger-Menü, Mobile) ----------------
+   Eigene Ansicht innerhalb von #menuOverlay statt eines separaten Sheets wie
+   newsOverlay (das bleibt unverändert für die Desktop-Glocke bestehen).
+   Nutzt dieselbe Datenquelle wie oben (getRelevantNotifications()/
+   NEWS_READ_KEY) - anders als openNewsSheet() markiert das Postfach aber
+   NICHT alles beim Öffnen als gelesen, sondern erst einzeln beim Antippen
+   einer Nachricht (siehe markNotificationRead()), damit der Punkt pro
+   Nachricht wirklich "ungelesen"/"gelesen" widerspiegelt. */
+
+function markNotificationRead(id){
+  const readIds = loadReadNewsIds();
+  if(readIds.has(id)) return;
+  readIds.add(id);
+  saveReadNewsIds(readIds);
+  updateNotifDot();
+}
+
+function renderNewsInboxList(){
+  const notifications = getRelevantNotifications();
+  const readIds = loadReadNewsIds();
+  const container = document.getElementById("menuNewsInboxList");
+
+  if(notifications.length===0){
+    container.innerHTML = `
+      <div class="news-inbox-empty">
+        <div class="news-inbox-empty-title">Keine neuen Neuigkeiten.</div>
+        <div class="news-inbox-empty-sub">Sobald es wieder relevante Updates gibt, erscheinen sie hier.</div>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = notifications.map(n=>{
+    const isRead = readIds.has(n.id);
+    const deal = n.dealId ? deals.find(d=>d.id===n.dealId) : null;
+    const meta = deal ? `${deal.store} · ${euro(deal.offerPrice)} € · ${formatSize(deal)}` : "";
+    return `
+      <button class="news-inbox-row${isRead ? " read" : ""}" data-news-id="${n.id}">
+        <span class="news-inbox-dot"></span>
+        <div class="news-inbox-text">
+          <div class="msg">${n.text}</div>
+          ${meta ? `<div class="news-inbox-meta">${meta}</div>` : ""}
+        </div>
+      </button>`;
+  }).join("");
+
+  container.querySelectorAll("[data-news-id]").forEach(row=>{
+    row.addEventListener("click", ()=>{
+      const n = notifications.find(x=>x.id===row.dataset.newsId);
+      if(!n) return;
+      markNotificationRead(n.id);
+      renderNewsInboxList();
+      renderNewsDetail(n);
+      showMenuView("menuViewNewsDetail","forward");
+    });
+  });
+}
+
+/* Kompakte Detailansicht: nutzt ausschließlich bereits vorhandene Produkt-/
+   Angebotsfelder (siehe deals/products) - "Zum Angebot" öffnet dieselbe
+   Händler-Detailansicht (openStoreDetail) wie überall sonst in der App,
+   keine zweite/eigene Angebotslogik. */
+function renderNewsDetail(n){
+  const container = document.getElementById("menuNewsDetailContent");
+  const product = n.productId ? products.find(p=>p.id===n.productId) : null;
+  const deal = n.dealId ? deals.find(d=>d.id===n.dealId) : null;
+
+  if(!product){
+    container.innerHTML = `<div class="desc" style="margin-top:18px">${n.text}</div>`;
+    return;
+  }
+
+  if(!deal){
+    container.innerHTML = `
+      <h2 style="margin-top:18px">${product.name}</h2>
+      <div class="news-detail-img-wrap"><img class="news-detail-img" src="${product.img}" alt="${product.name}" loading="lazy" referrerpolicy="no-referrer"></div>
+      <div class="desc">${n.text}${n.demo ? ' <span style="color:var(--text-disabled);font-weight:600">(Beispiel)</span>' : ""}</div>
+    `;
+    return;
+  }
+
+  const img = deal.img || product.img;
+  const statusLabel = n.cls==="green" ? "Aktuell im Angebot" : "Demnächst im Angebot";
+  const savings = deal.regularPrice - deal.offerPrice;
+
+  container.innerHTML = `
+    <h2 style="margin-top:18px">${product.name}</h2>
+    <div class="news-detail-img-wrap"><img class="news-detail-img" src="${img}" alt="${product.name}" loading="lazy" referrerpolicy="no-referrer"></div>
+    <div class="news-card-status ${n.cls}"><svg class="icon icon-xs"><use href="#${n.icon}"/></svg> ${statusLabel}</div>
+    <div class="news-detail-store">${deal.store}</div>
+    <div class="news-detail-price-row">
+      <span class="news-detail-price">${euro(deal.offerPrice)} €</span>
+      <span class="news-detail-unit">${formatSize(deal)}</span>
+    </div>
+    <div class="news-detail-old">Normalpreis: ${euro(deal.regularPrice)} €</div>
+    ${savings > 0.001 ? `<div class="news-detail-savings">Du sparst ${euro(savings)} €</div>` : ""}
+    <div class="field-label" style="margin-top:18px">Gültig</div>
+    <div class="meta" style="font-size:13px">${formatDateRange(deal.validFrom, deal.validUntil)}</div>
+    <button class="sheet-btn" id="menuNewsDetailCtaBtn" style="margin-top:18px">Zum Angebot</button>
+  `;
+
+  document.getElementById("menuNewsDetailCtaBtn").addEventListener("click", ()=>{
+    openStoreDetail(deal.id);
+  });
+}
+
+/* Mini-Navigation innerhalb des Drawers: genau eine .menu-view ist sichtbar,
+   der Wechsel bekommt eine kurze, dezente Richtungs-Animation ("forward" =
+   von rechts hinein, "back" = von links hinein). */
+function showMenuView(viewId, direction){
+  ["menuViewMain","menuViewNews","menuViewNewsDetail"].forEach(id=>{
+    const el = document.getElementById(id);
+    if(id===viewId){
+      el.style.display = "";
+      el.classList.remove("menu-view-enter-right","menu-view-enter-left");
+      if(direction){
+        void el.offsetWidth;
+        el.classList.add(direction==="back" ? "menu-view-enter-left" : "menu-view-enter-right");
+      }
+    } else {
+      el.style.display = "none";
+    }
+  });
 }
 
 /* ---------------- NOTIFICATIONS SHEET ---------------- */
