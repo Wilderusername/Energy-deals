@@ -377,7 +377,8 @@ z-index:50
 
 .search-suggestions-list{
 max-height:320px;
-overflow-y:auto
+overflow-y:auto;
+overscroll-behavior:contain
 }
 
 .search-suggestion{
@@ -989,6 +990,7 @@ transform:translateY(100%);
 transition:transform .25s cubic-bezier(.32,.72,0,1),background .2s ease;
 max-height:86vh;
 overflow:auto;
+overscroll-behavior:contain;
 box-shadow:var(--shadow-sheet)
 }
 
@@ -1002,6 +1004,7 @@ overflow:hidden
 #locOverlay .sheet-scroll,
 #filterOverlay .sheet-scroll{
 overflow:auto;
+overscroll-behavior:contain;
 flex:1;
 min-height:0;
 padding:10px 20px 20px
@@ -2128,6 +2131,48 @@ text-align:center
 .nutrition-grid .nbox b{display:block;font-size:16px;color:var(--text-primary)}
 .nutrition-grid .nbox span{font-size:10.5px;color:var(--text-muted)}
 
+.nutrition-toggle{
+display:flex;
+align-items:center;
+gap:5px;
+margin-top:10px;
+border:0;
+background:none;
+padding:2px 0;
+font-size:12px;
+font-weight:700;
+color:var(--text-muted);
+cursor:pointer;
+font-family:inherit;
+transition:color .15s
+}
+.nutrition-toggle:hover{color:var(--text-primary)}
+.nutrition-toggle .icon{transition:transform .2s}
+.nutrition-toggle.open .icon{transform:rotate(180deg)}
+
+.nutrition-full{
+display:none;
+margin-top:10px;
+background:var(--bg-surface-sunken);
+border:1px solid var(--border-subtle);
+border-radius:var(--radius-md);
+padding:4px 12px
+}
+.nutrition-full.open{display:block}
+.nutrition-full-row{
+display:flex;
+align-items:baseline;
+justify-content:space-between;
+gap:10px;
+padding:8px 0;
+border-bottom:1px solid var(--border-subtle);
+font-size:12.5px
+}
+.nutrition-full-row:last-child{border-bottom:0}
+.nutrition-full-row span{color:var(--text-muted)}
+.nutrition-full-row span.nutrition-full-sub{padding-left:10px}
+.nutrition-full-row b{color:var(--text-primary);font-weight:700;white-space:nowrap}
+
 .similar-scroll{
 display:flex;
 gap:10px;
@@ -3142,6 +3187,11 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 <div class="field-label" style="margin-top:18px">Nährwerte</div>
 <div class="nutrition-note" id="pdNutritionCaption">–</div>
 <div class="nutrition-grid" id="pdNutritionGrid"></div>
+<button class="nutrition-toggle" id="pdNutritionToggle" aria-expanded="false">
+<svg class="icon icon-xs"><use href="#i-chevron-down"/></svg>
+<span>Alle Nährwerte anzeigen</span>
+</button>
+<div class="nutrition-full" id="pdNutritionFull"></div>
 
 <div class="field-label" style="margin-top:24px">Ähnliche Produkte</div>
 <div class="similar-scroll" id="pdSimilar"></div>
@@ -3271,30 +3321,43 @@ const UNITS_FALLBACK = 1;
 
 /* MOCK-DATEN: Nährwerte gibt es (noch) nicht in deals.json — es existiert
    keine echte Herstellerdatenquelle dafür im Prototyp. Werte unten sind aber
-   anhand echter, aktuell gültiger Nährwertkennzeichnungen recherchiert
-   (u.a. offizielle Marken-Websites, das-ist-drin.de, fddb.info,
-   openfoodfacts.org — Zutaten-/Nährwerttabellen pro 100 ml, Stand 09/2026),
-   keine erfundenen Platzhalter mehr (in der UI weiterhin als Demo-Werte
-   gekennzeichnet, siehe #pdNutritionCaption in openProductDetail(), da nicht
-   jede einzelne Geschmacksrichtung individuell nachgeprüft wurde). Auflösung
-   beim Rendern: NUTRITION_MOCK_BY_PRODUCT[productId] ->
-   NUTRITION_MOCK_BY_BRAND[brand] -> NUTRITION_FALLBACK_PER_100ML — dieselbe
-   Fallback-Kette wie bei Pfand/Verpackung oben.
-   Wichtige reale Abweichungen von den früheren Platzhaltern: GÖNRGY ist
-   markenweit eine zuckerfreie Linie (~3 kcal/100ml statt regulärer Werte)
-   und hat mit 30 mg/100ml deutlich WENIGER Taurin als Red Bull/Monster/
-   Rockstar/Carabao/effect (die alle 0,4% = 400 mg/100ml führen); 28 Black
-   enthält laut eigener Zutatenliste GAR KEIN Taurin (0 mg) — vorher stand
-   bei beiden fälschlich derselbe 400mg-Wert wie bei den anderen Marken. */
-const NUTRITION_FALLBACK_PER_100ML = { kcal: 45, sugarG: 11, caffeineMg: 32, taurineMg: 400 };
+   anhand echter, aktuell gültiger Nährwertkennzeichnungen recherchiert und
+   zusätzlich gegen die unabhängige Laboranalyse "Energy Drinks 07/2013" der
+   Stiftung Warentest (test.de, Rote-Bull/Monster/Rockstar/effect/28-Black-
+   Einzeltests) abgeglichen — keine erfundenen Platzhalter (in der UI
+   weiterhin als Demo-Werte gekennzeichnet, siehe #pdNutritionCaption in
+   openProductDetail(), da nicht jede einzelne Geschmacksrichtung individuell
+   nachgeprüft wurde). Auflösung beim Rendern:
+   NUTRITION_MOCK_BY_PRODUCT[productId] -> NUTRITION_MOCK_BY_BRAND[brand] ->
+   NUTRITION_FALLBACK_PER_100ML — dieselbe Fallback-Kette wie bei Pfand/
+   Verpackung oben.
+   Taurin schwankt real MARKENWEISE zwischen ca. 390–430 mg/100ml (Red Bull/
+   Monster/Rockstar/effect/Carabao) — das ergibt bei 250ml-Dosen ca.
+   975–1000mg und bei 500ml-Dosen ca. 2000–2150mg, was mit den o.g. Marken
+   tatsächlich sehr nah beieinanderliegt (industrieweit üblich, kein
+   Kopierfehler). GÖNRGY ist dagegen markenweit eine zuckerfreie Linie
+   (~3 kcal/100ml) mit nur 30 mg/100ml Taurin, und 28 Black enthält laut
+   eigener Zutatenliste (von Warentest im Labor bestätigt: "n.n." =
+   nicht nachweisbar) GAR KEIN Taurin (0 mg) — beides vorher fälschlich mit
+   400mg/100ml wie die übrigen Marken geführt.
+   carbsG/fatG/satFatG/proteinG/saltG (ergänzt für die vollständige
+   Nährwertübersicht, siehe renderNutrition()) stammen aus denselben
+   Nährwerttabellen (das-ist-drin.de/fddb.info/openfoodfacts.org); saltG ist,
+   wo nur Natrium angegeben war, nach der EU-Standardformel Salz = Natrium×2,5
+   umgerechnet, keine geschätzten Werte. Zucker/Fett-/Eiweiß-/Salzwerte einer
+   Zero-Variante ohne eigene Quelle übernehmen den Wert der reguläten Sorte
+   derselben Marke (das Süßungsmittel-Austausch ändert typischerweise nicht
+   Fett/Eiweiß/Salz) — nur Monster Ultra (White) und Carabao Sugar Free hatten
+   eigene, abweichende Quellenwerte für Kohlenhydrate/Eiweiß. */
+const NUTRITION_FALLBACK_PER_100ML = { kcal: 45, carbsG: 11.3, sugarG: 11, fatG: 0, satFatG: 0, proteinG: 0, saltG: 0.1, caffeineMg: 31, taurineMg: 390 };
 const NUTRITION_MOCK_BY_BRAND = {
-  "Red Bull": { kcal: 45, sugarG: 11, caffeineMg: 32, taurineMg: 400 },
-  "Monster": { kcal: 47, sugarG: 11, caffeineMg: 32, taurineMg: 400 },
-  "Rockstar": { kcal: 59, sugarG: 14, caffeineMg: 32, taurineMg: 400 },
-  "GÖNRGY": { kcal: 3, sugarG: 0, caffeineMg: 32, taurineMg: 30 },
-  "Carabao": { kcal: 56, sugarG: 14, caffeineMg: 32, taurineMg: 400 },
-  "Effect Energy": { kcal: 46, sugarG: 11, caffeineMg: 32, taurineMg: 400 },
-  "28 Black": { kcal: 59, sugarG: 14, caffeineMg: 32, taurineMg: 0 }
+  "Red Bull": { kcal: 45, carbsG: 11.3, sugarG: 11, fatG: 0, satFatG: 0, proteinG: 0, saltG: 0.1, caffeineMg: 31, taurineMg: 390 },
+  "Monster": { kcal: 47, carbsG: 12, sugarG: 11, fatG: 0, satFatG: 0, proteinG: 0, saltG: 0.2, caffeineMg: 30, taurineMg: 430 },
+  "Rockstar": { kcal: 57, carbsG: 13.5, sugarG: 14, fatG: 0, satFatG: 0, proteinG: 0.4, saltG: 0.1, caffeineMg: 32, taurineMg: 410 },
+  "GÖNRGY": { kcal: 3, carbsG: 0, sugarG: 0, fatG: 0, satFatG: 0, proteinG: 0, saltG: 0, caffeineMg: 32, taurineMg: 30 },
+  "Carabao": { kcal: 57, carbsG: 14, sugarG: 14, fatG: 0, satFatG: 0, proteinG: 0.3, saltG: 0.23, caffeineMg: 32, taurineMg: 400 },
+  "Effect Energy": { kcal: 46, carbsG: 11, sugarG: 11, fatG: 0.1, satFatG: 0.1, proteinG: 0.1, saltG: 0.2, caffeineMg: 31, taurineMg: 400 },
+  "28 Black": { kcal: 57, carbsG: 14.4, sugarG: 14, fatG: 0.1, satFatG: 0.1, proteinG: 0.1, saltG: 0, caffeineMg: 31, taurineMg: 0 }
 };
 /* Produktgenaue Ausnahmen, wo der Markendefault oben nicht passt — nicht nur
    "Zero"/"Sugarfree" im Namen, sondern auch ganze Sub-Linien, die real
@@ -3302,15 +3365,15 @@ const NUTRITION_MOCK_BY_BRAND = {
    die komplette Ultra-Linie ist real zuckerfrei/kalorienfrei, nicht nur die
    explizit "Zero" benannten Varianten — betraf vorher fälschlich nur p11). */
 const NUTRITION_MOCK_BY_PRODUCT = {
-  p2:  { kcal: 3, sugarG: 0, caffeineMg: 32, taurineMg: 400 },  // Red Bull Sugarfree
-  p3:  { kcal: 2, sugarG: 0, caffeineMg: 30, taurineMg: 400 },  // Monster Energy Ultra (Ultra-Linie = zuckerfrei)
-  p8:  { kcal: 3, sugarG: 0, caffeineMg: 32, taurineMg: 400 },  // Red Bull Zero
-  p11: { kcal: 2, sugarG: 0, caffeineMg: 30, taurineMg: 400 },  // Monster Ultra Zero
-  p14: { kcal: 2, sugarG: 0, caffeineMg: 30, taurineMg: 400 },  // Monster Ultra Watermelon (Ultra-Linie = zuckerfrei)
-  p16: { kcal: 67, sugarG: 16, caffeineMg: 32, taurineMg: 400 }, // Rockstar Energy Punched Guava (weicht von Original ab)
-  p17: { kcal: 1, sugarG: 0, caffeineMg: 32, taurineMg: 400 },  // Carabao Green Apple Sugar Free
-  p23: { kcal: 3, sugarG: 0, caffeineMg: 32, taurineMg: 400 },  // effect Zero Sugarfree
-  p26: { kcal: 3, sugarG: 0, caffeineMg: 32, taurineMg: 0 }     // 28 Black Açaí Zero (Marke führt kein Taurin)
+  p2:  { kcal: 3, carbsG: 0, sugarG: 0, fatG: 0, satFatG: 0, proteinG: 0, saltG: 0.1, caffeineMg: 31, taurineMg: 390 },  // Red Bull Sugarfree
+  p3:  { kcal: 2, carbsG: 0.9, sugarG: 0, fatG: 0, satFatG: 0, proteinG: 0, saltG: 0.2, caffeineMg: 30, taurineMg: 430 },  // Monster Energy Ultra (Ultra-Linie = zuckerfrei)
+  p8:  { kcal: 3, carbsG: 0, sugarG: 0, fatG: 0, satFatG: 0, proteinG: 0, saltG: 0.1, caffeineMg: 31, taurineMg: 390 },  // Red Bull Zero
+  p11: { kcal: 2, carbsG: 0.9, sugarG: 0, fatG: 0, satFatG: 0, proteinG: 0, saltG: 0.2, caffeineMg: 30, taurineMg: 430 },  // Monster Ultra Zero
+  p14: { kcal: 2, carbsG: 0.9, sugarG: 0, fatG: 0, satFatG: 0, proteinG: 0, saltG: 0.2, caffeineMg: 30, taurineMg: 430 },  // Monster Ultra Watermelon (Ultra-Linie = zuckerfrei)
+  p16: { kcal: 67, carbsG: 15.8, sugarG: 16, fatG: 0, satFatG: 0, proteinG: 0.4, saltG: 0.1, caffeineMg: 32, taurineMg: 410 }, // Rockstar Energy Punched Guava (weicht von Original ab)
+  p17: { kcal: 1, carbsG: 0, sugarG: 0, fatG: 0, satFatG: 0, proteinG: 0.3, saltG: 0.23, caffeineMg: 32, taurineMg: 400 },  // Carabao Green Apple Sugar Free
+  p23: { kcal: 3, carbsG: 0, sugarG: 0, fatG: 0.1, satFatG: 0.1, proteinG: 0.1, saltG: 0.2, caffeineMg: 31, taurineMg: 400 },  // effect Zero Sugarfree
+  p26: { kcal: 3, carbsG: 0, sugarG: 0, fatG: 0.1, satFatG: 0.1, proteinG: 0.1, saltG: 0, caffeineMg: 31, taurineMg: 0 }     // 28 Black Açaí Zero (Marke führt kein Taurin)
 };
 function getNutritionPer100ml(product){
   return NUTRITION_MOCK_BY_PRODUCT[product.id]
@@ -5653,22 +5716,61 @@ function openProductDetail(productId, dealId){
   openSheet("productDetailOverlay");
 }
 
+/* Gramm-Anzeige im deutschen Zahlenformat (Komma), immer mit 1 Nachkommastelle
+   — entspricht der Schreibweise auf echten EU-Nährwerttabellen (auch "0,0 g"
+   wird dort so ausgewiesen, nicht als bloße "0"). */
+function formatNutritionG(n){ return n.toFixed(1).replace(".", ","); }
+
 function renderNutrition(product){
   const per100 = getNutritionPer100ml(product);
   const factor = product.sizeMl / 100;
-  const kcal = Math.round(per100.kcal * factor);
-  const sugarG = +(per100.sugarG * factor).toFixed(1);
-  const caffeineMg = Math.round(per100.caffeineMg * factor);
-  const taurineMg = Math.round(per100.taurineMg * factor);
+  const per = (key, decimals) => decimals===0 ? Math.round(per100[key]*factor) : +(per100[key]*factor).toFixed(decimals);
+
+  const kcal = per("kcal", 0);
+  const kJ = Math.round(kcal * 4.184);
+  const carbsG = per("carbsG", 1);
+  const sugarG = per("sugarG", 1);
+  const fatG = per("fatG", 1);
+  const satFatG = per("satFatG", 1);
+  const proteinG = per("proteinG", 1);
+  const saltG = per("saltG", 1);
+  const caffeineMg = per("caffeineMg", 0);
+  const taurineMg = per("taurineMg", 0);
 
   document.getElementById("pdNutritionGrid").innerHTML = `
     <div class="nbox"><b>${kcal} kcal</b><span>Kalorien</span></div>
-    <div class="nbox"><b>${sugarG} g</b><span>Zucker</span></div>
+    <div class="nbox"><b>${formatNutritionG(sugarG)} g</b><span>Zucker</span></div>
     <div class="nbox"><b>${caffeineMg} mg</b><span>Koffein</span></div>
-    <div class="nbox"><b>${taurineMg} mg</b><span>Taurin</span></div>
+    <div class="nbox"><b>${formatNutritionG(carbsG)} g</b><span>Kohlenhydrate</span></div>
   `;
   document.getElementById("pdNutritionCaption").textContent =
     `Angaben pro Dose (${product.sizeMl} ml) · Demo-Werte, keine geprüften Herstellerangaben`;
+
+  document.getElementById("pdNutritionFull").innerHTML = `
+    <div class="nutrition-full-row"><span>Energie</span><b>${kJ} kJ / ${kcal} kcal</b></div>
+    <div class="nutrition-full-row"><span>Fett</span><b>${formatNutritionG(fatG)} g</b></div>
+    <div class="nutrition-full-row"><span class="nutrition-full-sub">davon gesättigte Fettsäuren</span><b>${formatNutritionG(satFatG)} g</b></div>
+    <div class="nutrition-full-row"><span>Kohlenhydrate</span><b>${formatNutritionG(carbsG)} g</b></div>
+    <div class="nutrition-full-row"><span class="nutrition-full-sub">davon Zucker</span><b>${formatNutritionG(sugarG)} g</b></div>
+    <div class="nutrition-full-row"><span>Eiweiß</span><b>${formatNutritionG(proteinG)} g</b></div>
+    <div class="nutrition-full-row"><span>Salz</span><b>${formatNutritionG(saltG)} g</b></div>
+    <div class="nutrition-full-row"><span>Koffein</span><b>${caffeineMg} mg</b></div>
+    <div class="nutrition-full-row"><span>Taurin</span><b>${taurineMg} mg</b></div>
+  `;
+
+  const toggleBtn = document.getElementById("pdNutritionToggle");
+  const fullEl = document.getElementById("pdNutritionFull");
+  fullEl.classList.remove("open");
+  toggleBtn.classList.remove("open");
+  toggleBtn.setAttribute("aria-expanded", "false");
+  toggleBtn.querySelector("span").textContent = "Alle Nährwerte anzeigen";
+  toggleBtn.onclick = () => {
+    const nowOpen = !fullEl.classList.contains("open");
+    fullEl.classList.toggle("open", nowOpen);
+    toggleBtn.classList.toggle("open", nowOpen);
+    toggleBtn.setAttribute("aria-expanded", String(nowOpen));
+    toggleBtn.querySelector("span").textContent = nowOpen ? "Nährwerte ausblenden" : "Alle Nährwerte anzeigen";
+  };
 }
 
 function renderSimilarProducts(product){

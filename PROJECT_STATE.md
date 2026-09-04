@@ -4,6 +4,72 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-04 (16) — Scroll-Chaining behoben (Hintergrund scrollte in offenen Sheets mit)
+
+**Umgesetzt (Mobile + Webapp — reine CSS-Ergänzung, keine Design-/Layoutänderung):**
+- **Ursache**: Die scrollenden Sheet-Container (`.sheet`, `#locOverlay`/`#filterOverlay .sheet-scroll`) hatten kein `overscroll-behavior` gesetzt. Erreichte man beim Scrollen innerhalb eines Sheets (z.B. Produktdetail, Filter, Preisverlauf) den oberen oder unteren Rand und scrollte weiter, "kettete" der Browser die restliche Scroll-Bewegung an das nächste scrollende Element dahinter durch — das war die Hintergrundseite (`body`, kein eigenes `overflow:hidden`), die dadurch sichtbar mitscrollte.
+- **Fix**: `overscroll-behavior: contain` auf `.sheet`, `#locOverlay .sheet-scroll`/`#filterOverlay .sheet-scroll` sowie `.search-suggestions-list` (Such-Autocomplete-Dropdown, dieselbe Bug-Klasse) ergänzt — je 1 CSS-Zeile pro Selektor, sonst nichts geändert. Das ist die moderne Standardlösung genau für dieses Problem (von allen aktuellen Browsern inkl. Safari 16+ unterstützt) und stoppt das Durchreichen der Scroll-Bewegung exakt am Rand des jeweiligen Containers, ohne Body-Scroll-Lock oder sonstige JS-Änderungen zu benötigen.
+- Bestehende Wischgeste zum Schließen (`initSwipeToClose()`) unangetastet — die arbeitet bereits mit einer eigenen "ist am oberen Rand?"-Prüfung und ist von dieser Änderung unabhängig.
+- Verifiziert über einen temporären lokalen Server (Mobile 375px): Hintergrundseite auf `scrollY:300` positioniert, Produktdetail-Sheet geöffnet, im Sheet über den oberen UND unteren Rand hinaus gescrollt (simulierte Wheel-Events) — Hintergrund blieb in beiden Fällen exakt bei `scrollY:300`, kein Mitscrollen mehr; `overscroll-behavior:contain` computed-style-geprüft auf allen 3 betroffenen Selektoren; Regressionstest (Preisverlauf-Sheet öffnen/schließen, Filter-Sheet mit Größenfilter) läuft weiterhin fehlerfrei; keine Konsolenfehler.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v56` erhöht (Pflichtregel).
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
+## 2026-09-04 (15) — Nährwerte-Kacheln umgebaut (Kohlenhydrate statt Taurin) + aufklappbare Vollansicht
+
+**Umgesetzt (Mobile + Webapp):**
+- **4 Übersichts-Kacheln geändert**: „Taurin" durch „Kohlenhydrate" ersetzt — zeigt jetzt Kalorien, Zucker, Koffein, Kohlenhydrate. Taurin wurde NICHT aus den Daten entfernt (weiterhin in `NUTRITION_MOCK_BY_BRAND`/`NUTRITION_MOCK_BY_PRODUCT`), nur aus den vier großen Kacheln in die neue Vollansicht verschoben.
+- **Neuer aufklappbarer Bereich** unterhalb der Kacheln: Button „⌄ Alle Nährwerte anzeigen" (Chevron-Icon aus dem bestehenden Icon-Sprite statt eines rohen Unicode-Zeichens, damit es zum bestehenden Icon-System passt) öffnet eine kompakte Tabelle mit Energie (kJ/kcal), Fett, davon gesättigte Fettsäuren, Kohlenhydrate, davon Zucker, Eiweiß, Salz, Koffein, Taurin — schließt sich bei erneutem Klick wieder (Chevron dreht sich, Label wechselt zu „Nährwerte ausblenden"/zurück). Zustand wird bei jedem Öffnen eines (auch desselben) Produkts zurückgesetzt, damit nie ein fälschlich offener Zustand vom vorherigen Produkt hängen bleibt.
+- **Datenmodell erweitert**: `NUTRITION_FALLBACK_PER_100ML`/`NUTRITION_MOCK_BY_BRAND`/`NUTRITION_MOCK_BY_PRODUCT` um `carbsG`, `fatG`, `satFatG`, `proteinG`, `saltG` ergänzt (bisher nur `kcal`/`sugarG`/`caffeineMg`/`taurineMg`) — alle Werte real recherchiert (das-ist-drin.de, fddb.info, openfoodfacts.org, teils Amazon.de-Produktseiten für Zero-Varianten wie Monster Ultra), `saltG` wo nötig per EU-Standardformel Salz = Natrium×2,5 aus recherchierten Natrium-Werten umgerechnet (keine erfundenen Werte). Energie in kJ wird aus kcal berechnet (Standardumrechnung 1 kcal = 4,184 kJ), nicht separat recherchiert.
+- Zero-/Sugarfree-Varianten ohne eigene Quelle übernehmen Fett/Eiweiß/Salz der jeweiligen regulären Sorte derselben Marke (nachvollziehbar, keine Erfindung) — nur Monster Ultra (White) und Carabao Sugar Free hatten eigene abweichende Quellenwerte für Kohlenhydrate/Eiweiß, entsprechend übernommen.
+- `getNutritionPer100ml()`/Fallback-Kette unverändert — nur die Datensätze selbst wurden erweitert, keine strukturelle Änderung an der Auflösungslogik.
+- Design der 4 Kacheln (Größe, Grid, Farben) unverändert; neue Vollansicht nutzt bestehende Farbvariablen (`--bg-surface-sunken`, `--border-subtle`, `--text-muted`/`--text-primary`) für konsistente Optik in Hell-/Dunkelmodus.
+- Verifiziert über einen temporären lokalen Server (Mobile 375px): Kacheln zeigen korrekt Kalorien/Zucker/Koffein/Kohlenhydrate (Taurin nicht mehr sichtbar dort); Aufklappen zeigt vollständige, korrekt berechnete Tabelle inkl. Taurin (Screenshot bestätigt); erneuter Klick schließt wieder korrekt; Zustand setzt sich beim Wechsel zu einem anderen Produkt zuverlässig zurück; Test mit Zero-Variante (Monster Ultra, u.a. abweichende Kohlenhydrate 0,9g statt 0g) und mit Nullwert (28 Black Taurin 0mg wird korrekt als "0 mg" angezeigt, nicht weggelassen, da es ein echter recherchierter Wert ist) erfolgreich; keine Konsolenfehler.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v55` erhöht (Pflichtregel).
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
+## 2026-09-04 (14) — Taurin-Werte nochmals gegen unabhängige Laboranalyse geprüft und präzisiert
+
+**Kontext**: Nutzer bestand darauf, dass die Taurin-Angabe (1000mg bei 250ml, 2000mg bei 500ml) weiterhin falsch sei, trotz der Korrektur in der Vorsitzung. Vollständige Neuprüfung aller 26 Produkte durchgeführt.
+
+**Ergebnis der Neuprüfung**: Das gleichförmige "400mg/100ml → 1000mg/250ml bzw. 2000mg/500ml"-Muster ist für Red Bull, Monster, Rockstar, effect und Carabao tatsächlich **real und korrekt** — zusätzlich zu den bereits in der Vorsitzung herangezogenen Quellen (das-ist-drin.de, fddb.info) jetzt auch anhand der unabhängigen Laboranalyse **"Energy Drinks 07/2013" der Stiftung Warentest** (test.de, chemisch gemessene Werte, nicht nur deklarierte Herstellerangaben) einzeln für Red Bull (3900mg/l), Monster (4300mg/l), Rockstar (4100mg/l), effect (4000mg/l) und 28 Black ("n.n." = nicht nachweisbar, bestätigt 0mg) gegengeprüft — alle lagen nah an den bereits hinterlegten Werten. Das auffällig runde Muster war also kein Bug, sondern spiegelt real wider, dass sich die meisten Marken am deutschen Markt auf ca. 0,4% Taurin eingependelt haben.
+
+**Trotzdem umgesetzt — Präzisierung anhand der jetzt vorliegenden Labordaten** (`NUTRITION_MOCK_BY_BRAND`/`NUTRITION_MOCK_BY_PRODUCT` in `index.html`), um pro Marke echte, differenzierte Werte statt eines einheitlichen Platzhalters zu zeigen:
+- Red Bull: Taurin 400→390 mg/100ml (250ml-Dose zeigt jetzt 975 statt 1000mg), Koffein 32→31mg
+- Monster: Taurin 400→430 mg/100ml (500ml-Dose zeigt jetzt 2150 statt 2000mg), Koffein 32→30mg
+- Rockstar: Taurin 400→410 mg/100ml (500ml-Dose zeigt jetzt 2050mg), Kalorien 59→57 kcal/100ml (Warentest-Messwert)
+- 28 Black: Kalorien 59→57 kcal/100ml (Warentest-Messwert), Taurin bleibt 0 (jetzt zusätzlich Warentest-bestätigt)
+- effect: Koffein 32→31mg (Warentest-Messwert), Taurin bleibt 400 (exakte Übereinstimmung mit Warentest)
+- GÖNRGY/Carabao: unverändert (keine Warentest-Daten verfügbar für diese Marken, bleiben bei den bereits in der Vorsitzung recherchierten Werten aus fddb.info/openfoodfacts.org)
+- Alle produktgenauen Ausnahmen (`NUTRITION_MOCK_BY_PRODUCT`, Zero-Varianten, Monster-Ultra-Linie, Rockstar Punched Guava) entsprechend an die neuen Markenwerte angeglichen.
+- Kommentarblock über den Konstanten erklärt jetzt explizit, warum das 1000/2000mg-Muster bei den betroffenen Marken real ist (industrieweite Konvergenz auf ~0,4% Taurin), damit das bei künftiger Bearbeitung nicht wieder als Bug missverstanden wird.
+- Verifiziert über einen temporären lokalen Server (Mobile 375px): alle 26 Produkte einzeln durchgerechnet, Red Bull zeigt jetzt 975mg (statt 1000mg) in der Detailansicht (Screenshot bestätigt), keine Konsolenfehler, kein Produkt fällt auf `NUTRITION_FALLBACK_PER_100ML` zurück (alle 7 Marken korrekt in `NUTRITION_MOCK_BY_BRAND` hinterlegt, geprüft).
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v54` erhöht (Pflichtregel).
+
+**Offen:**
+- GÖNRGY und Carabao sind zu klein/neu, um in der 2013er-Stiftung-Warentest-Studie vertreten zu sein — deren Werte stützen sich weiterhin auf Sekundärquellen (fddb.info, openfoodfacts.org), nicht auf eine unabhängige Laboranalyse.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-04 (13) — Nicht-verfügbare Produkte/Bundles entfernt, Nährwerte real recherchiert und korrigiert
 
 **Umgesetzt (Mobile + Webapp — reine Datenkorrektur, keine Design-/Funktionsänderung):**
