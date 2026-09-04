@@ -5,7 +5,7 @@
     "fields": {
       "products[]": "Produktkatalog. Felder: id, name, brand (Marke), sizeMl (Menge in ml), img (hotlinked Produktbild-URL, kein lokaler Download).",
       "stores{}": "Haendler, keyed by Haendlername (z.B. \"Kaufland\"). Felder: logo (hotlinked Logo-URL), branch { address, geo \"lat,lon\", open/close (Oeffnungszeit in Stunden, 24h-Format, halbe Stunden als .5), closedSun (bool) }. Hinweis: bildet aktuell genau eine Filiale je Haendler in Arnsberg ab (Demo-Gebiet), nicht mehrere Filialen pro Kette -- fuer echte Mehr-Filial-Daten muesste \"store\" bei offers[] um eine eigene branchId erweitert werden.",
-      "offers[]": "Einzelangebote (das eigentliche \"Angebotsformat\"). Felder: id, productId (-> products[].id), store (-> stores{}-Key = Haendler+Filiale), regularPrice/offerPrice (Preis in EUR - bei Mehrfachpackungen der GESAMTPREIS fuer die ganze Packung, nicht pro Dose/Flasche), pfand (Pfand in EUR, bei Mehrfachpackungen ebenfalls der Gesamtbetrag fuer die ganze Packung), packaging (\"Dose\" | \"Flasche\"), distanceKm (Entfernung), validFrom/validUntil (Angebotszeitraum, YYYY-MM-DD), link (Ziel-URL des Angebots). Optional: units (Anzahl Dosen/Flaschen im Angebot, z.B. 4/6/12/24 fuer Multipacks; fehlt das Feld, gilt 1 = Einzelartikel -- siehe UNITS_FALLBACK in index.html), priceHistory (siehe eigener Eintrag 'priceHistory[].fields' unten) -- wenn vorhanden wird er von der App uebernommen (fehlende Detailfelder je Punkt werden ergaenzt), andernfalls synthetisch generiert (Demo-Verhalten).",
+      "offers[]": "Einzelangebote (das eigentliche \"Angebotsformat\"). Felder: id, productId (-> products[].id), store (-> stores{}-Key = Haendler+Filiale), regularPrice/offerPrice (Preis in EUR - bei Mehrfachpackungen der GESAMTPREIS fuer die ganze Packung, nicht pro Dose/Flasche), pfand (Pfand in EUR, bei Mehrfachpackungen ebenfalls der Gesamtbetrag fuer die ganze Packung), packaging (\"Dose\" | \"Flasche\"), distanceKm (Entfernung), validFrom/validUntil (Angebotszeitraum, YYYY-MM-DD), link (Ziel-URL des Angebots). Optional: units (Anzahl Dosen/Flaschen im Angebot, z.B. 4/6/12/24 fuer Multipacks; fehlt das Feld, gilt 1 = Einzelartikel -- siehe UNITS_FALLBACK in index.html), priceHistory (siehe eigener Eintrag 'priceHistory[].fields' unten) -- wenn vorhanden wird er von der App uebernommen (fehlende Detailfelder je Punkt werden ergaenzt), andernfalls synthetisch generiert (Demo-Verhalten). lastCheckedAt (Datum \"YYYY-MM-DD\", Pflichtfeld ab Schema-Version 1: wann der Preis zuletzt manuell geprueft wurde -- rein manuell gepflegtes Redaktionsfeld, wird 1:1 in der UI angezeigt wenn man auf den Preis einer Angebotskarte tippt, keine automatische Berechnung).",
       "priceHistory[].fields": "Preisverlaufs-Komponente (Tages-Karussell im Preisverlauf-Sheet). Jeder Eintrag ist ein eigenstaendiger, DATIERTER Preispunkt (kein nackter Zahlenwert): { date: \"YYYY-MM-DD\" (Pflicht, eindeutiger Kalendertag), price: number (Pflicht, EUR - bei Mehrfachpackungen Packungs-Gesamtpreis wie bei offerPrice), retailer: string (optional, Default = das store-Feld des Angebots), deposit: number (optional, EUR, Default = das pfand-Feld des Angebots), unitPrice: number (optional, EUR/L, Default = price / (units*sizeMl/1000) berechnet), available: boolean (optional, Default true - fuer spaeter: Tage ohne verfuegbares Angebot) }. productId/Marke/Menge muessen NICHT je Punkt wiederholt werden, da ein priceHistory-Array immer zu genau einem offers[]-Eintrag (= ein Produkt+Haendler+Gebinde) gehoert. Ist das Feld nicht gesetzt oder leer, generiert die App 90 Tage synthetische Demo-Werte (genPriceHistory() in index.html). Rueckwaerts-kompatibel wird auch ein reines number[] (alte, undatierte Form) akzeptiert - die App zaehlt die Datumswerte dann rueckwaerts vom heutigen Tag; fuer neue Daten bitte aber immer das datierte Objektformat verwenden."
     },
     "derivedClientSide": "Der Oeffnungsstatus (\"Jetzt geoeffnet\"/\"Geschlossen\") wird NICHT gespeichert, sondern zur Laufzeit aus stores{}.branch (open/close/closedSun) gegen die aktuelle Uhrzeit berechnet, damit er nie veraltet. \"Preis geprueft vor ...\" bleibt fuer Demo-Zwecke deterministisch aus der offer-id abgeleitet (kein echter Zeitstempel im Datensatz)."
@@ -275,7 +275,8 @@
       "validUntil": "2026-09-10",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d2",
@@ -288,7 +289,8 @@
       "validUntil": "2026-09-03",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d3",
@@ -301,7 +303,8 @@
       "validUntil": "2026-09-10",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d4",
@@ -314,7 +317,8 @@
       "validUntil": "2026-09-08",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d5",
@@ -327,7 +331,8 @@
       "validUntil": "2026-09-10",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d6",
@@ -340,7 +345,8 @@
       "validUntil": "2026-09-11",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d7",
@@ -353,7 +359,8 @@
       "validUntil": "2026-09-07",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d8",
@@ -366,7 +373,8 @@
       "validUntil": "2026-09-10",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d9",
@@ -379,7 +387,8 @@
       "validUntil": "2026-09-09",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d10",
@@ -392,7 +401,8 @@
       "validUntil": "2026-09-10",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d11",
@@ -405,7 +415,8 @@
       "validUntil": "2026-09-07",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d12",
@@ -418,7 +429,8 @@
       "validUntil": "2026-09-08",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d13",
@@ -431,7 +443,8 @@
       "validUntil": "2026-09-11",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d14",
@@ -444,7 +457,8 @@
       "validUntil": "2026-09-09",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d15",
@@ -457,7 +471,8 @@
       "validUntil": "2026-09-10",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d16",
@@ -470,7 +485,8 @@
       "validUntil": "2026-09-07",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d17",
@@ -483,7 +499,8 @@
       "validUntil": "2026-09-08",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d18",
@@ -496,7 +513,8 @@
       "validUntil": "2026-09-11",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d19",
@@ -509,7 +527,8 @@
       "validUntil": "2026-09-09",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d20",
@@ -522,7 +541,8 @@
       "validUntil": "2026-09-10",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d21",
@@ -535,7 +555,8 @@
       "validUntil": "2026-09-07",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d22",
@@ -548,7 +569,8 @@
       "validUntil": "2026-09-08",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d23",
@@ -561,7 +583,8 @@
       "validUntil": "2026-09-11",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d24",
@@ -574,7 +597,8 @@
       "validUntil": "2026-09-09",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d25",
@@ -587,7 +611,8 @@
       "validUntil": "2026-09-10",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d26",
@@ -600,7 +625,8 @@
       "validUntil": "2026-09-07",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d27",
@@ -613,7 +639,8 @@
       "validUntil": "2026-09-08",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d28",
@@ -626,7 +653,8 @@
       "validUntil": "2026-09-11",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d29",
@@ -639,7 +667,8 @@
       "validUntil": "2026-09-09",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d30",
@@ -652,7 +681,8 @@
       "validUntil": "2026-09-10",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d31",
@@ -665,7 +695,8 @@
       "validUntil": "2026-09-07",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d32",
@@ -678,7 +709,8 @@
       "validUntil": "2026-09-08",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d33",
@@ -691,7 +723,8 @@
       "validUntil": "2026-09-11",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d34",
@@ -704,7 +737,8 @@
       "validUntil": "2026-09-09",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d35",
@@ -717,7 +751,8 @@
       "validUntil": "2026-09-10",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d36",
@@ -730,7 +765,8 @@
       "validUntil": "2026-09-07",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d37",
@@ -743,7 +779,8 @@
       "validUntil": "2026-09-08",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d38",
@@ -756,7 +793,8 @@
       "validUntil": "2026-09-11",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d39",
@@ -769,7 +807,8 @@
       "validUntil": "2026-09-09",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d40",
@@ -782,7 +821,8 @@
       "validUntil": "2026-09-10",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d41",
@@ -795,7 +835,8 @@
       "validUntil": "2026-09-07",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d42",
@@ -808,7 +849,8 @@
       "validUntil": "2026-09-08",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d43",
@@ -821,7 +863,8 @@
       "validUntil": "2026-09-11",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d44",
@@ -834,7 +877,8 @@
       "validUntil": "2026-09-09",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d45",
@@ -847,7 +891,8 @@
       "validUntil": "2026-09-10",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d46",
@@ -860,7 +905,8 @@
       "validUntil": "2026-09-07",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d47",
@@ -873,7 +919,8 @@
       "validUntil": "2026-09-08",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d48",
@@ -886,7 +933,8 @@
       "validUntil": "2026-09-11",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d49",
@@ -899,7 +947,8 @@
       "validUntil": "2026-09-09",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d50",
@@ -912,7 +961,8 @@
       "validUntil": "2026-09-10",
       "link": "#",
       "pfand": 0.25,
-      "packaging": "Dose"
+      "packaging": "Dose",
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d51",
@@ -926,7 +976,8 @@
       "link": "#",
       "pfand": 1.0,
       "packaging": "Dose",
-      "units": 4
+      "units": 4,
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d52",
@@ -940,7 +991,8 @@
       "link": "#",
       "pfand": 1.0,
       "packaging": "Dose",
-      "units": 4
+      "units": 4,
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d53",
@@ -954,7 +1006,8 @@
       "link": "#",
       "pfand": 1.5,
       "packaging": "Dose",
-      "units": 6
+      "units": 6,
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d54",
@@ -968,7 +1021,8 @@
       "link": "#",
       "pfand": 1.5,
       "packaging": "Dose",
-      "units": 6
+      "units": 6,
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d55",
@@ -982,7 +1036,8 @@
       "link": "#",
       "pfand": 1.5,
       "packaging": "Dose",
-      "units": 6
+      "units": 6,
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d56",
@@ -996,7 +1051,8 @@
       "link": "#",
       "pfand": 3.0,
       "packaging": "Dose",
-      "units": 12
+      "units": 12,
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d57",
@@ -1010,7 +1066,8 @@
       "link": "#",
       "pfand": 3.0,
       "packaging": "Dose",
-      "units": 12
+      "units": 12,
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d58",
@@ -1024,7 +1081,8 @@
       "link": "#",
       "pfand": 6.0,
       "packaging": "Dose",
-      "units": 24
+      "units": 24,
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d59",
@@ -1038,7 +1096,8 @@
       "link": "#",
       "pfand": 6.0,
       "packaging": "Dose",
-      "units": 24
+      "units": 24,
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d60",
@@ -1052,7 +1111,8 @@
       "link": "#",
       "pfand": 6.0,
       "packaging": "Dose",
-      "units": 24
+      "units": 24,
+      "lastCheckedAt": "2026-09-01"
     }
   ]
 }

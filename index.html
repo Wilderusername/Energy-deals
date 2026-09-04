@@ -763,6 +763,19 @@ color:var(--text-primary);
 letter-spacing:-0.01em
 }
 .card .price{font-size:24px}
+button.price{
+appearance:none;
+-webkit-appearance:none;
+display:inline-block;
+width:auto;
+border:0;
+background:none;
+margin:0;
+padding:0;
+cursor:pointer;
+font-family:inherit;
+text-align:left
+}
 
 .unit{
 font-size:11px;
@@ -1135,6 +1148,50 @@ left:16px
 }
 
 .sheet-inner{position:relative}
+
+/* Kleine, dezente Sprechblase direkt unterhalb des angeklickten Preises
+   ("Zuletzt geprüft ..."). Immer unterhalb (nie oberhalb) platziert, damit
+   sie nie Produktbild/-name verdeckt, die in der Karte über dem Preis liegen
+   — siehe showPricePopover() in index.html. position:fixed, weil die
+   Position per getBoundingClientRect() des angeklickten Preis-Buttons
+   berechnet wird (viewport-relative Koordinaten passen direkt zu
+   position:fixed, unabhängig vom Scroll-Zustand irgendeines Vorfahren-
+   Containers). Sichtbarkeit über opacity/pointer-events statt display, damit
+   die Box beim Öffnen sofort korrekt vermessen werden kann.
+   --price-popover-arrow wird pro Öffnung gesetzt, damit die Pfeilspitze auch
+   bei an den Viewport-Rand geklemmter Bubble weiterhin auf den Preis zeigt. */
+.price-popover{
+position:fixed;
+z-index:70;
+background:var(--bg-surface-elevated);
+border:1px solid var(--border-subtle);
+color:var(--text-primary);
+font-size:12.5px;
+font-weight:700;
+line-height:1.3;
+padding:7px 11px;
+border-radius:var(--radius-sm);
+box-shadow:var(--shadow-md);
+white-space:nowrap;
+max-width:calc(100vw - 24px);
+opacity:0;
+transform:translateY(4px);
+pointer-events:none;
+transition:opacity .15s ease,transform .15s ease
+}
+.price-popover.open{opacity:1;transform:translateY(0);pointer-events:auto}
+.price-popover::after{
+content:"";
+position:absolute;
+top:-5px;
+left:var(--price-popover-arrow, 16px);
+width:9px;
+height:9px;
+background:var(--bg-surface-elevated);
+border-left:1px solid var(--border-subtle);
+border-top:1px solid var(--border-subtle);
+transform:translateX(-50%) rotate(45deg)
+}
 
 /* location sheet */
 
@@ -2106,6 +2163,7 @@ font-size:12px;
 font-weight:700;
 color:var(--text-primary);
 line-height:1.25;
+min-height:2.5em;
 display:-webkit-box;
 -webkit-line-clamp:2;
 -webkit-box-orient:vertical;
@@ -2979,6 +3037,9 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 </div>
 </div>
 
+<!-- ZULETZT GEPRÜFT (KLICK AUF DEN PREIS) — kleine Sprechblase, siehe showPricePopover() -->
+<div class="price-popover" id="pricePopover" role="tooltip"></div>
+
 <!-- PRODUKTDETAILS / PRICE HISTORY MODAL -->
 <div class="overlay" id="histOverlay">
 <div class="sheet">
@@ -3260,6 +3321,14 @@ function dateStrAddDays(base, days){
 }
 const DEMO_TODAY_STR = dateStrAddDays(DEMO_TODAY, 0);
 
+/* "Zuletzt geprüft am ..." (Klick auf den Preis einer Angebotskarte): rein
+   manuell gepflegtes Redaktionsfeld in deals.json (offer.lastCheckedAt,
+   "YYYY-MM-DD"), keine automatische Berechnung — im Gegensatz zu
+   checkedMinutesAgo oben, das weiterhin deterministisch aus der offer-id
+   abgeleitet bleibt. Fallback nur für den Fall, dass ein Angebot das Feld
+   (noch) nicht setzt. */
+const LAST_CHECKED_FALLBACK = DEMO_TODAY_STR;
+
 /* ---------------- PREISVERLAUF: DATENSTRUKTUR ----------------
    Jeder Preis-Datenpunkt ist ein eigenständiges, datiertes Objekt (keine
    nackten Zahlen mehr) — das Datum ist Teil der Statistik, nicht nur Deko,
@@ -3362,7 +3431,8 @@ function buildDeals(offers){
       totalMl: (typeof d.units === "number" ? d.units : UNITS_FALLBACK) * product.sizeMl,
       priceHistoryPoints,
       history: priceHistoryPoints.map(pt=>pt.price),
-      checkedMinutesAgo: 3 + (hashStr(d.id) % 118)
+      checkedMinutesAgo: 3 + (hashStr(d.id) % 118),
+      lastCheckedAt: typeof d.lastCheckedAt === "string" ? d.lastCheckedAt : LAST_CHECKED_FALLBACK
     };
   });
 }
@@ -3440,6 +3510,11 @@ function formatDateRange(from, until){
   const start = from.split("-");
   const end = until.split("-");
   return `${start[2]}.${start[1]}. – ${end[2]}.${end[1]}.${end[0]}`;
+}
+
+function formatSingleDate(dateStr){
+  const [y,m,d] = dateStr.split("-");
+  return `${d}.${m}.${y}`;
 }
 
 function euro(n){ return n.toFixed(2).replace(".",","); }
@@ -3693,7 +3768,7 @@ function render(){
               ${isBest ? `<button class="badge-best" data-store-detail="${deal.id}"><svg class="icon icon-xs"><use href="#i-trophy"/></svg> BESTER PREIS</button>` : ""}
             </div>
             <div class="price-line">
-              <span class="price">${euro(deal.offerPrice)} €</span>
+              <button class="price" data-checked="${deal.id}">${euro(deal.offerPrice)} €</button>
               <span class="pfand-note">+ ${euro(pfand)} € Pfand</span>
             </div>
             <div class="unit">${euro(literPrice)} €/L · Gesamt an der Kasse: ${euro(deal.offerPrice+pfand)} €</div>
@@ -3949,6 +4024,11 @@ dealsContainer.addEventListener("click",(e)=>{
   const histBtn = e.target.closest("[data-hist]");
   if(histBtn){
     openHistory(histBtn.dataset.hist);
+    return;
+  }
+  const checkedBtn = e.target.closest("[data-checked]");
+  if(checkedBtn){
+    togglePricePopover(checkedBtn);
     return;
   }
   const productDetailBtn = e.target.closest("[data-product-detail]");
@@ -5261,6 +5341,58 @@ function findBestDealFor(deal){
   if(candidates.length===0) return null;
   return candidates.reduce((a,b)=> a.offerPrice<=b.offerPrice ? a : b);
 }
+
+/* "Zuletzt geprüft"-Sprechblase am Preis: eine einzelne, wiederverwendete
+   #pricePopover-Box wird bei Klick auf den jeweiligen Preis-Button neu
+   positioniert (statt für jede Karte eine eigene Instanz vorzuhalten).
+   pricePopoverBtn merkt sich den aktuell verankerten Button, damit ein
+   erneuter Klick auf denselben Preis toggelt (schließt) statt neu zu öffnen. */
+let pricePopoverBtn = null;
+
+function hidePricePopover(){
+  document.getElementById("pricePopover").classList.remove("open");
+  pricePopoverBtn = null;
+}
+
+function showPricePopover(btn, deal){
+  const bubble = document.getElementById("pricePopover");
+  bubble.classList.remove("open");
+  bubble.textContent = `Zuletzt geprüft · ${formatSingleDate(deal.lastCheckedAt)}`;
+  pricePopoverBtn = btn;
+
+  const margin = 8, gap = 8;
+  const btnRect = btn.getBoundingClientRect();
+  const bubbleRect = bubble.getBoundingClientRect();
+
+  let left = btnRect.left + btnRect.width/2 - bubbleRect.width/2;
+  left = Math.max(margin, Math.min(left, window.innerWidth - bubbleRect.width - margin));
+
+  /* Immer unterhalb des Preises (nie darüber) — so verdeckt die Bubble nie
+     Produktbild/-name, die oberhalb des Preises in der Karte liegen. */
+  const top = btnRect.bottom + gap;
+
+  const arrowLeft = Math.max(12, Math.min(btnRect.left + btnRect.width/2 - left, bubbleRect.width - 12));
+
+  bubble.style.left = left + "px";
+  bubble.style.top = top + "px";
+  bubble.style.setProperty("--price-popover-arrow", arrowLeft + "px");
+  bubble.classList.add("open");
+}
+
+function togglePricePopover(btn){
+  const deal = deals.find(d=>d.id===btn.dataset.checked);
+  if(!deal) return;
+  if(pricePopoverBtn === btn) hidePricePopover();
+  else showPricePopover(btn, deal);
+}
+
+document.addEventListener("click",(e)=>{
+  if(!pricePopoverBtn) return;
+  if(e.target.closest("#pricePopover") || e.target.closest("[data-checked]")) return;
+  hidePricePopover();
+});
+window.addEventListener("scroll", ()=>{ if(pricePopoverBtn) hidePricePopover(); }, {capture:true, passive:true});
+window.addEventListener("resize", ()=>{ if(pricePopoverBtn) hidePricePopover(); });
 
 function openHistory(dealId){
   const deal = deals.find(d=>d.id===dealId);

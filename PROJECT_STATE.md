@@ -4,6 +4,84 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-04 (8) — Preis-Sprechblase: Emoji entfernt, immer unterhalb positioniert
+
+**Umgesetzt (Mobile + Webapp, wie bei der ursprünglichen Sprechblase):**
+- **Kalender-Emoji entfernt**: Text der Bubble ist jetzt schlicht „Zuletzt geprüft · 01.09.2026" statt „🗓 Zuletzt geprüft · …".
+- **Immer unterhalb des Preises**: Die bisherige Logik (oberhalb bevorzugt, nur bei Platzmangel unterhalb) wurde entfernt — `showPricePopover()` positioniert die Bubble jetzt ausnahmslos unterhalb des angeklickten Preises (`top = btnRect.bottom + gap`), damit sie nie Produktbild oder Produktname verdeckt, die in der Karte oberhalb des Preises liegen. Die jetzt überflüssige `data-placement`-Logik (JS und CSS-Selektoren für `[data-placement="top"]`/`"bottom"`) wurde entfernt, `.price-popover::after` (Pfeilspitze) zeigt nur noch die „unten"-Variante (Pfeil oben an der Bubble, zeigt nach oben zum Preis).
+- Horizontale Positionierung/Clamping an den Viewport-Rand sowie sämtliches Schließverhalten (erneuter Klick, Klick außerhalb, Scroll/Resize, Wechsel zu anderem Preis) unverändert wie zuvor.
+- Verifiziert über einen temporären lokalen Server (Mobile 375px): Bubble-Text ohne Emoji bestätigt; Bubble-Top liegt zuverlässig unterhalb von `btn.getBoundingClientRect().bottom` (8px Abstand); Screenshot bestätigt, dass Produktbild und -name frei bleiben; Toggle/Außerhalb-Klick/Wechsel-zu-anderem-Preis funktionieren weiterhin wie zuvor; keine Konsolenfehler.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v48` erhöht (Pflichtregel).
+- `CLAUDE.md` entsprechend aktualisiert (kein Emoji mehr, "immer unterhalb" statt "flips above/below").
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
+## 2026-09-04 (7) — "Zuletzt geprüft"-Fenster durch kleine Sprechblase am Preis ersetzt
+
+**Umgesetzt (Mobile + Webapp — Nutzer hat für diese Änderung ausdrücklich "auf Mobile sowie Desktop" verlangt):**
+- **Großes zentriertes Popup entfernt**: Das in der vorherigen Sitzung eingeführte `#checkedOverlay`/`.mini-modal`-Fenster ("Zuletzt geprüft am ...") wurde komplett entfernt (HTML, CSS, `openLastChecked()`).
+- **Neu: kleine, dezente Sprechblase direkt am Preis**: Klick auf den Preis (`button.price`, `data-checked`) öffnet jetzt eine kompakte Popover-Sprechblase (`#pricePopover`) mit dem Text „🗓 Zuletzt geprüft · 01.09.2026" (Datum aus `deal.lastCheckedAt`, wie zuvor). Eine einzelne, wiederverwendete `#pricePopover`-Box wird pro Klick neu positioniert statt für jede Karte eine eigene Instanz vorzuhalten (`showPricePopover()`/`hidePricePopover()`/`togglePricePopover()` in `index.html`).
+- **Positionierung**: `position:fixed`, berechnet aus `getBoundingClientRect()` des angeklickten Preis-Buttons — horizontal zentriert über/unter dem Preis, an den Viewport-Rand geklemmt (8px Mindestabstand), Pfeilspitze (`::after`, per CSS-Variable `--price-popover-arrow` positioniert) zeigt weiterhin exakt auf den Preis, auch wenn die Box selbst an den Rand geklemmt wurde. Passt sich automatisch an, ob über oder unter dem Preis genug Platz ist (`data-placement="top"|"bottom"`, Pfeilrichtung dreht sich entsprechend). Funktioniert unverändert bei jeder Fensterbreite (Mobile 375px und Desktop 1280px getestet).
+- **Schließen**: erneuter Klick auf denselben Preis (Toggle), Klick außerhalb (globaler `document`-Click-Listener, ignoriert Klicks auf die Bubble selbst oder auf einen `[data-checked]`-Button), sowie zusätzlich bei Scroll/Resize (sonst würde die `position:fixed`-Box beim Scrollen optisch vom Preis abdriften — kein expliziter Nutzerwunsch, aber notwendig für sauberes Verhalten einer fixed-positionierten Box). Klick auf einen ANDEREN Preis, während die Bubble schon offen ist, bewegt sie direkt zum neuen Preis (kein zusätzlicher Klick zum Schließen nötig).
+- **Optik**: nutzt bestehende Design-Tokens (`--bg-surface-elevated`, `--border-subtle`, `--shadow-md`, `--radius-sm`), passt sich damit automatisch an Hell-/Dunkelmodus an, ohne eigene Farbwerte zu definieren — bewusst dezent (kleine Schrift, dünner Rand, kein knalliger Toast-Stil).
+- Sonst keine Änderungen am bestehenden Design; `lastCheckedAt`-Datenfeld in `deals.json` und der Fallback (`LAST_CHECKED_FALLBACK`) aus der vorherigen Sitzung unverändert übernommen.
+- Verifiziert über einen temporären lokalen Server: Mobile 375px UND Desktop 1280px — Bubble öffnet mit korrektem Text/Datum, exakt horizontal über dem Preis zentriert (per `getBoundingClientRect()`-Vergleich bestätigt); Klick auf denselben Preis schließt sie wieder; Klick außerhalb schließt sie; Klick auf einen anderen Preis bewegt sie dorthin, ohne vorher schließen zu müssen; Scroll schließt sie; bei wenig Platz oberhalb (Preis nah am oberen Bildschirmrand) klappt sie automatisch nach unten (`data-placement="bottom"`) und der Pfeil dreht sich mit; keine Konsolenfehler.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v47` erhöht (Pflichtregel).
+- `CLAUDE.md` aktualisiert: Beschreibung von `lastCheckedAt`/Klick-auf-Preis-Verhalten an die neue Popover-Komponente angepasst (`#pricePopover` statt `#checkedOverlay`/`.mini-modal`).
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
+## 2026-09-04 (6) — "Zuletzt geprüft am ..."-Fenster beim Antippen des Preises
+
+**Umgesetzt (nur Mobile):**
+- **Neues manuell gepflegtes Datenfeld `lastCheckedAt`**: Jedes `offers[]`-Objekt in `deals.json` hat jetzt ein Feld `lastCheckedAt` (`"YYYY-MM-DD"`), aktuell einheitlich auf `"2026-09-01"` gesetzt (Demo-Default). Anders als das bestehende, rein clientseitig aus der offer-id abgeleitete `checkedMinutesAgo` ("Preis geprüft vor ...", aktuell in der UI ausgeblendet) ist `lastCheckedAt` ein echtes, händisch pflegbares Redaktionsfeld in der Datenquelle — direkt in `deals.json` bearbeitbar, um jederzeit ein aktuelles Datum einzutragen. `_meta.fields.offers[]` in `deals.json` dokumentiert das neue Feld. In `buildDeals()` (`index.html`) gibt es einen Fallback (`LAST_CHECKED_FALLBACK` = `DEMO_TODAY_STR`) für den Fall, dass ein Angebot das Feld nicht setzt.
+- **Preis ist jetzt antippbar**: Der Preis auf jeder Angebotskarte (`.price` in `.price-line`) ist von einem `<span>` zu einem `<button class="price" data-checked="...">` geworden. Klick/Tap öffnet ein kleines, zentriertes Fenster (`#checkedOverlay`, neue `.mini-modal`-Komponente statt der bestehenden Bottom-Sheets) mit „Zuletzt geprüft am [Datum]" (`openLastChecked()`, Datum formatiert über neue Hilfsfunktion `formatSingleDate()`). Das Fenster nutzt dieselbe Overlay-Backdrop-/Schließen-Mechanik (`openSheet`/`closeSheet`, Klick auf X oder auf den abgedunkelten Hintergrund) wie die bestehenden Sheets, ist aber bewusst klein und zentriert statt als Bottom-Sheet umgesetzt (`.overlay.center` + `.mini-modal`, eigene Scale-/Fade-Animation statt Slide-up).
+- **Nur die Preisangabe ist klickbar, kein leerer Bereich daneben**: `button.price` bekommt einen Reset (`background:none;border:0;padding:0;` usw.), damit der Button exakt so breit wie der Preistext selbst bleibt (kein Full-Width-Button durch Browser-Standardstile) — die leere Fläche rechts daneben in `.price-line` (z.B. neben "+ 0,25 € Pfand") bleibt nicht klickbar.
+- Sonst keine Änderungen an Design oder anderen Bereichen; die bereits ausgeblendete "Preis geprüft vor ..."-Logik (`checkedMinutesAgo`) bleibt unverändert und weiterhin unsichtbar.
+- Verifiziert über einen temporären lokalen Server (Mobile 375px): Klick auf den Preis öffnet das Fenster mit dem korrekten, aus `deal.lastCheckedAt` gelesenen Datum (per DOM-Test für mehrere Angebote bestätigt, inkl. Test mit manuell auf ein abweichendes Datum gesetztem `lastCheckedAt` — Anzeige folgt korrekt); Klick auf X sowie auf den abgedunkelten Hintergrund schließt das Fenster; `elementFromPoint` am rechten Rand von `.price-line` (neben dem Pfand-Hinweis) trifft weiterhin den umgebenden `<div>`, nicht den Preis-Button; Breite des Preis-Buttons entspricht der Textbreite (kein Full-Width-Button); keine Konsolenfehler.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v46` erhöht (Pflichtregel) — betrifft sowohl `index.html` als auch `deals.json` (beide in `APP_SHELL`).
+- `CLAUDE.md` aktualisiert: `lastCheckedAt` im `offers[]`-Feldschema ergänzt, alte Notiz "deliberately deferred extension, not wired up" entfernt/ersetzt, da jetzt umgesetzt.
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
+## 2026-09-04 (5) — Produktname-Höhe bei "Ähnliche Produkte" vereinheitlicht
+
+**Umgesetzt (nur Mobile):**
+- **Feste Höhe für den Produktnamen**: `.similar-name` (Produktname in der `.similar-card`-Leiste im Produktdetail-Sheet) bekommt jetzt `min-height:2.5em` (= 2 Zeilen bei `line-height:1.25`). Dadurch reserviert der Namensbereich bei jeder Karte immer den Platz für 2 Textzeilen, auch wenn der eigentliche Produktname (z.B. "Red Bull Zero") nur eine Zeile braucht — die darunterliegenden Zeilen (ml-Angabe/Händler-Meta und Preis) stehen dadurch bei allen Karten exakt auf derselben Höhe, unabhängig von 1- oder 2-zeiligem Namen. Bild-Ausrichtung oben (aus dem vorherigen Fix) bleibt unverändert bestehen.
+- Sonst keine Änderungen an Design oder anderen Bereichen.
+- Verifiziert über einen temporären lokalen Server (Mobile 375px): Bild-, Meta- und Preis-Offset innerhalb der Karte per `getBoundingClientRect()` für alle 6 „Ähnliche Produkte"-Karten gemessen — Bild bei allen 11px, ml-Angabe bei allen 126px, Preis bei allen 143px (unabhängig davon, ob der Name 1 oder 2 Zeilen braucht); `.similar-name` wird nur an dieser einen Stelle im Code verwendet, keine Seiteneffekte auf andere Bereiche; keine Konsolenfehler.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v45` erhöht (Pflichtregel).
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-04 (4) — Bilder bei "Ähnliche Produkte" ausgerichtet + Sortieroption "Günstigster €/Liter" entfernt
 
 **Umgesetzt (nur Mobile):**
