@@ -1578,7 +1578,15 @@ text-align:left;
 font-family:inherit;
 transition:background .15s
 }
+/* Nur auf Geräten mit echtem Zeiger-Hover (Maus) aktiv: auf reinen
+   Touch-Geräten bleibt :hover nach einem Tap "hängen" (kein mouseout-Event),
+   z.B. sichtbar als dauerhaft angegrauter Menü-/Accordion-Reiter nach dem
+   Antippen zum Schließen - siehe Anfrage. @media(hover:hover) verhindert das
+   an der Wurzel, ohne das gewollte Hover-Feedback auf Maus-Geräten (Webapp)
+   zu verlieren. */
+@media (hover:hover){
 .profile-row:hover{background:var(--bg-surface-interactive-hover)}
+}
 .profile-row-icon{font-size:18px;width:26px;text-align:center;flex-shrink:0;color:var(--brand-primary-blue)}
 .profile-row-txt{flex:1;min-width:0}
 .profile-row-txt b{display:block;font-size:13.5px;color:var(--text-primary)}
@@ -2537,6 +2545,14 @@ flex-shrink:0;
 margin-left:-4px
 }
 
+/* Schließen-X im Burger-Menü etwas höher als der generische .sheet-close-Wert,
+   damit es auf einer Linie mit der "Menü"-Überschrift sitzt (dieselbe
+   Position gilt automatisch für alle internen Ansichten - Hauptmenü,
+   Neuigkeiten, Detail -, da es sich um ein und denselben, immer sichtbaren
+   Button handelt statt separater Buttons je Ansicht). Nur #menuOverlay
+   betroffen, alle anderen Sheets behalten den bisherigen .sheet-close-Wert. */
+#menuOverlay .sheet-close{top:-4px}
+
 /* Burger-Menü: Side-Drawer von rechts statt Bottom-Sheet. Ausschließlich
    #menuOverlay betroffen (ID-Selektor > .overlay/.sheet-Basisregeln) - alle
    anderen Sheets (Standort, Filter, Mein Bereich, ...) bleiben unverändert
@@ -2594,47 +2610,26 @@ transition:max-height .3s ease
 }
 .menu-acc-panel.open{max-height:2000px}
 .menu-acc-panel-inner{padding:2px 14px 14px}
-.menu-acc-info{
-display:flex;
-align-items:center;
-gap:8px;
-font-size:12.5px;
-font-weight:600;
-color:var(--text-primary)
-}
-.menu-acc-info .icon{color:var(--brand-primary-blue);flex-shrink:0}
 
-/* "Standort & Entfernung" wirkt jetzt als EIN zusammenhängender Container
-   statt Titel-Zeile + optisch separat wirkendem Standort-Feld darunter.
-   Bewusst nur für diesen einen Menüpunkt überschrieben (.menu-acc-loc auf dem
-   Wrapper, #menuLocRow/#menuLocPanel per ID) - alle anderen Menü-Accordions
-   (.menu-acc/.menu-acc-toggle/.menu-acc-panel) bleiben unverändert: Der
-   Wrapper trägt jetzt allein Hintergrund/Rand/Rundung, Zeile und Panel selbst
-   sind randlos/transparent und übernehmen keine eigene Rundung mehr - nur der
-   äußere Container ist sichtbar rund (overflow:hidden schneidet den Inhalt
-   entsprechend zu). */
-.menu-acc-loc{
-background:var(--bg-surface-sunken);
-border:1px solid var(--border-subtle);
-border-radius:var(--radius-lg);
-overflow:hidden
+/* "NEU"-Badge für Neuheiten-Einträge (siehe renderNewArrivals()). */
+.new-badge{
+display:inline-block;
+font-size:9px;
+font-weight:800;
+letter-spacing:.03em;
+background:var(--brand-primary-blue);
+padding:2px 6px;
+border-radius:99px;
+margin-left:6px;
+vertical-align:middle
 }
-.menu-acc-loc #menuLocRow{
-background:transparent;
-border:0;
-border-radius:0
-}
-.menu-acc-loc #menuLocPanel{
-background:transparent;
-border:0;
-border-radius:0
-}
-/* Sehr dezente Trennlinie zwischen Titel und Standort - nur sichtbar, wenn
-   das Panel tatsächlich aufgeklappt ist (bei max-height:0 wird auch der
-   Rahmen durch overflow:hidden/box-sizing:border-box unsichtbar). */
-.menu-acc-loc #menuLocPanel.open{
-border-top:1px solid var(--border-subtle)
-}
+/* Höher spezifisch als .fav-row .fav-txt span (color:var(--text-muted)),
+   das den Badge-Text sonst überschreibt und ihn in beiden Themes zu einem
+   kontrastarmen Grau-auf-Blau macht (der gemeldete "ungünstige" Look).
+   --brand-primary-contrast ist genau für Text auf --brand-primary-blue
+   gedacht (in beiden Themes #fff) - dieselbe Lösung wie bei anderen
+   Schriftzügen auf farbigem Grund in der App. */
+.fav-row .fav-txt .new-badge{color:var(--brand-primary-contrast)}
 
 /* Mini-Navigation innerhalb des Drawers (Menü ↔ Neuigkeiten ↔ Detailansicht),
    siehe showMenuView() im Script. Dezente Slide-Animation statt Öffnen eines
@@ -2673,22 +2668,58 @@ margin-top:18px
 /* Neuigkeiten-Postfach: kompakte, leichte Nachrichtenliste statt großer
    Karten - dezente Trennlinie zwischen Einträgen, kein Rahmen/Schatten pro
    Zeile. Ungelesen = gefüllter blauer Punkt + kräftigerer Text, gelesen =
-   nur umrandeter Punkt + gedämpfter Text. */
+   nur umrandeter Punkt + gedämpfter Text. Jede Zeile steckt in einem
+   overflow:hidden-Wrapper, damit sie per Wisch nach links (löschen, roter
+   Papierkorb) oder nach rechts (Gelesen/Ungelesen umschalten, blaues
+   Umschlag-Symbol) über die jeweilige Fläche geschoben werden kann, siehe
+   initNewsSwipe() im Script. */
+.news-inbox-row-wrap{position:relative;overflow:hidden}
+.news-inbox-row-wrap:last-child .news-inbox-row{border-bottom:0}
+.news-inbox-delete-bg,
+.news-inbox-toggle-read-bg{
+position:absolute;
+top:0;
+bottom:0;
+width:76px;
+display:flex;
+align-items:center;
+cursor:pointer
+}
+.news-inbox-delete-bg{
+right:0;
+justify-content:flex-end;
+padding-right:22px;
+background:var(--status-error-bg)
+}
+.news-inbox-delete-bg .icon{color:var(--status-error-text);width:18px;height:18px}
+.news-inbox-toggle-read-bg{
+left:0;
+justify-content:flex-start;
+padding-left:22px
+}
+.news-inbox-toggle-read-bg .icon{width:18px;height:18px}
+/* Farbe zeigt an, WAS beim Loslassen passiert: aus ungelesener Nachricht
+   wird "gelesen" (info-blau) markiert, aus gelesener Nachricht wird wieder
+   "ungelesen" (highlight-gold, dieselbe Farbe wie "Demnächst"-Hinweise). */
+.news-inbox-toggle-read-bg.mark-read{background:var(--status-info-bg)}
+.news-inbox-toggle-read-bg.mark-read .icon{color:var(--status-info-text)}
+.news-inbox-toggle-read-bg.mark-unread{background:var(--highlight-bg)}
+.news-inbox-toggle-read-bg.mark-unread .icon{color:var(--highlight-text)}
 .news-inbox-row{
+position:relative;
 display:flex;
 align-items:flex-start;
 gap:10px;
 width:100%;
 text-align:left;
-background:none;
+background:var(--bg-surface-elevated);
 border:0;
 border-bottom:1px solid var(--border-subtle);
 padding:13px 2px;
 cursor:pointer;
 font-family:inherit;
-border-radius:var(--radius-sm)
+touch-action:pan-y
 }
-.news-inbox-row:last-child{border-bottom:0}
 .news-inbox-row:hover{background:var(--bg-surface-interactive-hover)}
 .news-inbox-dot{
 width:8px;
@@ -2784,6 +2815,8 @@ padding:10px
 <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v2.6M12 17.9v2.6M20.5 12h-2.6M6.1 12H3.5M17.8 6.2l-1.8 1.8M8 16l-1.8 1.8M17.8 17.8L16 16M8 8 6.2 6.2"/></symbol>
 <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.3 9.2a2.7 2.7 0 015.2 1c0 2.1-2.5 2.1-2.5 4.3"/><line x1="12" y1="17.4" x2="12" y2="17.5"/></symbol>
 <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16.2"/><line x1="12" y1="7.5" x2="12" y2="7.6"/></symbol>
+<symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/><path d="M19 3v3M17.5 4.5h3"/><path d="M5 17v2.5M3.75 18.25h2.5"/></symbol>
+<symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
 </defs>
 </svg>
 
@@ -3031,8 +3064,9 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 </div>
 
 <!-- NEUIGKEITEN (Glocke) — ersetzt die vorherige Direktverknüpfung der
-     Glocke zu den Push-Einstellungen (weiterhin über Profil > Benachrichtigungen
-     erreichbar, siehe #profileNotifRow / notifOverlay oben, unverändert). -->
+     Glocke zu den Push-Einstellungen (weiterhin über Burger-Menü >
+     Einstellungen > Push-Benachrichtigungen erreichbar, siehe #menuNotifRow
+     / notifOverlay, unverändert). -->
 <div class="overlay" id="newsOverlay">
 <div class="sheet">
 <div class="sheet-inner">
@@ -3198,14 +3232,6 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 <div class="profile-row-arrow">›</div>
 </button>
 
-<button class="profile-row" id="profileNotifRow" data-open="notifOverlay">
-<div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-bell"/></svg></div>
-<div class="profile-row-txt">
-<b>Push-Benachrichtigungen</b>
-<span id="profileNotifSummary">Bestpreis- &amp; Favoriten-Alarm an</span>
-</div>
-<div class="profile-row-arrow">›</div>
-</button>
 
 <div class="field-label" style="margin-top:22px">Meine Aktivität</div>
 <div class="field-sublabel"><span>Preisalarme (<span id="profileAlertCount">0</span>)</span></div>
@@ -3480,18 +3506,15 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 
 <div class="field-label" style="margin-top:22px">Mein CanSpot</div>
 
-<div class="menu-acc menu-acc-loc">
-<button class="profile-row menu-acc-toggle" id="menuLocRow" aria-expanded="false" aria-controls="menuLocPanel">
-<div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-pin"/></svg></div>
-<div class="profile-row-txt"><b>Standort &amp; Entfernung</b></div>
+<div class="menu-acc">
+<button class="profile-row menu-acc-toggle" id="menuNewRow" aria-expanded="false" aria-controls="menuNewPanel">
+<div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-sparkle"/></svg></div>
+<div class="profile-row-txt"><b>Neuheiten</b></div>
 <svg class="icon icon-md menu-acc-chevron"><use href="#i-chevron-down"/></svg>
 </button>
-<div class="menu-acc-panel" id="menuLocPanel">
+<div class="menu-acc-panel" id="menuNewPanel">
 <div class="menu-acc-panel-inner">
-<div class="menu-acc-info">
-<svg class="icon icon-md"><use href="#i-pin"/></svg>
-<span id="menuLocSummary">–</span>
-</div>
+<div id="newArrivalsList"></div>
 </div>
 </div>
 </div>
@@ -3525,6 +3548,14 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 <button class="theme-option" data-theme="dark"><svg class="icon icon-lg"><use href="#i-moon"/></svg><span>Dunkel</span></button>
 <button class="theme-option" data-theme="system"><svg class="icon icon-lg"><use href="#i-monitor"/></svg><span>System</span></button>
 </div>
+<button class="profile-row" id="menuNotifRow" data-open="notifOverlay" style="margin-top:14px">
+<div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-bell"/></svg></div>
+<div class="profile-row-txt">
+<b>Push-Benachrichtigungen</b>
+<span id="menuNotifSummary">Bestpreis- &amp; Favoriten-Alarm an</span>
+</div>
+<div class="profile-row-arrow">›</div>
+</button>
 </div>
 </div>
 </div>
@@ -5300,19 +5331,16 @@ function toggleMenuAccordion(rowId, panelId){
   row.setAttribute("aria-expanded", String(!wasOpen));
 }
 
-document.getElementById("menuLocRow").addEventListener("click",()=>{
-  /* Reine Anzeige des aktuellen Standorts/Umkreises - dieselbe Formel wie
-     refreshProfileSummaries() für #profileLocSummary, keine zweite
-     unabhängige Standortlogik. Ändern lässt sich der Standort weiterhin über
-     "Ändern" auf der Startseite oder "Mein Bereich" (unverändert). */
-  document.getElementById("menuLocSummary").textContent = searchWide ? "Ganz Deutschland" : `${locationLabel} · ${radiusKm} km`;
-  toggleMenuAccordion("menuLocRow","menuLocPanel");
+document.getElementById("menuNewRow").addEventListener("click",()=>{
+  renderNewArrivals();
+  toggleMenuAccordion("menuNewRow","menuNewPanel");
 });
 document.getElementById("menuStoresRow").addEventListener("click",()=>{
   renderStoreListSheet();
   toggleMenuAccordion("menuStoresRow","menuStoresPanel");
 });
 document.getElementById("menuSettingsRow").addEventListener("click",()=>{
+  refreshMenuNotifSummary();
   toggleMenuAccordion("menuSettingsRow","menuSettingsPanel");
 });
 document.getElementById("menuHelpRow").addEventListener("click",()=>{
@@ -5366,6 +5394,30 @@ function renderStoreListSheet(){
   });
 }
 
+/* Listet Produkte mit products[].isNew === true (aus deals.json) - rein
+   informativ, keine eigene Angebots-/Detaillogik nötig. Wiederverwendet die
+   bestehenden .fav-row/-emoji/-txt-Klassen aus "Mein Bereich"/Favoriten. */
+function renderNewArrivals(){
+  const container = document.getElementById("newArrivalsList");
+  const items = products.filter(p=>p.isNew);
+  if(items.length===0){
+    container.innerHTML = `<div class="fav-empty">Aktuell keine neuen Produkte im Sortiment.</div>`;
+    return;
+  }
+  container.innerHTML = items.map(p=>`
+    <div class="fav-row">
+      <img class="fav-emoji" src="${p.img}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer">
+      <div class="fav-txt">
+        <b>${p.name}<span class="new-badge">NEU</span></b>
+        <span>${p.brand} · ${p.sizeMl} ml</span>
+      </div>
+    </div>
+  `).join("");
+  container.querySelectorAll("img.fav-emoji").forEach(img=>{
+    img.addEventListener("error", function(){ this.src = FALLBACK_IMG; }, {once:true});
+  });
+}
+
 /* ---------------- PROFILE / MEIN BEREICH ---------------- */
 /* Zugang nur noch über den "Mein Bereich"-Tab in der unteren Navigation
    (navProfile) - der frühere zusätzliche Button oben rechts im Banner
@@ -5380,10 +5432,17 @@ function openProfile(){
 function refreshProfileSummaries(){
   const locSummary = document.getElementById("profileLocSummary");
   locSummary.textContent = searchWide ? "Ganz Deutschland" : `${locationLabel} · ${radiusKm} km`;
+}
 
+/* Push-Benachrichtigungen sind aus "Mein Bereich" entfernt und leben jetzt
+   ausschließlich im Burger-Menü unter "Einstellungen" (#menuNotifRow) -
+   dieselbe notifOverlay-Logik/-Sheet wie zuvor, nur der Einstiegspunkt zog
+   um. Zusammenfassung wird beim Öffnen des Einstellungen-Accordions
+   aktualisiert (siehe menuSettingsRow-Klick-Handler). */
+function refreshMenuNotifSummary(){
   const onCount = ["notifBest","notifFav","notifNearby","notifWeekly"]
     .filter(id=>document.getElementById(id).checked).length;
-  const notifSummary = document.getElementById("profileNotifSummary");
+  const notifSummary = document.getElementById("menuNotifSummary");
   if(onCount===0) notifSummary.textContent = "Alle Benachrichtigungen aus";
   else if(onCount===4) notifSummary.textContent = "Alle Benachrichtigungen an";
   else notifSummary.textContent = `${onCount} von 4 Benachrichtigungen an`;
@@ -5743,8 +5802,8 @@ document.getElementById("useGeoBtn").addEventListener("click", ()=>{
 
 /* ---------------- NEUIGKEITEN (Glocke) ----------------
    Die Glocke öffnet jetzt diesen Neuigkeiten-Bereich statt direkt der
-   Push-Einstellungen (die bleiben unverändert über Profil > Benachrichtigungen
-   / #profileNotifRow erreichbar). getRelevantNotifications() ist bewusst so
+   Push-Einstellungen (weiterhin über Burger-Menü > Einstellungen >
+   Push-Benachrichtigungen / #menuNotifRow erreichbar). getRelevantNotifications() ist bewusst so
    gebaut, dass eine echte Angebots-Datenquelle sie später ohne
    Strukturänderung füttern kann:
    - "aktuell im Angebot" wird schon jetzt aus echten Daten berechnet
@@ -5803,7 +5862,8 @@ function getRelevantNotifications(){
     }
   }
 
-  return notifications;
+  const deletedIds = loadDeletedNewsIds();
+  return notifications.filter(n=>!deletedIds.has(n.id));
 }
 
 const NEWS_READ_KEY = "canspot-news-read";
@@ -5813,6 +5873,26 @@ function loadReadNewsIds(){
 }
 function saveReadNewsIds(ids){
   localStorage.setItem(NEWS_READ_KEY, JSON.stringify([...ids]));
+}
+
+/* Gelöschte Neuigkeiten (Wisch-Geste oder Mehrfachauswahl im Postfach, siehe
+   unten) werden wie NEWS_READ_KEY als reine ID-Liste in localStorage
+   gemerkt und in getRelevantNotifications() herausgefiltert - dieselbe
+   Quelle wird dadurch automatisch auch für die Desktop-Glocke (newsOverlay)
+   und den Badge (updateNotifDot()) mit berücksichtigt. */
+const NEWS_DELETED_KEY = "canspot-news-deleted";
+function loadDeletedNewsIds(){
+  try{ return new Set(JSON.parse(localStorage.getItem(NEWS_DELETED_KEY) || "[]")); }
+  catch(e){ return new Set(); }
+}
+function saveDeletedNewsIds(ids){
+  localStorage.setItem(NEWS_DELETED_KEY, JSON.stringify([...ids]));
+}
+function deleteNotifications(ids){
+  const deleted = loadDeletedNewsIds();
+  ids.forEach(id=>deleted.add(id));
+  saveDeletedNewsIds(deleted);
+  updateNotifDot();
 }
 
 function updateNotifDot(){
@@ -5865,6 +5945,18 @@ function markNotificationRead(id){
   updateNotifDot();
 }
 
+/* Wisch nach rechts (siehe initNewsSwipe()) schaltet Gelesen/Ungelesen für
+   GENAU diese eine Nachricht um - anders als markNotificationRead() (nur
+   "gelesen setzen" beim Öffnen der Detailansicht) geht dieser Weg in beide
+   Richtungen. */
+function toggleNotificationRead(id){
+  const readIds = loadReadNewsIds();
+  if(readIds.has(id)) readIds.delete(id);
+  else readIds.add(id);
+  saveReadNewsIds(readIds);
+  updateNotifDot();
+}
+
 function renderNewsInboxList(){
   const notifications = getRelevantNotifications();
   const readIds = loadReadNewsIds();
@@ -5883,18 +5975,32 @@ function renderNewsInboxList(){
     const isRead = readIds.has(n.id);
     const deal = n.dealId ? deals.find(d=>d.id===n.dealId) : null;
     const meta = deal ? `${deal.store} · ${euro(deal.offerPrice)} € · ${formatSize(deal)}` : "";
+    /* Farbe/Beschriftung der Wisch-nach-rechts-Fläche richten sich danach,
+       WAS beim Loslassen passiert (siehe .mark-read/.mark-unread CSS). */
+    const readToggleClass = isRead ? "mark-unread" : "mark-read";
+    const readToggleLabel = isRead ? "Als ungelesen markieren" : "Als gelesen markieren";
     return `
-      <button class="news-inbox-row${isRead ? " read" : ""}" data-news-id="${n.id}">
-        <span class="news-inbox-dot"></span>
-        <div class="news-inbox-text">
-          <div class="msg">${n.text}</div>
-          ${meta ? `<div class="news-inbox-meta">${meta}</div>` : ""}
-        </div>
-      </button>`;
+      <div class="news-inbox-row-wrap" data-news-id="${n.id}">
+        <div class="news-inbox-toggle-read-bg ${readToggleClass}" aria-label="${readToggleLabel}"><svg class="icon icon-md"><use href="#i-mail"/></svg></div>
+        <div class="news-inbox-delete-bg" aria-label="Löschen"><svg class="icon icon-md"><use href="#i-trash"/></svg></div>
+        <button class="news-inbox-row${isRead ? " read" : ""}" data-news-id="${n.id}">
+          <span class="news-inbox-dot"></span>
+          <div class="news-inbox-text">
+            <div class="msg">${n.text}</div>
+            ${meta ? `<div class="news-inbox-meta">${meta}</div>` : ""}
+          </div>
+        </button>
+      </div>`;
   }).join("");
 
-  container.querySelectorAll("[data-news-id]").forEach(row=>{
+  container.querySelectorAll(".news-inbox-row-wrap").forEach(wrap=>{
+    const row = wrap.querySelector(".news-inbox-row");
     row.addEventListener("click", ()=>{
+      if(wrap.classList.contains("swiped-left") || wrap.classList.contains("swiped-right")){
+        wrap.classList.remove("swiped-left","swiped-right");
+        row.style.transform = "translateX(0)";
+        return;
+      }
       const n = notifications.find(x=>x.id===row.dataset.newsId);
       if(!n) return;
       markNotificationRead(n.id);
@@ -5902,7 +6008,81 @@ function renderNewsInboxList(){
       renderNewsDetail(n);
       showMenuView("menuViewNewsDetail","forward");
     });
+    wrap.querySelector(".news-inbox-delete-bg").addEventListener("click", (e)=>{
+      e.stopPropagation();
+      deleteNotifications([wrap.dataset.newsId]);
+      renderNewsInboxList();
+    });
+    wrap.querySelector(".news-inbox-toggle-read-bg").addEventListener("click", (e)=>{
+      e.stopPropagation();
+      toggleNotificationRead(wrap.dataset.newsId);
+      renderNewsInboxList();
+    });
+    initNewsSwipe(wrap);
   });
+}
+
+/* Wisch nach links deckt eine dezente Löschfläche (roter Papierkorb) auf,
+   Wisch nach rechts eine Gelesen/Ungelesen-Fläche (blaues Umschlag-Symbol) -
+   dieselbe "Dominante-Richtung"-Erkennung wie initSwipeToClose() weiter oben,
+   nur horizontal statt vertikal. Ein Tap auf eine aufgedeckte Fläche führt
+   sofort die jeweilige Aktion aus, ein erneuter Tap auf die Zeile selbst
+   schließt sie nur wieder (siehe Klick-Handler oben). */
+function initNewsSwipe(wrap){
+  const row = wrap.querySelector(".news-inbox-row");
+  const REVEAL = 76;
+  let startX = 0, startY = 0, baseX = 0, dragging = false, tracking = false;
+
+  row.addEventListener("touchstart", (e)=>{
+    if(e.touches.length!==1) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    baseX = wrap.classList.contains("swiped-left") ? -REVEAL : wrap.classList.contains("swiped-right") ? REVEAL : 0;
+    tracking = true;
+    dragging = false;
+    row.style.transition = "none";
+  }, {passive:true});
+
+  row.addEventListener("touchmove", (e)=>{
+    if(!tracking) return;
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - startX;
+    const deltaY = touch.clientY - startY;
+    if(!dragging){
+      if(Math.abs(deltaX) < 8 || Math.abs(deltaY) > Math.abs(deltaX)) return;
+      dragging = true;
+      document.querySelectorAll("#menuNewsInboxList .news-inbox-row-wrap.swiped-left, #menuNewsInboxList .news-inbox-row-wrap.swiped-right").forEach(other=>{
+        if(other!==wrap){
+          other.classList.remove("swiped-left","swiped-right");
+          other.querySelector(".news-inbox-row").style.transform = "translateX(0)";
+        }
+      });
+    }
+    const next = Math.max(-REVEAL, Math.min(REVEAL, baseX + deltaX));
+    row.style.transform = `translateX(${next}px)`;
+    e.preventDefault();
+  }, {passive:false});
+
+  function endDrag(){
+    if(!dragging){ tracking = false; return; }
+    tracking = false;
+    dragging = false;
+    row.style.transition = "";
+    const match = /translateX\((-?\d+(?:\.\d+)?)px\)/.exec(row.style.transform);
+    const current = match ? parseFloat(match[1]) : 0;
+    wrap.classList.remove("swiped-left","swiped-right");
+    if(current < -REVEAL/2){
+      row.style.transform = `translateX(-${REVEAL}px)`;
+      wrap.classList.add("swiped-left");
+    } else if(current > REVEAL/2){
+      row.style.transform = `translateX(${REVEAL}px)`;
+      wrap.classList.add("swiped-right");
+    } else {
+      row.style.transform = "translateX(0)";
+    }
+  }
+  row.addEventListener("touchend", endDrag);
+  row.addEventListener("touchcancel", endDrag);
 }
 
 /* Kompakte Detailansicht: nutzt ausschließlich bereits vorhandene Produkt-/
@@ -6011,13 +6191,13 @@ notifToggleIds.forEach(id=>{
   el.addEventListener("change", ()=>{
     localStorage.setItem("canspot-notif-"+id, el.checked ? "1" : "0");
     updateNotifHint();
-    refreshProfileSummaries();
+    refreshMenuNotifSummary();
   });
 });
 updateNotifHint();
 
 document.querySelector('[data-close="notifOverlay"].sheet-btn').addEventListener("click",()=>{
-  refreshProfileSummaries();
+  refreshMenuNotifSummary();
 });
 
 /* ---------------- PRICE HISTORY MODAL ---------------- */
