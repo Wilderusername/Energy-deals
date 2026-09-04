@@ -2517,6 +2517,93 @@ animation:skeleton-pulse 1.1s ease-in-out infinite
 .search{margin-top:12px}
 }
 
+/* Burger-Menü ersetzt die Glocke NUR in der Mobile-Version. Bewusst dieselbe
+   max-width:540px-Grenze wie oben (siehe Kommentar dort) statt einer neuen
+   Breakpoint-Definition, damit Mobile/Webapp exakt gleich abgegrenzt bleiben
+   und die Desktop-/Webapp-Ansicht (>540px) unverändert die Glocke behält. */
+.iconbtn-menu{display:none}
+@media (max-width:540px){
+#notifBtn{display:none}
+.iconbtn-menu{display:flex}
+}
+
+.menu-news-dot{
+display:none;
+width:7px;
+height:7px;
+border-radius:50%;
+background:var(--brand-primary-blue);
+flex-shrink:0;
+margin-left:-4px
+}
+
+/* Burger-Menü: Side-Drawer von rechts statt Bottom-Sheet. Ausschließlich
+   #menuOverlay betroffen (ID-Selektor > .overlay/.sheet-Basisregeln) - alle
+   anderen Sheets (Standort, Filter, Mein Bereich, ...) bleiben unverändert
+   Bottom-Sheets. Inhalt/Farben/Icons/Abstände der Menüzeilen selbst sind
+   unangetastet (.profile-row etc.) - nur Position/Maße/Animation des
+   Sheet-Containers ändern sich. */
+#menuOverlay{
+align-items:stretch;
+justify-content:flex-end
+}
+#menuOverlay .sheet{
+width:82%;
+max-width:340px;
+max-height:none;
+height:100%;
+border-radius:var(--radius-2xl) 0 0 var(--radius-2xl);
+transform:translateX(100%);
+transition:transform .28s cubic-bezier(.32,.72,0,1),background .2s ease;
+overflow-y:auto;
+box-sizing:border-box
+}
+#menuOverlay.open .sheet{
+transform:translateX(0)
+}
+
+/* Menü-Einträge (außer "Neuigkeiten") klappen ihren Inhalt direkt im Menü
+   auf, statt ein weiteres Fenster zu öffnen — siehe toggleMenuAccordion() im
+   Script. Die Zeile behält .profile-row (Farben/Abstände/Rundung bleiben
+   gleich), verliert nur ihre untere Rundung im geöffneten Zustand, damit sie
+   optisch nahtlos in das aufklappende Panel darunter übergeht (wirkt wie eine
+   einzige, wachsende Karte statt zweier getrennter Elemente). */
+.menu-acc{margin-top:12px}
+.menu-acc .profile-row{margin-top:0}
+.menu-acc-toggle[aria-expanded="true"]{
+border-bottom-left-radius:0;
+border-bottom-right-radius:0
+}
+.menu-acc-chevron{
+color:var(--text-disabled);
+transition:transform .2s ease,color .2s ease;
+flex-shrink:0
+}
+.menu-acc-toggle[aria-expanded="true"] .menu-acc-chevron{
+transform:rotate(180deg);
+color:var(--brand-primary-blue)
+}
+.menu-acc-panel{
+max-height:0;
+overflow:hidden;
+background:var(--bg-surface-sunken);
+border:1px solid var(--border-subtle);
+border-top:0;
+border-radius:0 0 var(--radius-lg) var(--radius-lg);
+transition:max-height .3s ease
+}
+.menu-acc-panel.open{max-height:2000px}
+.menu-acc-panel-inner{padding:2px 14px 14px}
+.menu-acc-info{
+display:flex;
+align-items:center;
+gap:8px;
+font-size:12.5px;
+font-weight:600;
+color:var(--text-primary)
+}
+.menu-acc-info .icon{color:var(--brand-primary-blue);flex-shrink:0}
+
 </style>
 </head>
 
@@ -2557,6 +2644,11 @@ animation:skeleton-pulse 1.1s ease-in-out infinite
 <symbol id="i-wifi-off" viewBox="0 0 24 24"><line x1="2" y1="2" x2="22" y2="22"/><path d="M8.5 16.5a5 5 0 017 0"/><path d="M5 12.5a10 10 0 013.3-2.2"/><path d="M19 12.5a10 10 0 00-2.3-1.9"/><path d="M2 8.8a15 15 0 014.2-2.9"/><path d="M22 8.8a15 15 0 00-8-4.4"/><line x1="12" y1="20" x2="12.01" y2="20"/></symbol>
 <symbol id="i-chevron-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
 <symbol id="i-sort" viewBox="0 0 24 24"><line x1="4" y1="7" x2="14" y2="7"/><line x1="4" y1="12" x2="11" y2="12"/><line x1="4" y1="17" x2="8" y2="17"/><polyline points="17 5 17 19"/><polyline points="14 16 17 19 20 16"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></symbol>
+<symbol id="i-store" viewBox="0 0 24 24"><path d="M4 9V4h16v5"/><path d="M3 9h18l-1 3a3 3 0 01-3 2 3 3 0 01-3-2 3 3 0 01-3 2 3 3 0 01-3-2 3 3 0 01-3 2 3 3 0 01-3-2z"/><path d="M5 14v7h14v-7"/><path d="M9 21v-5h6v5"/></symbol>
+<symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 3.5v2.6M12 17.9v2.6M20.5 12h-2.6M6.1 12H3.5M17.8 6.2l-1.8 1.8M8 16l-1.8 1.8M17.8 17.8L16 16M8 8 6.2 6.2"/></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.3 9.2a2.7 2.7 0 015.2 1c0 2.1-2.5 2.1-2.5 4.3"/><line x1="12" y1="17.4" x2="12" y2="17.5"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16.2"/><line x1="12" y1="7.5" x2="12" y2="7.6"/></symbol>
 </defs>
 </svg>
 
@@ -2591,6 +2683,7 @@ animation:skeleton-pulse 1.1s ease-in-out infinite
   <path class="st0" d="M197.4,67.6c-36.8,18.8-90.8,19.2-130.9,9.2-15.8-4-33.6-10.7-42.5-23.9-7.5-11.3-.9-23.2,10-31,9.3-6.6,19.5-10.8,30.6-13.7,14.3-3.8,28.5-6.5,43.3-7.5,27.8-2,57.6.9,83.2,11.8,8.3,3.5,15.8,8.6,21.6,15.1,7.5,8.3,7.9,19.1.9,27.7-4.3,5.4-9.9,9.2-16.3,12.4ZM153.8,35.5l-15.7,29.8c19.4-1.4,39.6-4.5,54.6-14.8,2.3-2.3,4.4-5,4.6-7.7,2.3-25-98.8-38.5-145.9-12.1-4.3,2.4-7.6,5.7-9,10.3.5,4.2,2.9,7.7,6.4,10.1,9.7,6.6,20.5,9.8,32.4,11.5l21.2-33.5c2.2-3.4,5.8-5.3,9.7-6.7,14.9-3.7,45.1-1.9,41.8,13.1ZM137.6,33.9c-1.4-6.8-22.5-6.5-23.3.8-.8,7.8,24.8,6.7,23.3-.8ZM126.7,55.4c-1.9-8.1-26.6-6-26.3,1.5,0,1,1.5,3,2.4,3.4,12,5.4,24.9-.7,23.9-5Z"/></svg></div>
 <div class="top-actions">
 <button class="iconbtn" id="notifBtn" aria-label="Benachrichtigungen"><svg class="icon icon-lg"><use href="#i-bell"/></svg><span class="dot" id="notifDot"></span></button>
+<button class="iconbtn iconbtn-menu" id="menuBtn" aria-label="Menü"><svg class="icon icon-lg"><use href="#i-menu"/></svg><span class="dot" id="menuDot"></span></button>
 <button class="loc" id="locBtn" style="display:none"><svg class="icon icon-sm"><use href="#i-pin"/></svg> <span id="locLabel">59821 · 10 km</span></button>
 </div>
 </div>
@@ -3218,6 +3311,118 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 <a class="sheet-btn" id="storeDetailOnlineBtn" href="#" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;background:var(--surface-3);color:var(--text);margin-top:10px">
 <svg class="icon icon-md"><use href="#i-external"/></svg> Angebot online öffnen
 </a>
+
+</div>
+</div>
+</div>
+
+<!-- BURGER-MENÜ (nur Mobile — siehe .iconbtn-menu / @media max-width:540px).
+     "Neuigkeiten" ist bewusst der erste Punkt, außerhalb der Gruppen-Blöcke,
+     und bleibt die einzige Zeile, die ein eigenes Sheet öffnet (openNewsSheet(),
+     erkennbar am "›"-Pfeil). Alle anderen Zeilen sind Accordion-Umschalter
+     (.menu-acc-toggle): ein Tap klappt den zugehörigen Inhalt direkt im Menü
+     auf/zu (toggleMenuAccordion() im Script) statt ein weiteres Fenster zu
+     öffnen — dafür ein rotierender Chevron statt des "›"-Pfeils, als klares
+     visuelles Signal "klappt auf" vs. "navigiert weg". Zeilen nutzen weiterhin
+     die bestehenden .profile-row/-icon/-txt-Klassen aus "Mein Bereich" wieder. -->
+<div class="overlay" id="menuOverlay">
+<div class="sheet">
+<div class="sheet-inner">
+<button class="sheet-close" data-close="menuOverlay"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
+<h2>Menü</h2>
+
+<button class="profile-row" id="menuNewsRow" style="margin-top:18px">
+<div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-bell"/></svg></div>
+<div class="profile-row-txt"><b>Neuigkeiten</b></div>
+<span class="menu-news-dot" id="menuNewsDot"></span>
+<div class="profile-row-arrow">›</div>
+</button>
+
+<div class="field-label" style="margin-top:22px">Mein CanSpot</div>
+
+<div class="menu-acc">
+<button class="profile-row menu-acc-toggle" id="menuLocRow" aria-expanded="false" aria-controls="menuLocPanel">
+<div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-pin"/></svg></div>
+<div class="profile-row-txt"><b>Standort &amp; Entfernung</b></div>
+<svg class="icon icon-md menu-acc-chevron"><use href="#i-chevron-down"/></svg>
+</button>
+<div class="menu-acc-panel" id="menuLocPanel">
+<div class="menu-acc-panel-inner">
+<div class="menu-acc-info">
+<svg class="icon icon-md"><use href="#i-pin"/></svg>
+<span id="menuLocSummary">–</span>
+</div>
+</div>
+</div>
+</div>
+
+<div class="menu-acc">
+<button class="profile-row menu-acc-toggle" id="menuStoresRow" aria-expanded="false" aria-controls="menuStoresPanel">
+<div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-store"/></svg></div>
+<div class="profile-row-txt"><b>Händler</b></div>
+<svg class="icon icon-md menu-acc-chevron"><use href="#i-chevron-down"/></svg>
+</button>
+<div class="menu-acc-panel" id="menuStoresPanel">
+<div class="menu-acc-panel-inner">
+<div id="storeListContainer"></div>
+</div>
+</div>
+</div>
+
+<div class="field-label" style="margin-top:22px">Weitere</div>
+
+<div class="menu-acc">
+<button class="profile-row menu-acc-toggle" id="menuSettingsRow" aria-expanded="false" aria-controls="menuSettingsPanel">
+<div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-settings"/></svg></div>
+<div class="profile-row-txt"><b>Einstellungen</b></div>
+<svg class="icon icon-md menu-acc-chevron"><use href="#i-chevron-down"/></svg>
+</button>
+<div class="menu-acc-panel" id="menuSettingsPanel">
+<div class="menu-acc-panel-inner">
+<div class="field-sublabel"><span>Erscheinungsbild</span></div>
+<div class="theme-switch">
+<button class="theme-option" data-theme="light"><svg class="icon icon-lg"><use href="#i-sun"/></svg><span>Hell</span></button>
+<button class="theme-option" data-theme="dark"><svg class="icon icon-lg"><use href="#i-moon"/></svg><span>Dunkel</span></button>
+<button class="theme-option" data-theme="system"><svg class="icon icon-lg"><use href="#i-monitor"/></svg><span>System</span></button>
+</div>
+</div>
+</div>
+</div>
+
+<div class="menu-acc">
+<button class="profile-row menu-acc-toggle" id="menuHelpRow" aria-expanded="false" aria-controls="menuHelpPanel">
+<div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-help"/></svg></div>
+<div class="profile-row-txt"><b>Hilfe &amp; Feedback</b></div>
+<svg class="icon icon-md menu-acc-chevron"><use href="#i-chevron-down"/></svg>
+</button>
+<div class="menu-acc-panel" id="menuHelpPanel">
+<div class="menu-acc-panel-inner">
+<div class="fav-empty">Hilfe-Center und Feedback-Formular sind noch nicht angebunden.</div>
+</div>
+</div>
+</div>
+
+<div class="menu-acc">
+<button class="profile-row menu-acc-toggle" id="menuAboutRow" aria-expanded="false" aria-controls="menuAboutPanel">
+<div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-info"/></svg></div>
+<div class="profile-row-txt"><b>Über CanSpot</b></div>
+<svg class="icon icon-md menu-acc-chevron"><use href="#i-chevron-down"/></svg>
+</button>
+<div class="menu-acc-panel" id="menuAboutPanel">
+<div class="menu-acc-panel-inner">
+<div class="desc" style="margin-bottom:14px">Dein Energy. Dein bester Preis. CanSpot vergleicht Energy-Drink-Angebote in deiner Nähe.</div>
+<div class="profile-legal">
+<a href="#">Impressum</a>
+<a href="#">Datenschutz</a>
+<a href="#">Nutzungsbedingungen</a>
+</div>
+<div class="profile-legal">
+<a href="mailto:kontakt@canspot.example">Kontakt</a>
+</div>
+<div class="profile-version">CanSpot Demo-Prototyp · Version 1.0.0</div>
+</div>
+</div>
+</div>
 
 </div>
 </div>
@@ -4778,6 +4983,12 @@ function closeSheet(id){
     const profileTab = document.querySelector('.navitem[data-nav="profile"]');
     if(profileTab && profileTab.classList.contains("active")) setActiveNav("home");
   }
+  if(id==="menuOverlay"){
+    /* Aufgeklappte Accordion-Abschnitte beim Schließen zurücksetzen, damit
+       das Menü beim nächsten Öffnen wieder im Ausgangszustand startet. */
+    document.querySelectorAll("#menuOverlay .menu-acc-toggle").forEach(row=>row.setAttribute("aria-expanded","false"));
+    document.querySelectorAll("#menuOverlay .menu-acc-panel").forEach(panel=>panel.classList.remove("open"));
+  }
 }
 
 document.querySelectorAll("[data-close]").forEach(el=>{
@@ -4859,6 +5070,10 @@ function initSwipeToClose(overlayId){
    den ersten beiden Sheets) nur auf echte Touch-Geräte aus - auf Maus-
    basierten Desktop-/Webapp-Bildschirmen feuern touchstart/-move/-end
    ohnehin nie, daher betrifft dies ausschließlich die mobile Nutzung. */
+/* menuOverlay bewusst NICHT hier: Wisch-nach-unten-zum-Schließen passt
+   konzeptionell nicht zu einem seitlichen Drawer (schiebt sich nach rechts
+   raus, nicht nach unten) und hätte per Inline-transform:translateY() mit
+   der neuen translateX()-Animation des Menüs kollidiert. */
 ["locOverlay","notifOverlay","newsOverlay","filterOverlay","sortOverlay","profileOverlay","accountManageOverlay","histOverlay","productDetailOverlay","storeDetailOverlay"].forEach(initSwipeToClose);
 
 /* Zusätzlich zu Pfeil/X und (bei Detail-/Preisverlauf-Fenster) der
@@ -4869,11 +5084,114 @@ function initHandleTapToClose(overlayId){
   const handle = document.querySelector(`#${overlayId} .handle`);
   if(handle) handle.addEventListener("click", ()=>closeSheet(overlayId));
 }
+/* menuOverlay bewusst NICHT hier: hat seit dem Umbau zum Side-Drawer keinen
+   .handle-Balken mehr (macht bei seitlichem statt unterem Einschub keinen
+   Sinn) - Schließen läuft dort über das X sowie Tippen auf den abgedunkelten
+   Bereich (bestehender generischer Overlay-Klick-Handler weiter oben). */
 ["locOverlay","notifOverlay","newsOverlay","filterOverlay","sortOverlay","profileOverlay","accountManageOverlay","histOverlay","productDetailOverlay","storeDetailOverlay"].forEach(initHandleTapToClose);
 
 document.getElementById("locBtn").addEventListener("click",()=>openSheet("locOverlay"));
 document.getElementById("statusEdit").addEventListener("click",()=>openSheet("locOverlay"));
 document.getElementById("notifBtn").addEventListener("click",()=>openNewsSheet());
+
+/* ---------------- BURGER-MENÜ (nur Mobile) ----------------
+   Ersetzt die Glocke ausschließlich unterhalb von 540px (siehe .iconbtn-menu
+   in <style>). "Neuigkeiten" öffnet weiterhin dieselbe openNewsSheet()-Logik
+   wie die Glocke in der Webapp-Ansicht (eigenes Sheet, da es sich um einen
+   eigenständigen Inhaltsbereich handelt). Alle anderen Zeilen klappen ihren
+   Inhalt stattdessen DIREKT im Menü auf (toggleMenuAccordion), statt ein
+   weiteres Fenster zu öffnen - nach dem Vorbild vieler Apps mit
+   Accordion-Untermenüs statt tief verschachtelter Navigation. */
+document.getElementById("menuBtn").addEventListener("click",()=>openSheet("menuOverlay"));
+
+document.getElementById("menuNewsRow").addEventListener("click",()=>{
+  closeSheet("menuOverlay");
+  openNewsSheet();
+});
+
+/* Klappt genau einen Menüabschnitt auf und alle anderen wieder ein (klassisches
+   Accordion-Verhalten), damit das Menü nicht beliebig in die Höhe wächst. */
+function toggleMenuAccordion(rowId, panelId){
+  const row = document.getElementById(rowId);
+  const panel = document.getElementById(panelId);
+  const wasOpen = panel.classList.contains("open");
+
+  document.querySelectorAll("#menuOverlay .menu-acc-toggle[aria-expanded=\"true\"]").forEach(otherRow=>{
+    if(otherRow!==row){
+      otherRow.setAttribute("aria-expanded","false");
+      document.getElementById(otherRow.getAttribute("aria-controls")).classList.remove("open");
+    }
+  });
+
+  panel.classList.toggle("open", !wasOpen);
+  row.setAttribute("aria-expanded", String(!wasOpen));
+}
+
+document.getElementById("menuLocRow").addEventListener("click",()=>{
+  /* Reine Anzeige des aktuellen Standorts/Umkreises - dieselbe Formel wie
+     refreshProfileSummaries() für #profileLocSummary, keine zweite
+     unabhängige Standortlogik. Ändern lässt sich der Standort weiterhin über
+     "Ändern" auf der Startseite oder "Mein Bereich" (unverändert). */
+  document.getElementById("menuLocSummary").textContent = searchWide ? "Ganz Deutschland" : `${locationLabel} · ${radiusKm} km`;
+  toggleMenuAccordion("menuLocRow","menuLocPanel");
+});
+document.getElementById("menuStoresRow").addEventListener("click",()=>{
+  renderStoreListSheet();
+  toggleMenuAccordion("menuStoresRow","menuStoresPanel");
+});
+document.getElementById("menuSettingsRow").addEventListener("click",()=>{
+  toggleMenuAccordion("menuSettingsRow","menuSettingsPanel");
+});
+document.getElementById("menuHelpRow").addEventListener("click",()=>{
+  toggleMenuAccordion("menuHelpRow","menuHelpPanel");
+});
+document.getElementById("menuAboutRow").addEventListener("click",()=>{
+  toggleMenuAccordion("menuAboutRow","menuAboutPanel");
+});
+
+document.addEventListener("keydown",(e)=>{
+  if(e.key==="Escape" && document.getElementById("menuOverlay").classList.contains("open")){
+    closeSheet("menuOverlay");
+  }
+});
+
+/* Listet alle Händler aus storeBranches/storeLogos (aus deals.json geladen) -
+   Öffnungsstatus/Adresse/Route nutzen dieselben Funktionen wie die
+   Händler-Detailansicht (isStoreOpenNow, formatHours), keine zweite
+   unabhängige Standort-/Öffnungslogik. */
+function renderStoreListSheet(){
+  const container = document.getElementById("storeListContainer");
+  const names = Object.keys(storeBranches).sort();
+  if(names.length===0){
+    container.innerHTML = `<div class="fav-empty">Keine Händlerdaten verfügbar.</div>`;
+    return;
+  }
+  container.innerHTML = names.map(name=>{
+    const branch = storeBranches[name];
+    const openNow = branch ? isStoreOpenNow(branch) : null;
+    const statusLabel = openNow===null ? "Öffnungszeiten unbekannt" : (openNow ? "Jetzt geöffnet" : "Aktuell geschlossen");
+    return `
+    <div class="store-row" style="align-items:flex-start">
+      <img class="store-row-logo" src="${storeLogos[name] || STORE_FALLBACK_IMG}" alt="${name}" loading="lazy" referrerpolicy="no-referrer">
+      <div class="store-row-txt">
+        <b>${name}</b>
+        <span class="open-status" style="margin-top:2px"><span class="open-dot ${openNow?"open":""}"></span>${statusLabel}</span>
+        <span>${branch ? branch.address : ""}</span>
+        <span>${branch ? formatHours(branch) : ""}</span>
+      </div>
+      ${branch ? `<button class="store-row-link" data-store-route="${branch.geo}">Route</button>` : ""}
+    </div>`;
+  }).join("");
+
+  container.querySelectorAll(".store-row-logo").forEach(img=>{
+    img.addEventListener("error", function(){ this.src = STORE_FALLBACK_IMG; }, {once:true});
+  });
+  container.querySelectorAll("[data-store-route]").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${btn.dataset.storeRoute}`, "_blank");
+    });
+  });
+}
 
 /* ---------------- PROFILE / MEIN BEREICH ---------------- */
 /* Zugang nur noch über den "Mein Bereich"-Tab in der unteren Navigation
@@ -5320,10 +5638,14 @@ function saveReadNewsIds(ids){
 }
 
 function updateNotifDot(){
-  const notifDot = document.getElementById("notifDot");
   const readIds = loadReadNewsIds();
   const hasUnread = getRelevantNotifications().some(n=>!readIds.has(n.id));
-  notifDot.style.display = hasUnread ? "block" : "none";
+  /* Glocke (Webapp/Desktop), Burger-Icon und "Neuigkeiten"-Menüpunkt (beide
+     Mobile) zeigen denselben Status - eine gemeinsame Quelle statt drei
+     unabhängiger Zustände. */
+  document.getElementById("notifDot").style.display = hasUnread ? "block" : "none";
+  document.getElementById("menuDot").style.display = hasUnread ? "block" : "none";
+  document.getElementById("menuNewsDot").style.display = hasUnread ? "block" : "none";
 }
 
 function renderNewsList(){
