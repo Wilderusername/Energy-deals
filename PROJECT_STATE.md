@@ -4,6 +4,17 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-04 (23) — "Standort & Entfernung" im Burger-Menü: ein zusammenhängender Container statt zwei Karten
+
+**Umgesetzt (ausschließlich dieser eine Menüpunkt, alle anderen Accordions unverändert):**
+- **Problem**: Titel-Zeile ("Standort & Entfernung") und die darunter aufklappende Standort-Zusammenfassung ("59821 Arnsberg · 10 km") hatten jeweils ihren eigenen Hintergrund/Rand/Eckenradius (geteilte `.menu-acc-toggle`/`.menu-acc-panel`-Basisregeln aus der vorherigen Änderung) — dadurch wirkten sie wie zwei getrennte, hart aneinandergesetzte Flächen statt einem Menüpunkt.
+- **Fix, streng auf diesen einen Eintrag begrenzt**: Neue Wrapper-Klasse `.menu-acc-loc` (nur auf dem `<div class="menu-acc ...">` von "Standort & Entfernung" ergänzt) trägt jetzt allein Hintergrund/Rand/Eckenradius; Titel-Zeile (`#menuLocRow`) und Panel (`#menuLocPanel`) selbst sind per ID-Selektor auf transparent/randlos/radius:0 gesetzt und übernehmen optisch keine eigene Kartenform mehr. Eine sehr dezente 1px-Trennlinie (`border-top`, nur im aufgeklappten Zustand sichtbar) trennt Titel und Standort-Info, statt einer harten zweiten Fläche. Alle anderen Accordions (Händler, Einstellungen, Hilfe & Feedback, Über CanSpot) nutzen weiterhin unverändert die geteilten `.menu-acc`/`.menu-acc-toggle`/`.menu-acc-panel`-Basisregeln von vorher.
+- Bestehende Funktionalität vollständig erhalten: Klick klappt weiterhin über `toggleMenuAccordion()` auf/zu, Standort-/Umkreis-Text kommt weiter aus derselben Formel wie `refreshProfileSummaries()`, Icon/Chevron/Farben/Schrift/Abstände unverändert übernommen.
+- Verifiziert über einen temporären lokalen Server (375px): Standort-Container ist jetzt eine einzige zusammenhängende Fläche mit außen sichtbarem `border-radius:16px` (Wrapper) und `border-radius:0` an Zeile/Panel, Trennlinie nur bei geöffnetem Zustand sichtbar, Zuklappen reduziert die Panel-Höhe sauber auf 0; "Händler" (und die übrigen Accordions) exemplarisch geprüft und unverändert (eigener Zeilen-Hintergrund, oben abgerundet, Wrapper transparent, wie zuvor) — keine Konsolenfehler.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v63` erhöht (Pflichtregel).
+
+---
+
 ## 2026-09-04 (22) — Burger-Menü: Einträge klappen jetzt inline auf statt neue Fenster zu öffnen
 
 **Umgesetzt (ausschließlich innerhalb von #menuOverlay):**

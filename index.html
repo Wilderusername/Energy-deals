@@ -2604,6 +2604,38 @@ color:var(--text-primary)
 }
 .menu-acc-info .icon{color:var(--brand-primary-blue);flex-shrink:0}
 
+/* "Standort & Entfernung" wirkt jetzt als EIN zusammenhängender Container
+   statt Titel-Zeile + optisch separat wirkendem Standort-Feld darunter.
+   Bewusst nur für diesen einen Menüpunkt überschrieben (.menu-acc-loc auf dem
+   Wrapper, #menuLocRow/#menuLocPanel per ID) - alle anderen Menü-Accordions
+   (.menu-acc/.menu-acc-toggle/.menu-acc-panel) bleiben unverändert: Der
+   Wrapper trägt jetzt allein Hintergrund/Rand/Rundung, Zeile und Panel selbst
+   sind randlos/transparent und übernehmen keine eigene Rundung mehr - nur der
+   äußere Container ist sichtbar rund (overflow:hidden schneidet den Inhalt
+   entsprechend zu). */
+.menu-acc-loc{
+background:var(--bg-surface-sunken);
+border:1px solid var(--border-subtle);
+border-radius:var(--radius-lg);
+overflow:hidden
+}
+.menu-acc-loc #menuLocRow{
+background:transparent;
+border:0;
+border-radius:0
+}
+.menu-acc-loc #menuLocPanel{
+background:transparent;
+border:0;
+border-radius:0
+}
+/* Sehr dezente Trennlinie zwischen Titel und Standort - nur sichtbar, wenn
+   das Panel tatsächlich aufgeklappt ist (bei max-height:0 wird auch der
+   Rahmen durch overflow:hidden/box-sizing:border-box unsichtbar). */
+.menu-acc-loc #menuLocPanel.open{
+border-top:1px solid var(--border-subtle)
+}
+
 </style>
 </head>
 
@@ -3340,7 +3372,7 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 
 <div class="field-label" style="margin-top:22px">Mein CanSpot</div>
 
-<div class="menu-acc">
+<div class="menu-acc menu-acc-loc">
 <button class="profile-row menu-acc-toggle" id="menuLocRow" aria-expanded="false" aria-controls="menuLocPanel">
 <div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-pin"/></svg></div>
 <div class="profile-row-txt"><b>Standort &amp; Entfernung</b></div>
