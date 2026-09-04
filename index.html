@@ -3270,34 +3270,47 @@ const PACKAGING_FALLBACK = "Dose";
 const UNITS_FALLBACK = 1;
 
 /* MOCK-DATEN: Nährwerte gibt es (noch) nicht in deals.json — es existiert
-   keine echte Herstellerdatenquelle dafür im Prototyp. Werte unten sind
-   branchenübliche Circa-Angaben pro 100 ml, keine geprüften Herstellerdaten
-   (in der UI entsprechend als Demo-Werte gekennzeichnet, siehe
-   #pdNutritionCaption in openProductDetail()). Auflösung beim Rendern:
-   NUTRITION_MOCK_BY_PRODUCT[productId] -> NUTRITION_MOCK_BY_BRAND[brand] ->
-   NUTRITION_FALLBACK_PER_100ML — dieselbe Fallback-Kette wie bei Pfand/
-   Verpackung oben. Für eine echte Datenquelle genügt es, productId-Einträge
-   in NUTRITION_MOCK_BY_PRODUCT mit realen Werten zu befüllen (oder komplett
-   durch ein Fetch-Ergebnis zu ersetzen) — getNutritionPer100ml() bliebe die
-   einzige Stelle, die angepasst werden müsste. */
+   keine echte Herstellerdatenquelle dafür im Prototyp. Werte unten sind aber
+   anhand echter, aktuell gültiger Nährwertkennzeichnungen recherchiert
+   (u.a. offizielle Marken-Websites, das-ist-drin.de, fddb.info,
+   openfoodfacts.org — Zutaten-/Nährwerttabellen pro 100 ml, Stand 09/2026),
+   keine erfundenen Platzhalter mehr (in der UI weiterhin als Demo-Werte
+   gekennzeichnet, siehe #pdNutritionCaption in openProductDetail(), da nicht
+   jede einzelne Geschmacksrichtung individuell nachgeprüft wurde). Auflösung
+   beim Rendern: NUTRITION_MOCK_BY_PRODUCT[productId] ->
+   NUTRITION_MOCK_BY_BRAND[brand] -> NUTRITION_FALLBACK_PER_100ML — dieselbe
+   Fallback-Kette wie bei Pfand/Verpackung oben.
+   Wichtige reale Abweichungen von den früheren Platzhaltern: GÖNRGY ist
+   markenweit eine zuckerfreie Linie (~3 kcal/100ml statt regulärer Werte)
+   und hat mit 30 mg/100ml deutlich WENIGER Taurin als Red Bull/Monster/
+   Rockstar/Carabao/effect (die alle 0,4% = 400 mg/100ml führen); 28 Black
+   enthält laut eigener Zutatenliste GAR KEIN Taurin (0 mg) — vorher stand
+   bei beiden fälschlich derselbe 400mg-Wert wie bei den anderen Marken. */
 const NUTRITION_FALLBACK_PER_100ML = { kcal: 45, sugarG: 11, caffeineMg: 32, taurineMg: 400 };
 const NUTRITION_MOCK_BY_BRAND = {
   "Red Bull": { kcal: 45, sugarG: 11, caffeineMg: 32, taurineMg: 400 },
-  "Monster": { kcal: 47, sugarG: 11, caffeineMg: 36, taurineMg: 400 },
-  "Rockstar": { kcal: 45, sugarG: 11, caffeineMg: 32, taurineMg: 400 },
-  "GÖNRGY": { kcal: 48, sugarG: 12, caffeineMg: 32, taurineMg: 400 },
-  "Carabao": { kcal: 45, sugarG: 11, caffeineMg: 30, taurineMg: 400 },
-  "Effect Energy": { kcal: 48, sugarG: 11, caffeineMg: 32, taurineMg: 400 },
-  "28 Black": { kcal: 45, sugarG: 11, caffeineMg: 32, taurineMg: 400 }
+  "Monster": { kcal: 47, sugarG: 11, caffeineMg: 32, taurineMg: 400 },
+  "Rockstar": { kcal: 59, sugarG: 14, caffeineMg: 32, taurineMg: 400 },
+  "GÖNRGY": { kcal: 3, sugarG: 0, caffeineMg: 32, taurineMg: 30 },
+  "Carabao": { kcal: 56, sugarG: 14, caffeineMg: 32, taurineMg: 400 },
+  "Effect Energy": { kcal: 46, sugarG: 11, caffeineMg: 32, taurineMg: 400 },
+  "28 Black": { kcal: 59, sugarG: 14, caffeineMg: 32, taurineMg: 0 }
 };
-/* Zucker-/kalorienreduzierte Varianten: Markendefault oben passt nicht
-   ("Zero"/"Sugarfree"/"zuckerfrei" im Namen), daher produktgenaue Ausnahmen. */
+/* Produktgenaue Ausnahmen, wo der Markendefault oben nicht passt — nicht nur
+   "Zero"/"Sugarfree" im Namen, sondern auch ganze Sub-Linien, die real
+   zuckerfrei sind, ohne das im Produktnamen zu tragen (z.B. Monster "Ultra":
+   die komplette Ultra-Linie ist real zuckerfrei/kalorienfrei, nicht nur die
+   explizit "Zero" benannten Varianten — betraf vorher fälschlich nur p11). */
 const NUTRITION_MOCK_BY_PRODUCT = {
   p2:  { kcal: 3, sugarG: 0, caffeineMg: 32, taurineMg: 400 },  // Red Bull Sugarfree
+  p3:  { kcal: 2, sugarG: 0, caffeineMg: 30, taurineMg: 400 },  // Monster Energy Ultra (Ultra-Linie = zuckerfrei)
   p8:  { kcal: 3, sugarG: 0, caffeineMg: 32, taurineMg: 400 },  // Red Bull Zero
-  p11: { kcal: 3, sugarG: 0, caffeineMg: 36, taurineMg: 400 },  // Monster Ultra Zero
+  p11: { kcal: 2, sugarG: 0, caffeineMg: 30, taurineMg: 400 },  // Monster Ultra Zero
+  p14: { kcal: 2, sugarG: 0, caffeineMg: 30, taurineMg: 400 },  // Monster Ultra Watermelon (Ultra-Linie = zuckerfrei)
+  p16: { kcal: 67, sugarG: 16, caffeineMg: 32, taurineMg: 400 }, // Rockstar Energy Punched Guava (weicht von Original ab)
+  p17: { kcal: 1, sugarG: 0, caffeineMg: 32, taurineMg: 400 },  // Carabao Green Apple Sugar Free
   p23: { kcal: 3, sugarG: 0, caffeineMg: 32, taurineMg: 400 },  // effect Zero Sugarfree
-  p26: { kcal: 3, sugarG: 0, caffeineMg: 32, taurineMg: 400 }   // 28 Black Açaí Zero
+  p26: { kcal: 3, sugarG: 0, caffeineMg: 32, taurineMg: 0 }     // 28 Black Açaí Zero (Marke führt kein Taurin)
 };
 function getNutritionPer100ml(product){
   return NUTRITION_MOCK_BY_PRODUCT[product.id]

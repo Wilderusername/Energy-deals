@@ -4,6 +4,67 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-04 (13) — Nicht-verfügbare Produkte/Bundles entfernt, Nährwerte real recherchiert und korrigiert
+
+**Umgesetzt (Mobile + Webapp — reine Datenkorrektur, keine Design-/Funktionsänderung):**
+
+**1. Entfernte Produkte/Bundles (real recherchiert, nicht mehr im deutschen Handel):**
+- **Produkt `p9` "Red Bull Red Edition (Wassermelone)" komplett entfernt** (inkl. aller 3 Angebote d13/d14/d53): Auf der offiziellen `redbull.com/de-de`-Editions-Seite taucht "Wassermelone"/"Red Edition" nirgends mehr in der aktuellen Editions-Liste auf (Summer/Glacier/Peach/Sea Blue/Apricot/Green/White/Blue Edition), REWEs komplette Red-Bull-Sortimentsseite (`rewe.de/shop/productList?brand=Red%20Bull`, 41+ Artikel) enthält den Suchbegriff "Wassermelone" ebenfalls nicht — nur noch Reseller-Restbestände auf eBay/Amazon Marketplace zu deutlich erhöhten Preisen, kein regulärer Handel mehr.
+- **3 Bundle-Angebote entfernt** (Produkt bleibt jeweils erhalten, da als Einzeldose weiterhin real erhältlich, nur das konkrete Mehrpack-Angebot existiert nicht): `d54` Monster Ultra Zero 6×500ml (am deutschen Markt nur 4er/12er/24er auffindbar), `d55` effect Classic Energy 6×250ml (REWE führt effect nur einzeln, als 4×0,33l oder 6×1l-PET, keine 6×0,25l-Dose), `d57` Carabao Green Apple Sugar Free 12×330ml (keine verlässliche deutsche 12er-Quelle gefunden, Carabao bei REWE gar nicht gelistet).
+- Ergebnis: 66→60 Angebote, 27→26 Produkte. `git diff` zeigt für `deals.json` ausschließlich Löschungen der betroffenen Einträge, keine Änderung an übrigen Daten. Alle verbleibenden 12 Bundle-Angebote haben jetzt ein reales, verifiziertes `bundleImg` — keine Bundle-Lücke mehr offen.
+
+**2. Nährwerte real recherchiert und korrigiert** (`NUTRITION_MOCK_BY_BRAND`/`NUTRITION_MOCK_BY_PRODUCT` in `index.html`), Quellen: offizielle Marken-Websites, das-ist-drin.de, fddb.info, openfoodfacts.org (Nährwerttabellen pro 100 ml):
+- **GÖNRGY war komplett falsch**: bisher wie eine reguläre Vollzucker-Marke behandelt (48 kcal/12 g Zucker/100ml) — real ist die komplette GÖNRGY-Linie zuckerfrei (~3 kcal/0 g Zucker/100ml) UND hat mit 30 mg/100ml deutlich weniger Taurin als angenommen (statt 400 mg) — z.B. GÖNRGY Raspberry Cheesecake (500ml) zeigte vorher 240 kcal/60 g Zucker/2000 mg Taurin, jetzt korrekt 15 kcal/0 g Zucker/150 mg Taurin.
+- **28 Black führt laut eigener Zutatenliste GAR KEIN Taurin** (0 mg) — vorher fälschlich wie alle anderen Marken mit 400 mg/100ml geführt (z.B. 28 Black Açaí 250ml zeigte vorher 1000 mg Taurin, jetzt korrekt 0 mg — das ist der vom Nutzer als Beispiel genannte Fehler).
+- **Monster "Ultra"-Linie (p3 Monster Energy Ultra, p14 Monster Ultra Watermelon) bekam erstmals eine eigene Zuckerfrei-Ausnahme** in `NUTRITION_MOCK_BY_PRODUCT` — bisher liefen beide fälschlich über den regulären Monster-Markendefault (47 kcal/11g Zucker), obwohl die komplette Ultra-Linie real zuckerfrei/kalorienfrei ist (2 kcal/0g Zucker/100ml, offiziell "Zero Zucker und Zero Kalorien" beworben) — nur `p11` Monster Ultra Zero hatte vorher schon eine (leicht ungenaue) Ausnahme.
+- **Carabao Green Apple Sugar Free (`p17`)** bekam ebenfalls erstmals eine Zuckerfrei-Ausnahme (trotz "Sugar Free" im Namen lief es vorher über den vollzuckrigen Markendefault).
+- **Rockstar/Carabao/28 Black/effect-Markendefaults kcal & Zucker korrigiert**: Rockstar 45→59 kcal, 11→14 g Zucker; Carabao 45→56 kcal, 11→14 g; 28 Black 45→59 kcal, 11→14 g; effect 48→46 kcal (alle anhand realer Nährwerttabellen). Red Bull und Monster (Classic) waren bereits korrekt und blieben unverändert.
+- **Rockstar Energy Punched Guava (`p16`)** bekam eine eigene Ausnahme (67 kcal/16g Zucker statt Rockstar-Original-Werten 59/14 — reale Nährwerttabelle weicht spürbar vom Original ab).
+- Caffeine-Werte weitgehend bestätigt (~32mg/100ml herstellerübergreifend üblich), Monster-Markendefault-Koffein von 36 auf die real bestätigten 32mg/100ml korrigiert.
+- Weiterhin als Demo-Werte gekennzeichnet (`#pdNutritionCaption`: "Demo-Werte, keine geprüften Herstellerangaben") — nicht jede einzelne Geschmacksrichtung wurde individuell nachgeprüft, aber alle Markendefaults und die auffälligsten Abweichungen (GÖNRGY, 28 Black, Monster Ultra) sind jetzt real recherchiert statt geraten.
+- Keine Änderung an der bestehenden Fallback-Kette/Anzeige-Logik (`getNutritionPer100ml()`, `renderNutrition()`) — nur die Zahlenwerte wurden korrigiert.
+- Verifiziert über einen temporären lokalen Server (Mobile 375px): `deals.length`/`products.length` korrekt auf 60/26; Nährwerte für 13 Stichproben-Produkte per Berechnung geprüft (Red Bull, Monster Ultra/Classic, Rockstar Original/Punched Guava, GÖNRGY, Carabao/Sugar Free, effect, 28 Black/Zero) — alle Werte stimmen mit den recherchierten Markendefaults/Ausnahmen überein; Detailansicht für 28 Black Açaí (0mg Taurin) und GÖNRGY Raspberry Cheesecake (15kcal/0g Zucker) per Screenshot bestätigt; Regressionstest über Markenfilter/Karte/Favoriten/Alarme/Packungsgrößen-Ausgrauen/Bundle-Sortierung — alles funktioniert weiterhin fehlerfrei; keine Konsolenfehler.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v53` erhöht (Pflichtregel).
+
+**Offen:**
+- Nicht jede einzelne Geschmacksrichtung (insbesondere kleinere Monster-"Juiced"-Sorten wie Mango Loco/Pipeline Punch sowie effect-/28-Black-Geschmacksvarianten) wurde einzeln nachrecherchiert — sie laufen weiterhin über den (jetzt korrigierten) Markendefault ihrer Marke, was für ein Demo-Prototyp als ausreichend genau eingeschätzt wurde.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
+## 2026-09-04 (12) — Fehlende Bundle-Bilder bei den ursprünglichen 10 Multipack-Angeboten nachgetragen
+
+**Umgesetzt (Mobile + Webapp — reine Datenergänzung, keine Code-Änderung nötig):**
+- **Ursache**: `bundleImg` wurde in der vorletzten Sitzung nur für die 6 neu hinzugefügten Bundle-Angebote (d61–d66) recherchiert und gesetzt — die 10 bereits vorher vorhandenen Multipack-Angebote (d51–d60, u.a. das vom Nutzer genannte Beispiel "Red Bull 24×250ml bei EDEKA" = d58) hatten das Feld nie bekommen und zeigten deshalb weiterhin die Einzeldose.
+- **6 der 10 fehlenden Bundle-Bilder real recherchiert und ergänzt** (jeweils einzeln visuell verifiziert, von REWE- bzw. Amazon.de-Produktseiten):
+  - d51 Red Bull 4×250ml (Kaufland) — REWE (identisches Bild wie d61, da exakt dieselbe Packungsgröße)
+  - d52 Monster Energy Ultra 4×500ml (Lidl) — Amazon.de
+  - d56 Red Bull 12×250ml (Netto) — REWE (`rewe.de/shop/p/red-bull-energy-drink-12x0-25l/6392199`)
+  - d58 Red Bull 24×250ml (EDEKA) — Amazon.de (identisches Bild wie d62)
+  - d59 Monster Energy Ultra 24×500ml (Kaufland) — Amazon.de
+  - d60 28 Black Açaí 24×250ml (Penny) — Amazon.de
+- **4 Angebote bewusst OHNE Bundle-Bild gelassen** (Fallback bleibt die Einzeldose, wie von Anfang an vorgesehen für den Fall "kein eindeutig passendes Bild gefunden") — für keines dieser vier existiert nachweislich ein reales Mehrpack-Produkt in dieser exakten Kombination aus Geschmack/Größe/Packungsgröße im deutschen Handel (jeweils per REWE-Sortimentsseite bzw. gezielter Suche gegengeprüft, keine Vermutung):
+  - d53 Red Bull Red Edition (Wassermelone) 6×250ml — REWE führt diese Geschmacksrichtung nachweislich nur als Einzeldose, kein 6er-Pack im Sortiment
+  - d54 Monster Ultra Zero 6×500ml — für Monster (Ultra) 500ml-Dosen sind am deutschen Markt nur 4er/12er/24er-Packungsgrößen auffindbar, kein 6er
+  - d55 effect Classic Energy 6×250ml — REWE führt effect nur als Einzeldose (0,25l), 4×0,33l oder 6×1l-PET-Flaschen, keine 6×0,25l-Dosenpackung
+  - d57 Carabao Green Apple Sugar Free 12×330ml — Carabao ist bei den geprüften deutschen Händlern (REWE) gar nicht gelistet; keine verlässliche deutsche 12er-Pack-Quelle für exakt diese Geschmacksrichtung gefunden
+  - Diese vier Angebote sind rein fiktive Demo-Kombinationen ohne reales Vorbild in dieser Packungsgröße — bewusst nicht mit einem unpassenden Ersatzbild (z.B. falsche Geschmacksrichtung oder falsche Packungsgröße) verfälscht.
+- Keine Code-Änderung nötig — der bestehende `bundleImg`-Mechanismus aus der vorletzten Sitzung greift automatisch, sobald das Feld in `deals.json` gesetzt ist.
+- Verifiziert über einen temporären lokalen Server (Mobile 375px): alle 6 neuen Bilder laden fehlerfrei (`img.complete`, `naturalWidth`>0, kein `thumb-fallback`); d58 (EDEKA-Beispiel des Nutzers) zeigt jetzt sowohl in der Kartenliste als auch in der Detailansicht (`pdImg.src`) korrekt die 24er-Palette; d53/d54/d55/d57 zeigen weiterhin korrekt (und bewusst) die Einzeldose; keine Konsolenfehler; `git diff --stat` bestätigt rein additive Änderung (6 Insertions, 0 Deletions).
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v52` erhöht (Pflichtregel).
+
+**Offen:**
+- 4 Bundle-Angebote (d53/d54/d55/d57) haben weiterhin kein eigenes Bundle-Bild (bewusst, siehe oben) — falls der Nutzer möchte, könnten diese vier stattdessen durch real existierende Packungsgrößen/Geschmacksrichtungen ersetzt werden, für die es tatsächlich Handelsware gibt.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-04 (11) — Bundles ans Listenende, Packungsgröße pro Marke ausgrauen, Bundle-Bild in Detailansicht
 
 **Umgesetzt (Mobile + Webapp — reine Verhaltens-Erweiterung, kein Design geändert):**
