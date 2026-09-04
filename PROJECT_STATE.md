@@ -4,6 +4,25 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-04 (2) — Suche bleibt im Hintergrund + "Mein Bereich" bleibt beim Öffnen von Untermenüs offen
+
+**Umgesetzt (Mobile + Webapp):**
+- **Suche springt nicht mehr sofort**: Tippen in der Suchleiste filtert die Startseite/Liste im Hintergrund jetzt nicht mehr live mit — sie bleibt unverändert sichtbar, während die Vorschlagsliste (Autocomplete) darüber Treffer anzeigt. Erst ein Klick auf einen konkreten Vorschlag übernimmt den Produktnamen in die Suchleiste und filtert die Liste auf genau dieses Produkt ("springt zum Produkt"). Technisch: `render()` filtert jetzt nach einem separaten `committedSearch`-Wert statt direkt nach `search.value`; der `input`-Listener aktualisiert nur noch die Vorschläge (und setzt `committedSearch` nur zurück, wenn das Feld komplett geleert wird); beide bestehenden "Filter zurücksetzen"-Stellen (leere Suche über den Reset-Button im Empty-State bzw. über "Start" in der unteren Navigation) setzen `committedSearch` konsistent mit zurück.
+- Platzhaltertext der Suchleiste geändert von „Energy Drink, Marke oder Händler..." zu „Energy Drink oder Marke eingeben".
+- Beschreibungstext „Deine Daten, Einstellungen und dein Konto." direkt unter der Überschrift „Mein Bereich" entfernt (Überschrift bleibt, Rest des Bereichs unverändert).
+- **"Mein Bereich" bleibt beim Öffnen eines Untermenüs (Standort & Umkreis, Push-Benachrichtigungen, Konto verwalten) jetzt im Hintergrund geöffnet**, statt geschlossen zu werden — es schließt sich nur noch, wenn der Nutzer es aktiv wegklickt/wegwischt (X-Button, Klick auf den abgedunkelten Hintergrund oder Wischgeste). Speichern/Schließen eines Untermenüs (z.B. „Speichern" bei Push-Benachrichtigungen, „Aktualisieren" bei Standort & Umkreis) schließt weiterhin nur dieses Untermenü, „Mein Bereich" bleibt darunter sichtbar offen. Technisch: `openSheet()` verschiebt das zu öffnende Overlay-Element jetzt an das Ende seines Elternelements, bevor es sichtbar geschaltet wird — dadurch liegt es bei gleichem z-index immer über bereits offenen Overlays, unabhängig von der ursprünglichen Reihenfolge im HTML (relevant, weil „Standort & Umkreis" und „Push-Benachrichtigungen" im Markup eigentlich vor „Mein Bereich" stehen). Der bisherige `closeSheet("profileOverlay")`-Aufruf beim Klick auf eine Profil-Zeile wurde entfernt.
+- Verifiziert über einen temporären lokalen Server (Mobile 375px + Webapp/Desktop 1280px): Suche bleibt beim Tippen im Hintergrund unverändert (Zähler bleibt bei 60), Vorschlagsauswahl filtert korrekt auf 1 Treffer, Leeren der Suche stellt wieder alle 60 Angebote her; „Mein Bereich" bleibt beim Öffnen von „Standort & Umkreis"/„Push-Benachrichtigungen"/„Konto verwalten" sichtbar im Hintergrund offen (per DOM-Check bestätigt), das jeweilige Untermenü schließt sich beim Speichern eigenständig, „Mein Bereich" bleibt offen bis zum expliziten Schließen; keine echten Konsolenfehler (nur bekanntes Test-Tool-Rauschen durch simulierte Touch-Events, kein App-Code betroffen).
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v42` erhöht (Pflichtregel).
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-04 — "Konto verwalten" und "Abmelden" vertauscht
 
 **Umgesetzt (Mobile + Webapp):**

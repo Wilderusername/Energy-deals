@@ -2493,7 +2493,7 @@ Aktuelle Energy-Drink-Angebote in deiner Nähe
 
 <div class="search">
 <svg class="icon icon-lg"><use href="#i-search"/></svg>
-<input type="search" id="search" placeholder="Energy Drink, Marke oder Händler..." autocomplete="off">
+<input type="search" id="search" placeholder="Energy Drink oder Marke eingeben" autocomplete="off">
 <div class="search-suggestions" id="searchSuggestions"></div>
 </div>
 
@@ -2850,7 +2850,6 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 <button class="sheet-close" data-close="profileOverlay"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
 <div class="handle"></div>
 <h2>Mein Bereich</h2>
-<div class="desc">Deine Daten, Einstellungen und dein Konto.</div>
 
 <div class="profile-head">
 <div class="profile-avatar-wrap">
@@ -3420,6 +3419,7 @@ let sizeFilter = "Alle";
 let packagingFilter = "Alle";
 let unitsFilter = "Alle";
 let periodFilter = "Alle";
+let committedSearch = "";
 let chartRangeDays = 30;
 
 let priceAlerts = {};
@@ -3542,7 +3542,7 @@ function buildBadges(deal, isFav, favLiterMin){
 function render(){
 
   let filtered = [...deals];
-  const searchText = normalizeSearchText(search.value.trim());
+  const searchText = normalizeSearchText(committedSearch);
 
   if(viewFavoritesOnly){
     filtered = filtered.filter(d=>favorites.has(d.productId));
@@ -3857,6 +3857,7 @@ searchSuggestions.addEventListener("click",(e)=>{
   const product = products.find(p=>p.id===btn.dataset.suggest);
   if(!product) return;
   search.value = product.name;
+  committedSearch = product.name;
   hideSearchSuggestions();
   render();
   updateStatus();
@@ -3872,7 +3873,14 @@ search.addEventListener("keydown",(e)=>{
   if(e.key === "Escape") hideSearchSuggestions();
 });
 
-search.addEventListener("input",()=>{render();updateStatus();renderSearchSuggestions();});
+search.addEventListener("input",()=>{
+  renderSearchSuggestions();
+  if(!search.value.trim() && committedSearch){
+    committedSearch = "";
+    render();
+    updateStatus();
+  }
+});
 storeFilter.addEventListener("change",()=>{render();updateStatus();});
 sort.addEventListener("change",()=>{render();updateStatus();});
 
@@ -3958,6 +3966,7 @@ dealsContainer.addEventListener("click",(e)=>{
       setActiveNav("home");
     } else {
       search.value = "";
+      committedSearch = "";
       hideSearchSuggestions();
       selectedBrand = "Alle";
       document.querySelectorAll(".tabs .chip").forEach(b=>b.classList.remove("on"));
@@ -4281,6 +4290,7 @@ document.getElementById("navHome").addEventListener("click", ()=>{
   closeAllSheets();
   viewFavoritesOnly = false;
   search.value = "";
+  committedSearch = "";
   hideSearchSuggestions();
   selectedBrand = "Alle";
   document.querySelectorAll(".tabs .chip").forEach(b=>b.classList.remove("on"));
@@ -4594,7 +4604,14 @@ function updateBottomNavVisibility(){
 }
 
 function openSheet(id){
-  document.getElementById(id).classList.add("open");
+  const el = document.getElementById(id);
+  /* Auf dieselbe Ebene ans Ende ihres Elternelements verschieben, damit sie
+     bei gleichem z-index immer über bereits geöffneten Sheets liegt -
+     unabhängig von ihrer ursprünglichen Reihenfolge im HTML (relevant, da
+     z.B. "Mein Bereich" jetzt im Hintergrund offen bleiben kann, während ein
+     Untermenü wie Standort/Push-Benachrichtigungen darüber geöffnet wird). */
+  if(el.parentNode) el.parentNode.appendChild(el);
+  el.classList.add("open");
   updateBottomNavVisibility();
 }
 function closeSheet(id){
@@ -4833,7 +4850,9 @@ function updateProfileFavList(){
 
 document.querySelectorAll(".profile-row[data-open]").forEach(row=>{
   row.addEventListener("click", ()=>{
-    closeSheet("profileOverlay");
+    /* "Mein Bereich" bleibt im Hintergrund geöffnet - schließt sich nur noch,
+       wenn der Nutzer es aktiv wegklickt/wegwischt, nicht beim Öffnen eines
+       Untermenüs. */
     openSheet(row.dataset.open);
   });
 });
