@@ -2078,6 +2078,10 @@ scrollbar-width:none
 .similar-scroll::-webkit-scrollbar{display:none}
 
 .similar-card{
+display:flex;
+flex-direction:column;
+align-items:stretch;
+justify-content:flex-start;
 flex:0 0 118px;
 background:var(--bg-surface-sunken);
 border:1px solid var(--border-subtle);
@@ -2516,7 +2520,6 @@ Aktuelle Energy-Drink-Angebote in deiner Nähe
 <div class="controls">
 <select id="sort" style="display:none">
 <option value="price">Günstigster Preis</option>
-<option value="liter">Günstigster €/Liter</option>
 <option value="distance">Nächster Händler</option>
 <option value="saving">Beste Ersparnis</option>
 <option value="ending">Endet bald</option>
@@ -2824,10 +2827,6 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 
 <button class="sort-row" data-sort="price">
 <span>Günstigster Preis</span>
-<svg class="icon icon-md sort-check"><use href="#i-check"/></svg>
-</button>
-<button class="sort-row" data-sort="liter">
-<span>Günstigster €/Liter</span>
 <svg class="icon icon-md sort-check"><use href="#i-check"/></svg>
 </button>
 <button class="sort-row" data-sort="distance">
@@ -3589,10 +3588,6 @@ function render(){
 
   if(sort.value==="price"){
     filtered.sort((a,b)=>a.offerPrice-b.offerPrice);
-  } else if(sort.value==="liter"){
-    filtered.sort((a,b)=>
-      (a.offerPrice/(a.totalMl/1000)) - (b.offerPrice/(b.totalMl/1000))
-    );
   } else if(sort.value==="distance"){
     filtered.sort((a,b)=>a.distanceKm-b.distanceKm);
   } else if(sort.value==="saving"){
@@ -3891,7 +3886,6 @@ sort.addEventListener("change",()=>{render();updateStatus();});
 
 const sortLabels = {
   price: "Günstigster Preis",
-  liter: "Günstigster €/Liter",
   distance: "Nächster Händler",
   saving: "Beste Ersparnis",
   ending: "Endet bald"

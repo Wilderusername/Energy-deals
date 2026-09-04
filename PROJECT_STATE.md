@@ -4,6 +4,24 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-04 (4) — Bilder bei "Ähnliche Produkte" ausgerichtet + Sortieroption "Günstigster €/Liter" entfernt
+
+**Umgesetzt (nur Mobile):**
+- **Bildausrichtung bei "Ähnliche Produkte"**: Die Produktbilder in der horizontalen `.similar-card`-Leiste (im Produktdetail-Sheet) standen bei Produkten mit einzeiligem Namen (z.B. "Red Bull Zero") sichtbar tiefer als bei zweizeiligen Namen. Ursache: `.similar-card` ist ein `<button>` ohne explizites `display`; Chrome zentriert den Inhalt von Buttons in solchen Fällen vertikal innerhalb der (durch `align-items:stretch` im Elternflex `.similar-scroll` gestreckten) Button-Höhe, statt ihn oben auszurichten — bei kürzerem Textinhalt blieb dadurch mehr Leerraum, der zur Hälfte oberhalb des Bildes landete. Behoben, indem `.similar-card` selbst `display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start` bekommt, wodurch der Button-Inhalt wieder zuverlässig oben ausgerichtet wird, unabhängig von 1- oder 2-zeiligem Produktnamen. (Ein einfaches `display:block` allein reichte nicht aus, um Chromes interne Button-Zentrierung zu überschreiben — das wurde zuerst versucht und im Browser verifiziert, dass es nicht ausreicht.)
+- **Sortieroption entfernt**: „Günstigster €/Liter" komplett aus der Sortierung entfernt — sowohl aus dem (versteckten) `<select id="sort">` als auch aus dem Sortierungs-Sheet (`.sort-row[data-sort="liter"]`), inklusive der zugehörigen Sortierlogik (`sort.value==="liter"`-Zweig) und des Labels in `sortLabels`. Die übrigen Optionen (Günstigster Preis, Nächster Händler, Beste Ersparnis, Endet bald) sind unverändert. Die €/L-Anzeige auf den einzelnen Angebotskarten selbst (`literPrice`-Berechnung für "3,56 €/L") ist davon nicht betroffen und bleibt bestehen — nur die Sortier-*option* wurde entfernt, nicht die Anzeige.
+- Bei der Verifizierung im Vorschau-Server fiel auf, dass eine zwischengeschaltete Proxy-/Cache-Schicht der Browser-Vorschau alte `index.html`-Inhalte auslieferte, obwohl der Server selbst (per `curl` bestätigt) bereits den aktuellen Stand hatte — ein Cache-Busting-Query-Parameter beim Navigieren hat das für die Testsitzung umgangen; kein Hinweis, dass dies die echte Auslieferung an Endnutzer (GitHub Pages / Service Worker) betrifft.
+- Verifiziert über einen temporären lokalen Server (Mobile 375px): Bild-Offset innerhalb der Karte per `getBoundingClientRect()` für alle 6 „Ähnliche Produkte"-Karten gemessen — vorher 11px vs. 18.5px je nach Textlänge, nachher einheitlich 11px bei allen; Sortierungs-Sheet zeigt nur noch die vier verbleibenden Optionen, Sortieren nach „Nächster Händler" funktioniert weiterhin korrekt; keine Konsolenfehler.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v44` erhöht (Pflichtregel).
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-04 (3) — Herz-Schatten im hellen Modus entfernt + leere Klickflächen bei Produktname/Händlerzeile entfernt
 
 **Umgesetzt (nur Mobile, ab jetzt Standard-Arbeitsumfang):**
