@@ -4,6 +4,49 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-04 (19) — Favoriten-Animation bei Mehrfach-Angeboten behoben + Monster/Rockstar-Bundle-Bilder korrigiert
+
+**Umgesetzt (Mobile + Webapp):**
+
+**1. Favoriten-"Pop"-Animation lief bei Produkten mit mehreren Angeboten auf der falschen Karte:**
+- **Ursache**: Beim Klick auf ein Herz rief der Handler `render()` auf (baut `dealsContainer.innerHTML` komplett neu), danach wurde die Animation über `dealsContainer.querySelector('[data-fav="productId"] .icon')` ausgelöst — bei Produkten mit mehreren Angeboten (verschiedene Händler/Packungsgrößen, z.B. Red Bull mit 8 Karten) liefert `querySelector` aber IMMER das erste Vorkommen im DOM, unabhängig davon, welche Karte tatsächlich angeklickt wurde. Die Animation lief dadurch fast immer auf der falschen (oft nicht sichtbaren) Karte — genau die vom Nutzer bemerkten "manche Sorten und Marken".
+- **Fix**: Vor dem `render()`-Aufruf wird jetzt zusätzlich die eindeutige Angebots-ID (`data-id` der `.card`) der tatsächlich angeklickten Karte gemerkt; nach dem Neu-Rendern wird gezielt genau diese Karte wiedergefunden und nur deren Herz animiert. Betraf ausschließlich die Hauptliste (`dealsContainer`) — die Herz-Buttons in Preisverlauf-Sheet (`#detailFavBtn`, eindeutige ID) und Favoriten-Tab waren nicht betroffen.
+- Verifiziert über einen temporären lokalen Server (Mobile 375px): systematischer Test aller 26 Produkte — jeweils das LETZTE Angebot (ungünstigster Fall für den alten Bug) angeklickt und geprüft, ob die Animation auf genau dieser Karte lief (nicht auf einer anderen) — alle 26 bestehen jetzt; vorher lief die Animation bei Produkten mit >1 Angebot nachweislich auf der ersten Karte statt der angeklickten (per Vorher/Nachher-Test bestätigt); keine Konsolenfehler.
+
+**2. Monster/Rockstar-Bundle-Bilder: Einzeldose verdeckte Favoriten-Herz:**
+- **Ursache**: Die bisherigen Amazon-Bundle-Bilder für 5 Monster-/Rockstar-Angebote waren Amazon-Composite-Aufnahmen mit einer zusätzlich freigestellten Einzeldose oben rechts im Bild — exakt dort, wo das Herz-Symbol (`.thumb-frame .btn.fav`, `top:-3px;right:-3px`) positioniert ist, wodurch es auf der Dose zu liegen kam.
+- **Fix**: 5 der 6 betroffenen Bundle-Bilder durch andere, real recherchierte Produktfotos ersetzt, die keine freigestellte Einzeldose in der rechten Bildhälfte zeigen (reine Karton-/Tray-Aufnahmen ohne Corner-Dose, jeweils einzeln visuell verifiziert): Monster Energy Ultra 4×500ml (REWE-Kartonfoto), Monster Energy Classic 12×500ml, Monster Mango Loco 12×500ml, Monster Pipeline Punch 12×500ml, Rockstar Energy Original 12×500ml (je ein alternatives Amazon.de-Produktbild von derselben Angebotsseite). Eine echte "Dose links statt rechts"-Variante existierte bei keinem der geprüften Bilder (Amazons Composite-Generator platziert die Akzent-Dose grundsätzlich immer rechts) — die tray-only-Aufnahmen ohne jede freigestellte Dose lösen das eigentliche Problem (Herz-Überlappung) genauso zuverlässig, ohne eine Bildseite künstlich zu spiegeln (was Text/Logos auf der Verpackung seitenverkehrt und unlesbar gemacht hätte).
+- **1 Ausnahme unverändert gelassen**: Monster Energy Ultra 24×500ml (`d59`) — für dieses Angebot war trotz Suche bei REWE (keine 24er-Packung im Sortiment) und mehreren Amazon-/idealo-Bildquellen keine Alternative ohne rechtsseitige Einzeldose auffindbar; bewusst nicht verändert, um keine Bildseite zu spiegeln oder ein nicht-reales Bild zu verwenden.
+- Verifiziert über einen temporären lokalen Server (Mobile 375px): alle 5 neuen Bilder laden fehlerfrei (`img.complete`, `naturalWidth`>0, kein `thumb-fallback`); Screenshots aller 5 betroffenen Karten (4er/12er-Filter) bestätigen, dass keine Dose mehr mit dem Herz überlappt; 24er-Pack (unverändert) zur Kontrolle ebenfalls geprüft; `git diff` bestätigt, dass ausschließlich die 5 `bundleImg`-Werte geändert wurden, sonst nichts; keine Konsolenfehler.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v59` erhöht (Pflichtregel).
+
+**Offen:**
+- Monster Energy Ultra 24×500ml (`d59`) zeigt weiterhin die Einzeldose rechts im Bild — falls der Nutzer eine Lösung wünscht, käme z.B. eine andere Packungsgröße/ein anderer Händler für dieses Angebot infrage, oder eine bewusste Ausnahme in der Herz-Positionierung nur für dieses eine Bild.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
+## 2026-09-04 (18) — Filter "Ohne Pfand"/"Verpackung" und "Favoriten" in Mein Bereich entfernt
+
+**Umgesetzt (Mobile + Webapp):**
+- **Filter "Ohne Pfand" komplett entfernt**: Switch-Row im Filter-Sheet, State-Variable `noPfandOnly`, Filterlogik in `render()` und in der Leer-Zustand-Radius-Erweiterungs-Zählung, `updateFilterCount()`, `resetExtraFilters()` und der zugehörige `change`-Event-Listener — alles restlos entfernt, keine toten Referenzen übrig (per Grep bestätigt).
+- **Filter "Verpackung" (Dose/Flasche) komplett entfernt**: Chip-Reihe im Filter-Sheet, State-Variable `packagingFilter`, dieselben Anknüpfungspunkte wie oben (Filterlogik, Leer-Zustand-Zählung, `updateFilterCount()`, `resetExtraFilters()`, Klick-Listener für `.chip[data-pack]`) — restlos entfernt. Das zugrunde liegende `packaging`-Datenfeld in `deals.json`/`buildDeals()` bleibt unangetastet (ist weiterhin Teil des Datenmodells, nur nicht mehr als Filteroption nutzbar — wie gewünscht nur die Filteroption entfernt, keine Daten gelöscht).
+- **"Favoriten" aus "Mein Bereich" entfernt**: Das eigenständige Favoriten-Listing unter "Meine Aktivität" (`#profileFavCount`/`#profileFavList`, mit eigener `updateProfileFavList()`-Funktion) entfernt — "Preisalarme" bleibt als einziger Punkt unter "Meine Aktivität" erhalten. Der reguläre "Favoriten"-Tab in der unteren Navigation (eigene Ansicht, `renderFavList()`) ist davon **nicht** betroffen und funktioniert unverändert — war explizit nicht Teil der Anfrage.
+- Verifiziert über einen temporären lokalen Server (Mobile 375px): Filter-Sheet zeigt "Verpackung" und "Ohne Pfand" nicht mehr (Screenshot bestätigt, sauberer Übergang von "Packungsgröße" zu "Angebotszeitraum" bzw. "Nur verfügbare Angebote" bleibt als letzter Punkt); "Mein Bereich" zeigt "Preisalarme (0)" direkt unter "Meine Aktivität", kein "Favoriten"-Eintrag mehr; bestehender Favoriten-Tab (untere Navigation) weiterhin funktionsfähig; Größen-/Packungsgrößen-Filter funktionieren weiterhin korrekt (Test mit Volumen-Filter "500 ml" → 27 Treffer, Filterzähler zeigt korrekt "1"); keine Konsolenfehler.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v58` erhöht (Pflichtregel).
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-04 (17) — Echter 6er-Pack gefunden (Red Bull bei Lidl) und ergänzt
 
 **Kontext**: Nutzer bemerkte, dass "6er Pack" im Packungsgrößen-Filter komplett ausgegraut war (0 Angebote mit `units:6` in den Daten, da die drei einzigen 6er-Angebote in einer früheren Sitzung als nicht real verifizierbar entfernt worden waren). Nutzer bat um erneute, auf die 6 in der App abgebildeten Händler (Kaufland, Lidl, EDEKA, Penny, REWE, Netto) beschränkte Prüfung, mit der Auflage, den Filter-Reiter zu entfernen, falls sich nirgendwo etwas findet.

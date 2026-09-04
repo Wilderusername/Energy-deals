@@ -2860,13 +2860,6 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 <button class="chip" data-store="REWE">REWE</button>
 </div>
 
-<div class="field-label" style="margin-top:20px">Verpackung</div>
-<div class="filter-chip-row">
-<button class="chip on" data-pack="Alle">Alle</button>
-<button class="chip" data-pack="Dose">Dose</button>
-<button class="chip" data-pack="Flasche">Flasche</button>
-</div>
-
 <div class="field-label" style="margin-top:20px">Volumen</div>
 <div class="filter-chip-row">
 <button class="chip on" data-size="Alle">Alle</button>
@@ -2899,17 +2892,6 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 </div>
 <label class="switch">
 <input type="checkbox" id="filterHideExpired" checked>
-<span class="track"></span>
-</label>
-</div>
-
-<div class="switch-row">
-<div class="txt">
-<b>Ohne Pfand</b>
-<span>Aktuell haben alle Dosen-Angebote 0,25 € Pfand</span>
-</div>
-<label class="switch">
-<input type="checkbox" id="filterNoPfand">
 <span class="track"></span>
 </label>
 </div>
@@ -2998,10 +2980,7 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 </button>
 
 <div class="field-label" style="margin-top:22px">Meine Aktivität</div>
-<div class="field-sublabel"><span>Favoriten (<span id="profileFavCount">0</span>)</span></div>
-<div id="profileFavList"></div>
-
-<div class="field-sublabel" style="margin-top:16px"><span>Preisalarme (<span id="profileAlertCount">0</span>)</span></div>
+<div class="field-sublabel"><span>Preisalarme (<span id="profileAlertCount">0</span>)</span></div>
 <div id="profileAlertList"></div>
 
 <div class="field-label" style="margin-top:22px">Konto</div>
@@ -3569,9 +3548,7 @@ let selectedMapStore = null;
 let currentDetailDealId = null;
 let currentProductDetailId = null;
 let hideExpired = true;
-let noPfandOnly = false;
 let sizeFilter = "Alle";
-let packagingFilter = "Alle";
 let unitsFilter = "Alle";
 let periodFilter = "Alle";
 let committedSearch = "";
@@ -3726,14 +3703,8 @@ function render(){
   if(hideExpired){
     filtered = filtered.filter(d=>daysUntil(d.validUntil) >= 0);
   }
-  if(noPfandOnly){
-    filtered = filtered.filter(d=>d.pfand===0);
-  }
   if(sizeFilter !== "Alle"){
     filtered = filtered.filter(d=>String(d.sizeMl)===sizeFilter);
-  }
-  if(packagingFilter !== "Alle"){
-    filtered = filtered.filter(d=>d.packaging===packagingFilter);
   }
   if(unitsFilter !== "Alle"){
     filtered = filtered.filter(d=>String(d.units)===unitsFilter);
@@ -3787,9 +3758,7 @@ function render(){
         if(storeFilter.value!=="Alle" && d.store!==storeFilter.value) return false;
         if(searchText && !(normalizeSearchText(d.product).includes(searchText) || normalizeSearchText(d.brand).includes(searchText) || normalizeSearchText(d.store).includes(searchText))) return false;
         if(hideExpired && daysUntil(d.validUntil)<0) return false;
-        if(noPfandOnly && d.pfand!==0) return false;
         if(sizeFilter!=="Alle" && String(d.sizeMl)!==sizeFilter) return false;
-        if(packagingFilter!=="Alle" && d.packaging!==packagingFilter) return false;
         if(unitsFilter!=="Alle" && String(d.units)!==unitsFilter) return false;
         if(periodFilter==="soon"){ const dl=daysUntil(d.validUntil); if(!(dl>=0 && dl<=3)) return false; }
         if(periodFilter==="new"){ const df=daysUntil(d.validFrom)*-1; if(!(df>=0 && df<=3)) return false; }
@@ -4099,13 +4068,25 @@ dealsContainer.addEventListener("click",(e)=>{
   const favBtn = e.target.closest("[data-fav]");
   if(favBtn){
     const pid = favBtn.dataset.fav;
+    /* Bei Produkten mit mehreren Angeboten (z.B. bei mehreren Händlern
+       gelistet) gibt es mehrere Karten mit demselben data-fav="productId" im
+       DOM. Nach dem re-render() unten würde eine erneute Suche nur nach
+       [data-fav="pid"] immer die ERSTE dieser Karten treffen — unabhängig
+       davon, welches Herz tatsächlich angeklickt wurde (dort lief die
+       Animation dann sichtbar nie oder an der falschen Stelle). Deshalb
+       merken wir uns hier zusätzlich die eindeutige Angebots-ID der
+       tatsächlich angeklickten Karte, um nach dem Neu-Rendern gezielt genau
+       diese Karte wiederzufinden. */
+    const dealId = favBtn.closest(".card")?.dataset.id;
     const wasFav = favorites.has(pid);
     if(wasFav) favorites.delete(pid); else favorites.add(pid);
     saveFavorites();
     render();
     renderFavList();
     if(!wasFav){
-      triggerFavPop(dealsContainer.querySelector(`[data-fav="${pid}"] .icon`));
+      const cardEl = dealId ? dealsContainer.querySelector(`.card[data-id="${dealId}"]`) : null;
+      const iconEl = (cardEl || dealsContainer).querySelector(`[data-fav="${pid}"] .icon`);
+      triggerFavPop(iconEl);
     }
     const product = products.find(p=>p.id===pid);
     const label = product ? product.name : "Produkt";
@@ -4271,10 +4252,8 @@ function updateFilterCount(){
   let n = 0;
   if(storeFilter.value !== "Alle") n++;
   if(sizeFilter !== "Alle") n++;
-  if(packagingFilter !== "Alle") n++;
   if(unitsFilter !== "Alle") n++;
   if(periodFilter !== "Alle") n++;
-  if(noPfandOnly) n++;
   if(!hideExpired) n++;
   if(searchWide || radiusKm !== 10) n++;
   filterCountEl.textContent = n;
@@ -4324,9 +4303,7 @@ function syncRadiusChips(){
 
 function resetExtraFilters(){
   hideExpired = true;
-  noPfandOnly = false;
   sizeFilter = "Alle";
-  packagingFilter = "Alle";
   unitsFilter = "Alle";
   periodFilter = "Alle";
   radiusKm = 10;
@@ -4334,10 +4311,8 @@ function resetExtraFilters(){
   storeFilter.value = "Alle";
 
   document.getElementById("filterHideExpired").checked = true;
-  document.getElementById("filterNoPfand").checked = false;
   filterPeriod.value = "Alle";
   document.querySelectorAll(".chip[data-size]").forEach(b=>b.classList.toggle("on", b.dataset.size==="Alle"));
-  document.querySelectorAll(".chip[data-pack]").forEach(b=>b.classList.toggle("on", b.dataset.pack==="Alle"));
   document.querySelectorAll(".chip[data-units]").forEach(b=>b.classList.toggle("on", b.dataset.units==="Alle"));
   germanyToggle.checked = false;
   radiusSlider.value = 10;
@@ -4363,13 +4338,6 @@ document.getElementById("filterHideExpired").addEventListener("change",(e)=>{
   updateFilterCount();
 });
 
-document.getElementById("filterNoPfand").addEventListener("change",(e)=>{
-  noPfandOnly = e.target.checked;
-  render();
-  updateStatus();
-  updateFilterCount();
-});
-
 filterPeriod.addEventListener("change",()=>{
   periodFilter = filterPeriod.value;
   render();
@@ -4382,17 +4350,6 @@ document.querySelectorAll(".chip[data-size]").forEach(btn=>{
     document.querySelectorAll(".chip[data-size]").forEach(b=>b.classList.remove("on"));
     btn.classList.add("on");
     sizeFilter = btn.dataset.size;
-    render();
-    updateStatus();
-    updateFilterCount();
-  });
-});
-
-document.querySelectorAll(".chip[data-pack]").forEach(btn=>{
-  btn.addEventListener("click", ()=>{
-    document.querySelectorAll(".chip[data-pack]").forEach(b=>b.classList.remove("on"));
-    btn.classList.add("on");
-    packagingFilter = btn.dataset.pack;
     render();
     updateStatus();
     updateFilterCount();
@@ -4925,7 +4882,6 @@ document.getElementById("notifBtn").addEventListener("click",()=>openNewsSheet()
 
 function openProfile(){
   refreshProfileSummaries();
-  updateProfileFavList();
   updateProfileAlertList();
   openSheet("profileOverlay");
 }
@@ -5031,21 +4987,6 @@ function bindFavRowEvents(container, rerender){
       rerender();
     });
   });
-}
-
-function updateProfileFavList(){
-  const list = document.getElementById("profileFavList");
-  const countEl = document.getElementById("profileFavCount");
-  const favProducts = products.filter(p=>favorites.has(p.id));
-  countEl.textContent = favProducts.length;
-
-  if(favProducts.length===0){
-    list.innerHTML = `<div class="fav-empty">Noch keine Favoriten. Tippe <svg class="icon icon-xs"><use href="#i-heart"/></svg> bei einem Angebot.</div>`;
-    return;
-  }
-
-  list.innerHTML = favProducts.map(favRowHtml).join("");
-  bindFavRowEvents(list, ()=>{ updateProfileFavList(); updateProfileAlertList(); });
 }
 
 document.querySelectorAll(".profile-row[data-open]").forEach(row=>{
