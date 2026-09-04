@@ -583,9 +583,9 @@ position:absolute;
 top:-3px;
 right:-3px;
 width:30px;
-height:30px;
-filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))
+height:30px
 }
+:root[data-theme="dark"] .thumb-frame .btn.fav{filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
 .thumb-frame .btn.fav .icon{width:26px;height:26px}
 .card-top-info{flex:1;min-width:0}
 
@@ -633,7 +633,8 @@ align-items:flex-start
 font-size:var(--fs-h3);
 font-weight:var(--fw-h3);
 color:var(--text-primary);
-letter-spacing:-0.005em
+letter-spacing:-0.005em;
+width:fit-content
 }
 
 /* Eigene, klar abgegrenzte Klickziele auf der Karte: Produktname/-bild öffnen
@@ -678,6 +679,8 @@ display:flex;
 align-items:center;
 gap:7px
 }
+
+.store-name{width:fit-content;max-width:100%}
 
 .store-logo{
 width:44px;
@@ -3721,7 +3724,7 @@ function render(){
           <div class="store">
             <img class="store-logo" data-store-detail="${deal.id}" src="${storeLogos[deal.store] || STORE_FALLBACK_IMG}" alt="${deal.store}" loading="lazy" referrerpolicy="no-referrer">
             <div>
-              <div data-store-detail="${deal.id}">${deal.store} <span class="distance">· ${deal.distanceKm} km</span></div>
+              <div class="store-name" data-store-detail="${deal.id}">${deal.store} <span class="distance">· ${deal.distanceKm} km</span></div>
               <div class="store-sub">${routeMinutes(deal.distanceKm)} Min. Route${openNow===null ? "" : `<span class="open-dot ${openNow?"open":""}"></span>${openNow?"Jetzt geöffnet":"Geschlossen"}`}</div>
             </div>
           </div>

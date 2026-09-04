@@ -4,6 +4,24 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-04 (3) — Herz-Schatten im hellen Modus entfernt + leere Klickflächen bei Produktname/Händlerzeile entfernt
+
+**Umgesetzt (nur Mobile, ab jetzt Standard-Arbeitsumfang):**
+- **Herz-Icon-Schatten**: `.thumb-frame .btn.fav` hatte einen festen `filter:drop-shadow(...)`, der unabhängig vom Theme immer angewendet wurde und im hellen Modus als unschöner leichter schwarzer Schatten auffiel. Der Schatten gilt jetzt nur noch im dunklen Theme (`:root[data-theme="dark"] .thumb-frame .btn.fav{filter:...}`), im hellen Modus ist er komplett entfernt. Da dies eine reine Theme-Eigenschaft ist (nicht Viewport-abhängig), wirkt sich die Änderung zwangsläufig gleich auf Mobile und Webapp aus — es gibt kein sinnvolles Mobile-only-CSS dafür.
+- **Leere anklickbare Flächen entfernt**: `.product` (Produktname auf der Karte, wiederverwendet auch in der Alarme-Ansicht) und die neue Klasse `.store-name` (Händlername + Entfernung, z.B. "Kaufland · 1.4 km") waren als normale Block-`<div>`s mit `data-product-detail`/`data-store-detail` immer so breit wie ihr Elternelement (bzw. wie die breitere Nachbarzeile) — dadurch war der leere Bereich rechts neben kurzem Text mit anklickbar und öffnete fälschlich das Produkt- bzw. Händlerfenster. Beide Elemente haben jetzt `width:fit-content`, sodass die Klickfläche exakt dem sichtbaren Text entspricht. Layout/Umbruchverhalten bei langen Namen unverändert (fit-content bleibt innerhalb der verfügbaren Breite).
+- Verifiziert über einen temporären lokalen Server (Mobile 375px): Herz-Schatten computed `filter` ist im hellen Theme `none`, im dunklen Theme weiterhin `drop-shadow(...)`; Klick auf die leere Fläche neben einem kurzen Produktnamen bzw. neben "1.4 km" öffnet nichts mehr (per `elementFromPoint` + Klick-Test bestätigt), Klick auf den eigentlichen Text öffnet weiterhin zuverlässig Produkt- bzw. Händlerfenster; keine Konsolenfehler.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v43` erhöht (Pflichtregel).
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+- Ab dieser Sitzung: Arbeitsumfang standardmäßig nur noch Mobile, außer der Nutzer nennt explizit "beide Versionen" (siehe Nutzeranweisung).
+
+---
+
 ## 2026-09-04 (2) — Suche bleibt im Hintergrund + "Mein Bereich" bleibt beim Öffnen von Untermenüs offen
 
 **Umgesetzt (Mobile + Webapp):**
