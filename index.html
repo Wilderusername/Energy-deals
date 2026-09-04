@@ -469,6 +469,9 @@ color:#fff
 }
 .chip.on:hover{background:var(--brand-primary-hover);border-color:var(--brand-primary-hover)}
 
+.chip:disabled{opacity:.4;cursor:default}
+.chip:disabled:hover{border-color:var(--border-subtle);color:var(--text-secondary)}
+
 .controls{
 display:flex;
 align-items:center;
@@ -3412,7 +3415,11 @@ function hashStr(s){
    priceHistoryPoints (datiert) ist die neue, alleinige Datenquelle für die
    Preisverlaufs-Ansicht; history (reine Preis-Zahlen, wie zuvor) bleibt
    unverändert als abgeleitetes Array bestehen, damit alle bisherigen
-   Verbraucher (Badges, Ø-Preis-Vergleich usw.) unangetastet weiterlaufen. */
+   Verbraucher (Badges, Ø-Preis-Vergleich usw.) unangetastet weiterlaufen.
+   Bild: optionales offer.bundleImg (z.B. Mehrpack-/Tray-Packshot bei
+   Multipack-Angeboten mit units>1) geht vor dem normalen Einzelprodukt-Bild
+   (product.img) — fehlt bundleImg (der Normalfall, alle bisherigen Angebote),
+   bleibt exakt das bisherige Verhalten (immer product.img) unangetastet. */
 function buildDeals(offers){
   return offers.map(d=>{
     const product = products.find(p=>p.id===d.productId);
@@ -3424,7 +3431,7 @@ function buildDeals(offers){
       product: product.name,
       brand: product.brand,
       sizeMl: product.sizeMl,
-      img: product.img,
+      img: (typeof d.bundleImg === "string" && d.bundleImg) ? d.bundleImg : product.img,
       pfand: typeof d.pfand === "number" ? d.pfand : PFAND_FALLBACK,
       packaging: d.packaging || PACKAGING_FALLBACK,
       units: typeof d.units === "number" ? d.units : UNITS_FALLBACK,
@@ -3673,6 +3680,13 @@ function render(){
     filtered.sort((a,b)=> new Date(a.validUntil) - new Date(b.validUntil));
   }
 
+  /* Bundles/Mehrpacks (units>1) sollen unabhängig von der Sortierung immer
+     ganz am Ende der Liste stehen. Array.prototype.sort ist seit ES2019
+     spec-mäßig stabil, daher verschiebt dieser zweite sort()-Aufruf nur die
+     Bundles ans Ende und lässt die Reihenfolge innerhalb "Einzelartikel" und
+     innerhalb "Bundles" (jeweils wie oben sortiert) unangetastet. */
+  filtered.sort((a,b)=> (a.units>1?1:0) - (b.units>1?1:0));
+
   count.textContent = filtered.length;
 
   let favLiterMin = Infinity;
@@ -3756,13 +3770,13 @@ function render(){
       card.innerHTML = `
         <div class="card-top">
           <div class="thumb-frame">
-            <img class="thumb" data-product-detail="${deal.productId}" src="${deal.img}" alt="${deal.product}" loading="lazy" referrerpolicy="no-referrer">
+            <img class="thumb" data-product-detail="${deal.productId}" data-deal-id="${deal.id}" src="${deal.img}" alt="${deal.product}" loading="lazy" referrerpolicy="no-referrer">
             <button class="btn fav ${isFav ? "active":""}" data-fav="${deal.productId}" aria-label="Favorit"><svg class="icon icon-md"><use href="#i-heart"/></svg></button>
           </div>
           <div class="card-top-info">
             <div class="card-head">
               <div class="product-name-col">
-                <div class="product" data-product-detail="${deal.productId}">${deal.product}</div>
+                <div class="product" data-product-detail="${deal.productId}" data-deal-id="${deal.id}">${deal.product}</div>
                 <div class="brandtxt">${deal.brand} · ${formatSize(deal)}</div>
               </div>
               ${isBest ? `<button class="badge-best" data-store-detail="${deal.id}"><svg class="icon icon-xs"><use href="#i-trophy"/></svg> BESTER PREIS</button>` : ""}
@@ -3846,6 +3860,7 @@ document.querySelectorAll(".tabs .chip").forEach(button=>{
     selectedBrand = button.dataset.brand;
     render();
     updateStatus();
+    syncUnitsChipsAvailability();
   });
 });
 
@@ -4033,7 +4048,7 @@ dealsContainer.addEventListener("click",(e)=>{
   }
   const productDetailBtn = e.target.closest("[data-product-detail]");
   if(productDetailBtn){
-    openProductDetail(productDetailBtn.dataset.productDetail);
+    openProductDetail(productDetailBtn.dataset.productDetail, productDetailBtn.dataset.dealId);
     return;
   }
   const resetBtn = e.target.closest("[data-reset]");
@@ -4190,6 +4205,36 @@ function updateFilterCount(){
   filterCountEl.classList.toggle("show", n>0);
 }
 
+/* Packungsgrößen-Chips im Filter-Sheet: für die aktuell gewählte Marke
+   (selectedBrand) nicht verfügbare Größen (z.B. "4er Pack" bei Rockstar,
+   das aktuell nur als 12er-Pack existiert) werden per natives disabled-
+   Attribut ausgegraut und nicht mehr anklickbar — geprüft gegen ALLE
+   `deals` (nicht das gefilterte `filtered`-Array), damit z.B. Umkreis/Suche
+   die Verfügbarkeit nicht verfälschen. War die gerade aktive unitsFilter-
+   Auswahl für die neue Marke nicht mehr verfügbar, wird sie automatisch auf
+   "Alle" zurückgesetzt (sonst bliebe ein ausgegrauter Chip fälschlich aktiv
+   markiert, während die Liste bereits leer wäre). */
+function syncUnitsChipsAvailability(){
+  let resetNeeded = false;
+  document.querySelectorAll(".chip[data-units]").forEach(btn=>{
+    const u = btn.dataset.units;
+    if(u === "Alle"){
+      btn.disabled = false;
+      return;
+    }
+    const available = deals.some(d => (selectedBrand==="Alle" || d.brand===selectedBrand) && String(d.units)===u);
+    btn.disabled = !available;
+    if(!available && unitsFilter===u) resetNeeded = true;
+  });
+  if(resetNeeded){
+    unitsFilter = "Alle";
+    document.querySelectorAll(".chip[data-units]").forEach(b=>b.classList.toggle("on", b.dataset.units==="Alle"));
+    render();
+    updateStatus();
+    updateFilterCount();
+  }
+}
+
 function syncStoreChips(){
   document.querySelectorAll(".chip[data-store]").forEach(b=>b.classList.toggle("on", b.dataset.store===storeFilter.value));
 }
@@ -4224,12 +4269,14 @@ function resetExtraFilters(){
   radiusBox.classList.remove("disabled");
   syncRadiusChips();
   syncStoreChips();
+  syncUnitsChipsAvailability();
   updateFilterCount();
 }
 
 document.getElementById("filterBtn").addEventListener("click", ()=>{
   syncRadiusChips();
   syncStoreChips();
+  syncUnitsChipsAvailability();
   openSheet("filterOverlay");
 });
 
@@ -4504,9 +4551,9 @@ function newsCardHtml(item){
       <article class="news-card">
         <div class="news-card-status gold"><svg class="icon icon-xs"><use href="#i-hourglass"/></svg> Demnächst im Angebot</div>
         <div class="news-card-body">
-          <img class="thumb" data-product-detail="${p.id}" src="${img}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer">
+          <img class="thumb" data-product-detail="${p.id}" data-deal-id="${d.id}" src="${img}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer">
           <div class="news-card-text">
-            <div class="news-card-name" data-product-detail="${p.id}">${p.name}</div>
+            <div class="news-card-name" data-product-detail="${p.id}" data-deal-id="${d.id}">${p.name}</div>
             <div class="news-card-meta">${p.brand} · ${p.sizeMl} ml</div>
           </div>
         </div>
@@ -4532,9 +4579,9 @@ function newsCardHtml(item){
     <article class="news-card">
       <div class="news-card-status green"><svg class="icon icon-xs"><use href="#i-tag"/></svg> Jetzt im Angebot</div>
       <div class="news-card-body">
-        <img class="thumb" data-product-detail="${p.id}" src="${img}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer">
+        <img class="thumb" data-product-detail="${p.id}" data-deal-id="${d.id}" src="${img}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer">
         <div class="news-card-text">
-          <div class="news-card-name" data-product-detail="${p.id}">${p.name}</div>
+          <div class="news-card-name" data-product-detail="${p.id}" data-deal-id="${d.id}">${p.name}</div>
           <div class="news-card-meta">${p.brand} · ${p.sizeMl} ml</div>
         </div>
       </div>
@@ -4624,7 +4671,7 @@ function renderAlertsView(){
 alertsView.addEventListener("click", (e)=>{
   const productDetailEl = e.target.closest("[data-product-detail]");
   if(productDetailEl){
-    openProductDetail(productDetailEl.dataset.productDetail);
+    openProductDetail(productDetailEl.dataset.productDetail, productDetailEl.dataset.dealId);
     return;
   }
   const delBtn = e.target.closest("[data-alert-delete]");
@@ -5566,13 +5613,21 @@ function renderOtherStores(deal){
    (Katalogdaten aus products[]), nicht um ein einzelnes Angebot bei einem
    bestimmten Händler — daher als productId adressiert statt als dealId. */
 
-function openProductDetail(productId){
+function openProductDetail(productId, dealId){
   const product = products.find(p=>p.id===productId);
   if(!product) return;
   currentProductDetailId = productId;
 
+  /* Wurde von der Karte eines konkreten Angebots (dealId) geöffnet, das ein
+     eigenes Bundle-Bild hat (deal.img != product.img bei Mehrpacks mit
+     bundleImg, siehe buildDeals()), zeigt der Hero genau dieses Bild statt
+     der Einzeldose — sonst (Ähnliche Produkte, Favoriten, kein dealId) bleibt
+     es wie gehabt product.img. */
+  const deal = dealId ? deals.find(d=>d.id===dealId) : null;
+  const heroImg = (deal && deal.img) ? deal.img : product.img;
+
   const pdImg = document.getElementById("pdImg");
-  pdImg.src = product.img;
+  pdImg.src = heroImg;
   pdImg.alt = product.name;
   pdImg.onerror = function(){ this.src = FALLBACK_IMG; };
 
@@ -5966,6 +6021,7 @@ function finishInit(){
   updateAlertsDot();
   syncRadiusChips();
   syncStoreChips();
+  syncUnitsChipsAvailability();
   updateFilterCount();
   updateConnectionBanner();
   checkDeepLink();

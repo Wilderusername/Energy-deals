@@ -4,6 +4,78 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-04 (11) — Bundles ans Listenende, Packungsgröße pro Marke ausgrauen, Bundle-Bild in Detailansicht
+
+**Umgesetzt (Mobile + Webapp — reine Verhaltens-Erweiterung, kein Design geändert):**
+- **Bundles immer am Ende der Liste**: Nach dem bestehenden Sortier-Schritt in `render()` sortiert ein zweiter, stabiler `sort()`-Aufruf (`(a,b)=>(a.units>1?1:0)-(b.units>1?1:0)`) alle Angebote mit `units>1` ans Ende — die Reihenfolge innerhalb "Einzelartikel" bzw. innerhalb "Bundles" bleibt dabei exakt wie von der gewählten Sortierung (Preis/Entfernung/Ersparnis/Endet bald) vorgegeben, da `Array.prototype.sort` seit ES2019 spezifiziert stabil ist. Gilt für alle Sortieroptionen gleichermaßen.
+- **Packungsgrößen-Filter markenabhängig ausgegraut**: Neue Funktion `syncUnitsChipsAvailability()` prüft für jede Packungsgrößen-Chip (4er/6er/12er/24er) im Filter-Sheet, ob es für die aktuell gewählte Marke (`selectedBrand`) überhaupt ein Angebot mit dieser `units`-Zahl gibt (geprüft gegen das volle `deals`-Array, nicht das bereits gefilterte) — falls nicht, wird die Chip-Schaltfläche per nativem `disabled`-Attribut ausgegraut und nicht mehr anklickbar (neue CSS-Regel `.chip:disabled{opacity:.4;cursor:default}`). Beispiel: Marke "Rockstar" (aktuell nur als 12er-Pack im Sortiment) graut "4er/6er/24er Pack" aus, "12er Pack" bleibt aktiv. War der zuvor aktive `unitsFilter` für die neu gewählte Marke nicht mehr verfügbar, wird er automatisch auf "Alle" zurückgesetzt (sonst bliebe eine ausgegraute Chip fälschlich als "aktiv" markiert, während die Liste bereits leer wäre) — per Test mit Markenwechsel Rockstar→GÖNRGY (keine Mehrpacks) bestätigt: `unitsFilter` sprang automatisch von "12" auf "Alle", Liste zeigte korrekt alle 7 GÖNRGY-Angebote statt leer zu bleiben. Wird aufgerufen beim Marken-Wechsel, beim Öffnen des Filter-Sheets, beim "Zurücksetzen" der Filter und einmalig nach dem initialen Laden der Angebote.
+- **Bundle-Bild jetzt auch in der Produktdetailansicht**: Bisher öffnete ein Klick auf das Bild/den Namen einer Bundle-Karte die Produktdetailansicht immer mit der Einzeldose (`product.img`), weil dort nur die `productId` bekannt war. Die Angebotskarten (Hauptliste UND die Bundle-fähigen "Alarme"-Karten in `newsCardHtml()`) tragen jetzt zusätzlich `data-deal-id="${deal.id}"` auf Bild und Name; `openProductDetail(productId, dealId)` nimmt das optionale zweite Argument entgegen und zeigt als Hero-Bild `deal.img` (das bereits bestehende `bundleImg`-Fallback aus `buildDeals()`) statt `product.img`, wenn ein `dealId` übergeben wurde. Ohne `dealId` (Ähnliche Produkte, Favoriten — unverändert) bleibt exakt das bisherige Verhalten (`product.img`). Nährwerte und "Ähnliche Produkte" bleiben unverändert produktbezogen (nicht angebotsbezogen), wie vom Nutzer nicht angefordert.
+- Verifiziert über einen temporären lokalen Server (Mobile 375px): Bundle-Reihenfolge per `deals.find`+Index-Check bestätigt (erstes Bundle bei Index 50 von 66, danach kein Einzelartikel mehr); Filter-Sheet bei Marke "Rockstar" zeigt 4er/6er/24er ausgegraut, 12er aktiv (Screenshot + `.disabled`-Property-Check); Klick auf Rockstar-12er-Pack-Bild (d66) öffnet Detailansicht mit dem Amazon-Bundle-Bild statt der Einzeldose (Screenshot + `pdImg.src`-Check); Klick auf ein normales Einzelprodukt (d1) zeigt weiterhin korrekt die Einzeldose (Regressionstest); Alarme-Ansicht mit neuem `data-deal-id` funktioniert ebenfalls fehlerfrei; keine Konsolenfehler.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v51` erhöht (Pflichtregel).
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
+## 2026-09-04 (10) — Echte Mehrpack-Produktbilder für die 6 neuen Bundles
+
+**Umgesetzt (Mobile + Webapp — reine Datenergänzung + eine minimale, generische Code-Änderung):**
+- **Neues optionales Offer-Feld `bundleImg`** in `deals.json`: überschreibt für GENAU dieses eine Angebot das Standard-Produktbild (`products[].img`, Einzeldose). In `buildDeals()` (`index.html`): `img: (typeof d.bundleImg === "string" && d.bundleImg) ? d.bundleImg : product.img` — exakt dieselbe Fallback-Kette wie bei `pfand`/`packaging`/`units`/`lastCheckedAt`. Fehlt das Feld (der Fall bei **allen** bisherigen Angeboten, inkl. der 10 alten Multipack-Angebote d51–d60), bleibt das Verhalten 1:1 wie zuvor — nur die 6 neuen Bundle-Angebote (d61–d66) haben das Feld gesetzt.
+- **Produktkatalog bleibt unangetastet**: Das Produktdetail-Sheet und die "Ähnliche Produkte"-Leiste lesen weiterhin ausschließlich `product.img` (Einzeldose) direkt aus `products[]`, komplett unabhängig von `bundleImg` — per Test bestätigt (`pdImg.src` bei p1 weiterhin die Einzeldose, trotz zweier Red-Bull-Bundle-Angebote mit eigenem Bild).
+- **6 real recherchierte Mehrpack-Packshots** (jeweils von der offiziellen Händler-/Retailer-Seite, wie bei den bisherigen Produktbildern):
+  - Red Bull 4×250ml (d61) — Bild von REWE (`img.rewe-static.de`, von der REWE-Produktseite `rewe.de/shop/p/red-bull-energy-drink-4x0-25l/2843250`)
+  - Red Bull 24×250ml (d62) — Bild von Amazon.de (`m.media-amazon.com`, von der Amazon.de-Produktseite für den 24er-Karton)
+  - Monster Energy Classic 12×500ml (d63) — Amazon.de
+  - Monster Mango Loco 12×500ml (d64) — Amazon.de
+  - Monster Pipeline Punch 12×500ml (d65) — Amazon.de
+  - Rockstar Energy Original 12×500ml (d66) — Amazon.de
+  - Jedes Bild wurde vor der Übernahme einzeln visuell im Browser verifiziert (zeigt tatsächlich Tray/Verpackungseinheit mit korrekter Stückzahl/Größe, nicht nur eine Einzeldose) — keines wurde ungeprüft übernommen.
+- `_meta.fields.offers[]` in `deals.json` um die Beschreibung von `bundleImg` ergänzt; `CLAUDE.md` (Abschnitt **Images**) entsprechend aktualisiert.
+- Verifiziert über einen temporären lokalen Server (Mobile 375px): Für alle 6 neuen Angebote zeigt die Karte jetzt das jeweilige Mehrpack-Bild (per Screenshot + `deal.img`-Check bestätigt); alle bisherigen Multipack-Angebote (u.a. d51/d56/d58 Red Bull, d52/d59 Monster Ultra, d57 Carabao, d60 28 Black) zeigen unverändert weiterhin die Einzeldose; alle 6 neuen Bilder laden fehlerfrei (`img.complete`, `naturalWidth` > 0, kein `thumb-fallback`); keine Konsolenfehler; `git diff` bestätigt rein additive Änderung an `deals.json`.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v50` erhöht (Pflichtregel).
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
+## 2026-09-04 (9) — Echte deutsche Energy-Drink-Bundles/Mehrpacks ergänzt
+
+**Umgesetzt (Mobile + Webapp — reine Datenergänzung, betrifft beide gleich):**
+- **Analyse zuerst**: Das bestehende Datenmodell unterstützte Mehrpacks bereits vollständig über das optionale `units`-Feld in `offers[]` (10 Bestandsangebote d51–d60 nutzten es schon, z.B. Red Bull 4/12/24er). `formatSize()`, `totalMl`, Preis-pro-Liter, der Packungsgrößen-Filter ("1/4/6/12/24er Pack") und alle Preisverlaufs-/Badge-Funktionen greifen bereits generisch auf `units` zu — **es waren daher keine Code-Änderungen an `index.html` nötig**, nur neue Datensätze in `deals.json`.
+- **6 neue, real recherchierte Bundle-Angebote** (`d61`–`d66`) für bestehende Produkte ohne bisherige Mehrpack-Angebote bzw. mit Lücken in der Packungsgrößen-Abdeckung, jeweils einem der 6 bestehenden Händler zugeordnet:
+  - Red Bull Energy Drink 4×250ml — REWE — 5,49 € (5,49 €/L)
+  - Red Bull Energy Drink 24×250ml — Lidl — 25,55 € (4,26 €/L)
+  - Monster Energy Classic 12×500ml — EDEKA — 14,39 € (2,40 €/L)
+  - Monster Mango Loco 12×500ml — Netto — 12,99 € (2,16 €/L)
+  - Monster Pipeline Punch 12×500ml — Penny — 17,88 € (2,98 €/L)
+  - Rockstar Energy Original 12×500ml — Kaufland — 17,88 € (2,98 €/L) — Rockstar hatte zuvor **kein einziges** Mehrpack-Angebot.
+- **Quelle für alle 6 Preise**: idealo.de-Preisvergleich (aggregiert reale, aktuelle Angebote deutscher Händler/Verkäufer je exakter Packungsgröße), per Live-Browser-Recherche abgerufen. Die Packungsgröße 6×0,25l für Red Bull Original wurde zusätzlich über die REWE-Produktseite (rewe.de) als real im Sortiment bestätigt, aber mangels belastbarem aktuellem Preisdatenpunkt bewusst NICHT hinzugefügt (keine erfundenen Preise). Ausschließlich Kernvarianten ohne Sondereditionen verwendet, um zuverlässig dauerhaft im deutschen Handel erhältliche Produkte abzubilden.
+- **Kein Hochrechnen aus Einzelpreisen**: Für jedes Bundle wurde der tatsächlich bei idealo.de gelistete Bundle-Gesamtpreis übernommen (nicht Einzeldosenpreis × Anzahl).
+- **`regularPrice` = `offerPrice`** bei allen 6 neuen Angeboten (bewusst kein erfundener "UVP"/Vorher-Preis, da dafür keine belastbare Quelle vorlag) — dadurch zeigt die Karte für diese Angebote transparent "0% GÜNSTIGER" statt eines erfundenen Rabatts; visuell/technisch läuft das über exakt dieselbe bestehende Badge-Logik wie bei allen anderen Angeboten, keine Sonderbehandlung im Code.
+- `pfand` konsistent zur bestehenden Konvention (0,25 €/Dose × units), `packaging: "Dose"`, `distanceKm`/Öffnungszeiten identisch zur jeweils bestehenden Filiale des Händlers übernommen, `link: "#"` (Platzhalter wie bei allen bisherigen Demo-Angeboten), `lastCheckedAt: "2026-09-01"` (konsistent zu `DEMO_TODAY`, wie alle bisherigen Angebote).
+- Verifiziert über einen temporären lokalen Server (Mobile 375px): `deals.length`/Angebotszähler steigt korrekt von 60 auf 66; Packungsgrößen-Filter "12er Pack" liefert korrekt 6 Treffer (2 bestehende + 4 neue); alle 6 neuen Karten rendern mit korrektem Bild, Name, Packungsgröße ("12 × 500 ml" etc.), Preis, Preis/Liter, Pfand, Händler-Logo, Distanz und Öffnungsstatus — identisch zum bestehenden Kartendesign; „Zuletzt geprüft"-Sprechblase und Preisverlauf-Sheet funktionieren für ein neues Bundle (d66) korrekt; keine Konsolenfehler; `git diff --stat` bestätigt rein additive Änderung an `deals.json` (0 gelöschte Zeilen, keine bestehenden Einträge verändert).
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v49` erhöht (Pflichtregel, da `deals.json` in `APP_SHELL`).
+
+**Offen:**
+- Weitere, nicht hinzugefügte Bundle-Kandidaten (z.B. Red Bull Sugarfree/Zero-Mehrpacks, Monster Ultra-Varianten, GÖNRGY-Mehrpacks) mangels ausreichend belastbarer aktueller Preisdaten bei der Recherche bewusst ausgelassen — bei Bedarf in einer Folge-Session gezielt nachrecherchieren.
+- Nutzer könnte optional gezielt einen realistischen `regularPrice` (Vorher-Preis) für die 6 neuen Angebote ergänzen, falls das "0% GÜNSTIGER" optisch stören sollte — aktuell bewusst nicht erfunden.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-04 (8) — Preis-Sprechblase: Emoji entfernt, immer unterhalb positioniert
 
 **Umgesetzt (Mobile + Webapp, wie bei der ursprünglichen Sprechblase):**
