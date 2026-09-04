@@ -4,6 +4,25 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-04 (17) — Echter 6er-Pack gefunden (Red Bull bei Lidl) und ergänzt
+
+**Kontext**: Nutzer bemerkte, dass "6er Pack" im Packungsgrößen-Filter komplett ausgegraut war (0 Angebote mit `units:6` in den Daten, da die drei einzigen 6er-Angebote in einer früheren Sitzung als nicht real verifizierbar entfernt worden waren). Nutzer bat um erneute, auf die 6 in der App abgebildeten Händler (Kaufland, Lidl, EDEKA, Penny, REWE, Netto) beschränkte Prüfung, mit der Auflage, den Filter-Reiter zu entfernen, falls sich nirgendwo etwas findet.
+
+**Ergebnis der Prüfung**: Bei **Lidl gibt es tatsächlich einen echten 6er-Pack** — Red Bull Energy Drink 6×0,25l ist dort laut supermarktcheck.de (aktuell getrackter Preis) das EINZIGE gelistete Red-Bull-Produkt überhaupt, für 7,74 € (5,16 €/L); zusätzlich bereits früher über prospektangebote.de als historisches Lidl-Flyer-Angebot bestätigt. Bei den anderen 5 Händlern und für die übrigen 6 Marken (Monster, Rockstar u.a.) wurde gezielt bei REWE/Kaufland/EDEKA/Lidl/Netto nachgeprüft — kein weiterer 6er-Pack gefunden.
+
+**Umgesetzt**: Da ein echter 6er-Pack gefunden wurde, bleibt der Filter-Reiter erhalten (die Entfernungs-Bedingung galt nur für den Fall "nirgendwo etwas gefunden"). Stattdessen 1 neues, real recherchiertes Bundle-Angebot ergänzt (`d67`): Red Bull Energy Drink 6×250ml, Lidl, 7,74 €, Bundle-Bild von der REWE-Produktseite für dieselbe Packungsgröße (`img.rewe-static.de/0116447/...`, zeigt "6 PACK 250ml", visuell verifiziert). `git diff` bestätigt rein additive Änderung an `deals.json` (nur 1 neuer Offer, nichts Bestehendes verändert).
+- Verifiziert über einen temporären lokalen Server (Mobile 375px): Packungsgrößen-Filter zeigt "6er Pack" wieder als aktiv/anklickbar; Filtern danach liefert genau 1 Treffer (Red Bull, Lidl, 7,74 €) mit korrektem Bundle-Bild und Preis pro Liter; keine Konsolenfehler.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v57` erhöht (Pflichtregel).
+
+**Offen:**
+- Keine offenen Rückfragen.
+
+**Bekannte Fehler / nächste Schritte:**
+- Keine bekannten Fehler.
+- Nicht committet/gepusht — Nutzer committet/pusht selbst nach eigenem Test in der Vorschau.
+
+---
+
 ## 2026-09-04 (16) — Scroll-Chaining behoben (Hintergrund scrollte in offenen Sheets mit)
 
 **Umgesetzt (Mobile + Webapp — reine CSS-Ergänzung, keine Design-/Layoutänderung):**

@@ -1120,6 +1120,22 @@
       "packaging": "Dose",
       "units": 12,
       "lastCheckedAt": "2026-09-01"
+    },
+    {
+      "id": "d67",
+      "productId": "p1",
+      "store": "Lidl",
+      "regularPrice": 7.74,
+      "offerPrice": 7.74,
+      "distanceKm": 3.1,
+      "validFrom": "2026-08-27",
+      "validUntil": "2026-09-13",
+      "link": "#",
+      "bundleImg": "https://img.rewe-static.de/0116447/2868120_digital-image.png?imwidth=840&impolicy=pdp",
+      "pfand": 1.5,
+      "packaging": "Dose",
+      "units": 6,
+      "lastCheckedAt": "2026-09-01"
     }
   ]
 }
