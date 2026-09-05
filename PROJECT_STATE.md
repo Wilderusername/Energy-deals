@@ -4,6 +4,35 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-05 (37) — Allgemeine Fehlersuche: 3 echte Bugs + 1 Textfehler gefunden und behoben
+
+Auf ausdrücklichen Wunsch ("Prüfe die App nur noch auf Fehler und Bugs und behebe diese") systematisch durch die komplette Mobile-Version geklickt (Burger-Menü, Mein Bereich/Konto verwalten, Suche, Favoriten, Alarme, Produktdetail, Preisverlauf/Preisalarm, Händler-Detail, Filter-/Sortier-Sheet, Kartenansicht, Standort-Sheet). Gefunden und behoben:
+
+- **E-Mail-Speichern ohne Formatprüfung**: Im Feld "E-Mail-Adresse" (`accountManageOverlay`) wurde beim Speichern nur auf "nicht leer" geprüft, nicht auf ein gültiges Format — `"not-an-email"` wurde anstandslos gespeichert und mit "E-Mail-Adresse aktualisiert." bestätigt. Fix: einfache Regex-Prüfung (`^[^\s@]+@[^\s@]+\.[^\s@]+$`) vor dem Speichern; bei ungültigem Format bleibt das Feld offen und zeigt "Bitte eine gültige E-Mail-Adresse eingeben." statt falsch-positiv zu bestätigen.
+- **Suche reagierte nicht auf Enter**: Die Freitextsuche filterte die Liste ausschließlich, wenn ein Vorschlag aus dem Autocomplete-Dropdown angeklickt wurde (`committedSearch` wurde nur dort gesetzt) — Tippen eines Suchbegriffs und Bestätigen mit Enter tat schlicht nichts, die Liste blieb ungefiltert. Fix: `keydown`-Handler auf dem Suchfeld übernimmt bei Enter jetzt den getippten Text als `committedSearch` und rendert neu (Vorschlags-Klick funktioniert unverändert weiter).
+- **Karten-Pins konnten sich überlappen**: In der Kartenansicht (`renderMap()`) werden Händler-Pins per gehashtem Winkel + normierter Distanz positioniert (bewusst keine echten Koordinaten, siehe CLAUDE.md) — bei Händlern mit ähnlicher Entfernung/Winkel (z.B. Kaufland 1,4 km und REWE 2,2 km in den Testdaten) landeten die Preis-Badges direkt übereinander und wurden unleserlich (z.B. "0,89 €" nur noch als "89 €" sichtbar). Fix: einfache iterative Kollisionsvermeidung nach der ersten Platzierung — Pins, die sich näher als ein Mindestabstand kommen, werden entlang ihrer Verbindungslinie leicht auseinandergeschoben. Rein visuell, ändert nichts an Distanzwerten/Sortierung/Klickverhalten.
+- **Irreführender Hinweistext im leeren Alarme-Tab**: Text lautete "Öffne ein Angebot und lege im Produktdetail einen Wunschpreis fest" — der Preisalarm-Regler liegt aber tatsächlich im Preisverlauf-Sheet (`histOverlay`, Button "Preisverlauf" auf der Angebotskarte), nicht im Produktdetail (Nährwerte/Ähnliche Produkte). Text korrigiert auf "Öffne bei einem Angebot den Preisverlauf und lege dort einen Wunschpreis fest."
+
+Alle vier Fixes einzeln über einen temporären lokalen Server (nur Mobile, 375×812) verifiziert: E-Mail-Validierung lehnt ungültige Eingaben ab und akzeptiert weiterhin gültige; Enter-Suche filtert korrekt (Test mit "Monster" → 16 statt 61 Angebote, leere Trefferliste zeigt korrekt den bestehenden Empty-State); Karten-Pins zeigen nach dem Fix alle Preise lesbar nebeneinander statt übereinander; Alarme-Tab-Text korrigiert, restlicher Preisalarm-Ablauf (Setzen/Anzeigen/Umschalten/Löschen/"Angebote ansehen") vollständig durchgetestet und fehlerfrei. Zusätzlich ohne Befund geprüft (keine Änderung nötig): Konto verwalten (Name/Geburtsdatum/Passwort-Felder, Klick-außerhalb-schließt, zweistufiges Konto-löschen), Produktdetail (Nährwerte auf-/zuklappen, Ähnliche Produkte), Händler-Detail-Sheet (Scroll-Verhalten war ein Fehlalarm meinerseits, Sheet scrollt korrekt), Filter-Sheet (Anwenden/Zurücksetzen), Sortier-Sheet (alle vier Optionen), Standort-Sheet (Umkreis-Regler, "Ganz Deutschland durchsuchen"-Umschalter deaktiviert den Regler korrekt), Favoriten-Ansicht (Liste + Karte).
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v80` erhöht (Pflichtregel; v77 E-Mail-Fix, v78 Such-Fix, v79 Alarme-Text, v80 Karten-Pin-Fix).
+
+**Hinweis zum Umfang**: Ausschließlich Mobile-Version bearbeitet und verifiziert, wie seit [[feedback-scope-mobile-only-default]] festgelegt — Desktop/Webapp nicht angefasst, nicht getestet, nicht erwähnt.
+
+---
+
+## 2026-09-05 (36) — Nachtrag: Favoriten-Fix (35) war noch zu grob, jetzt exakte Packungsgrößen-Unabhängigkeit
+
+**Korrektur von (35)**: Der "single"/"bundle"-Schlüssel aus (35) fasste noch alle Mehrpackgrößen (4er/6er/12er/24er) eines Produkts zu EINEM gemeinsamen Bundle-Status zusammen — Favorisieren des 12er-Packs zeigte dadurch fälschlich auch das 24er-Pack derselben Sorte unter "Favoriten". Gewünscht (und jetzt umgesetzt): JEDE exakte Packungsgröße hat einen komplett unabhängigen Favoriten-Status, produkt- und markenübergreifend.
+
+**Umsetzung**: Schlüssel geändert von `"productId:single"`/`"productId:bundle"` auf `"productId:units"` (z.B. `"p3:12"`, `"p3:24"` als getrennte Einträge) — `favKeyFor(productId, units)`, `favKeyForDeal(deal)`, `favProductId(key)`, `favUnitsFromKey(key)`, `isProductFavoritedAtAll(productId)`. Alle Verbraucher dieser Schlüssel (Angebotskarten-Herz, Favoriten-Tab-Filter, `favLiterMin`, Umkreis-Erweiterungs-Zählung, `computeFavoriteEvents()`, `getRelevantNotifications()`, Herz-Button im Preisverlauf-Sheet) nutzen jetzt `favUnitsFromKey()`/`favProductId()` statt der alten Single/Bundle-Unterscheidung. Migration bestehender `":single"`/`":bundle"`-Einträge sowie noch älterer reiner `productId`-Einträge auf das neue Format beim Start ergänzt.
+
+Verifiziert über einen temporären lokalen Server (nur Mobile): Favorisieren des Red-Bull-12er-Packs zeigt in "Favoriten" ausschließlich das 12er-Pack, weder 4er/6er/24er noch die Einzeldose; umgekehrt ebenso geprüft; Verhalten datenbasiert über `units`, nicht Red-Bull-spezifisch.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v76` erhöht (Pflichtregel).
+
+**Hinweis zum Umfang**: Ausschließlich Mobile-Version, siehe [[feedback-scope-mobile-only-default]].
+
+---
+
 ## 2026-09-05 (35) — Favoriten: Einzelartikel und Bundles unabhängig voneinander favorisierbar (statt Bundles komplett auszuschließen)
 
 **Korrektur der letzten Änderung**: (34) hatte Bundles komplett von der Favoriten-Funktion ausgeschlossen (kein Herz-Symbol mehr auf Mehrpack-Karten). Das war zu weitgehend — gewünscht war stattdessen, dass Einzelartikel und Bundles UNABHÄNGIGE Favoriten-Zustände haben: Favorisieren der Einzeldose darf die Bundles nicht mit favorisieren, aber Bundles sollen weiterhin eigenständig favorisierbar sein (und umgekehrt: Favorisieren eines Bundles darf nicht die Einzeldose mit favorisieren).

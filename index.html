@@ -4509,6 +4509,13 @@ document.addEventListener("click",(e)=>{
 
 search.addEventListener("keydown",(e)=>{
   if(e.key === "Escape") hideSearchSuggestions();
+  if(e.key === "Enter"){
+    e.preventDefault();
+    committedSearch = search.value.trim();
+    hideSearchSuggestions();
+    render();
+    updateStatus();
+  }
 });
 
 search.addEventListener("input",()=>{
@@ -4685,14 +4692,43 @@ function renderMap(filtered){
     `<div class="map-ring" style="width:${f*90}%;height:${f*90}%"></div>`
   ).join("");
 
-  const pins = stores.map(s=>{
+  const pinPositions = stores.map(s=>{
     const angle = (hashStr(s.store) % 360) * Math.PI/180;
     const r = Math.min(s.distanceKm/maxDist, 0.92) * 45;
-    const x = 50 + r*Math.cos(angle);
-    const y = 50 + r*Math.sin(angle);
-    const selected = selectedMapStore===s.store;
-    return `<button class="map-pin ${selected?"selected":""}" style="left:${x}%;top:${y}%" data-store="${s.store}">
-      <span class="pin-logo"><img src="${storeLogos[s.store] || STORE_FALLBACK_IMG}" alt="${s.store}" referrerpolicy="no-referrer"></span>
+    return {store:s.store, x: 50 + r*Math.cos(angle), y: 50 + r*Math.sin(angle)};
+  });
+
+  /* Kollisionsvermeidung: Händler mit ähnlicher Entfernung/Winkel landen
+     sonst so dicht beieinander, dass sich ihre Preis-Badges überlappen und
+     unlesbar werden (z.B. "0,89 €" und "0,95 €" übereinander). Pins, die
+     sich zu nah kommen, werden iterativ entlang ihrer Verbindungslinie
+     auseinandergeschoben - rein visuell, ändert nichts an distanceKm/Sortierung. */
+  const MIN_PIN_DIST = 16;
+  for(let iter=0; iter<8; iter++){
+    let moved = false;
+    for(let i=0;i<pinPositions.length;i++){
+      for(let j=i+1;j<pinPositions.length;j++){
+        const dx = pinPositions[j].x - pinPositions[i].x;
+        const dy = pinPositions[j].y - pinPositions[i].y;
+        const dist = Math.hypot(dx,dy) || 0.001;
+        if(dist < MIN_PIN_DIST){
+          const push = (MIN_PIN_DIST - dist)/2;
+          const ux = dx/dist, uy = dy/dist;
+          pinPositions[i].x -= ux*push; pinPositions[i].y -= uy*push;
+          pinPositions[j].x += ux*push; pinPositions[j].y += uy*push;
+          moved = true;
+        }
+      }
+    }
+    if(!moved) break;
+  }
+  pinPositions.forEach(p=>{ p.x = Math.max(6, Math.min(94,p.x)); p.y = Math.max(6, Math.min(94,p.y)); });
+
+  const pins = pinPositions.map(p=>{
+    const s = byStore[p.store];
+    const selected = selectedMapStore===p.store;
+    return `<button class="map-pin ${selected?"selected":""}" style="left:${p.x}%;top:${p.y}%" data-store="${p.store}">
+      <span class="pin-logo"><img src="${storeLogos[p.store] || STORE_FALLBACK_IMG}" alt="${p.store}" referrerpolicy="no-referrer"></span>
       <span class="pin-price">${euro(s.minPrice)} €</span>
     </button>`;
   }).join("");
@@ -5155,7 +5191,7 @@ function renderAlertsView(){
       <div class="empty">
         <svg class="icon icon-xl"><use href="#i-target"/></svg><br><br>
         <b>Noch keine Preisalarme.</b><br>
-        Öffne ein Angebot und lege im Produktdetail einen Wunschpreis fest.
+        Öffne bei einem Angebot den Preisverlauf und lege dort einen Wunschpreis fest.
         <br><br>
         <button class="btn primary" data-alert-tohome style="display:inline-flex">Angebote entdecken</button>
       </div>`;
@@ -5776,6 +5812,10 @@ document.querySelectorAll("[data-save]").forEach(btn=>{
     } else {
       const val = profileEmailInput.value.trim();
       if(!val) return;
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)){
+        showToast("Bitte eine gültige E-Mail-Adresse eingeben.");
+        return;
+      }
       profileEmailText.textContent = val;
       localStorage.setItem("canspot-email", val);
       showToast("E-Mail-Adresse aktualisiert.");
