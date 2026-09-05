@@ -4,6 +4,26 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-05 (45) — Zwei echte Bugs in der Bildfreistellung gefunden: Schwarz-Verfärbung (Resize-Farbverlauf) und weißer Hintergrund (Flood-Fill-Limitierung)
+
+**Gemeldet**: (a) Monster Energy Ultra 24er zeigt im unteren Kartonbereich Schwarz statt der eigentlichen hellgrauen Verpackung im Dark Mode. (b) Red Bull 12er hat immer noch sichtbaren weißen Hintergrund.
+
+**Bug 1 — Schwarzfärbung durch Resize (betraf Monster Ultra 24er UND Monster Ultra 4er)**: Pillows `resize()` interpoliert RGB- und Alpha-Kanal unabhängig voneinander (kein premultiplied alpha). Da transparente Pixel aus dem Freistellen willkürliche RGB-Werte behalten (bei Flood-Fill z.B. Schwarz), erzeugt jedes Verkleinern in der Nähe der Grenze zwischen einer hellen, undurchsichtigen Produktfläche und dem transparenten Rand/Padding einen sichtbaren dunklen Verlaufs-Schmier — obwohl das Bild vor dem Resize noch sauber aussah. Genau das hat den unteren Kartonbereich (nah am unteren Padding-Rand) bei Monster Ultra 24er schwarz gefärbt; beim Testen fiel auf, dass Monster Ultra 4er denselben Fehler bereits VOR dieser Rückmeldung hatte (nicht gemeldet, aber beim Gegencheck gefunden).
+- **Fix**: Vor jedem Resize werden die Randfarben der undurchsichtigen Bildbereiche iterativ (~12-15 Durchläufe) in die angrenzenden transparenten Bereiche hinein ausgedehnt (Alpha bleibt unverändert, nur die RGB-Werte "bluten" nach außen) — danach verursacht das Resize keinen Farbkontrast mehr an dieser Grenze.
+
+**Bug 2 — Red Bull 12er zeigte weiterhin weißen Hintergrund**: Anders als angenommen war dieses REWE-Bild NICHT sauber freigestellt, sondern hatte nativ eine rechteckige Alpha-Maske mit einem eingebackenen weißen "See" um die eigentliche (isometrisch gekippte) Kartonform. Ursache im eigenen Flood-Fill-Ansatz gefunden: `ImageDraw.floodfill` vergleicht alle 4 RGBA-Kanäle — startet der Fill an einem bereits transparenten Eckpixel (Alpha 0), kann er niemals zu undurchsichtigen weißen Hintergrundpixeln (Alpha 255) vordringen, egal wie hoch der Schwellwert ist, weil allein die Alpha-Differenz (255) jeden sinnvollen Schwellwert übersteigt.
+- **Fix**: Vor dem Flood-Fill wird das Bild auf einen weißen Hintergrund kompositiert (macht bereits-transparente Randbereiche für den Fill wieder mit dem Hintergrund verbunden/gleichfarbig), erst DANN wird von den Ecken geflutet.
+- **Nebenbefund beim Beheben**: Nicht jedes REWE-Bild ist gleich sauber vorbereitet — andere REWE-Bilder (Red Bull 4er/6er, Monster Ultra 4er) waren nativ bereits korrekt freigestellt (Alpha-Maske an den Ecken der Inhalts-Bounding-Box bereits transparent), Red Bull 12er dagegen nicht. Pauschales erneutes Freistellen ALLER Bilder (wie in (44) gemacht) ist deshalb riskant: bei den bereits sauberen Bildern hat genau das Bug 1 hierüber hinaus noch verschärft, weil erneutes Flood-Fill dort baugleiche, aber eigentlich zum Produkt gehörende weiße Flächen (z.B. das weiße Rückseiten-Panel bei Monster Ultra 4er) fälschlich mit entfernt hat, wenn sie farblich nicht vom Hintergrund zu unterscheiden UND mit ihm verbunden waren.
+- **Fix**: Neue Erkennung vor dem Verarbeiten — Alpha-Werte an den (leicht eingerückten) Ecken der Inhalts-Bounding-Box prüfen: bereits transparent → Quelle ist sauber, Flood-Fill überspringen (nur die Randzonen-Bereinigung aus (44) läuft noch); bereits opak → Quelle braucht echtes Freistellen (Kompositieren-auf-Weiß-Ansatz von Bug 2).
+
+Alle 11 lokalen Bundle-Bilder mit beiden Fixes kombiniert aus den Original-Quellbildern neu erzeugt (Zuschnitt/Ränder aus (41)-(44) unverändert beibehalten). **Systematisch alle 11 erneut bei 3-4-facher Vergrößerung auf hellem UND dunklem Hintergrund geprüft** — keine Schwarz-/Weißverfärbung, keine Ränder mehr sichtbar. Zusätzlich per Canvas-Pixel-Sampling bestätigt, dass das Herz bei allen 13 Bundle-Angeboten weiterhin frei liegt. Als allgemeinen App-Check zusätzlich geprüft: Gesamtzahl Angebote (62), "Neuheiten"-Filter (weiterhin exakt 1 Treffer), Favoriten-Toggle (korrekt, mit frischer DOM-Abfrage statt der veralteten Referenz aus (43)), Produktdetail-Nährwerte (Monster Energy Ultra: 10 kcal/0g Zucker/150mg Koffein/4,5g Kohlenhydrate für 500ml, stimmt mit der Marken-/Produkt-Nährwerttabelle überein), Burger-Menü "Neuheiten"-Akkordeon (zeigt weiterhin Glacier Edition) — alles unauffällig, keine weiteren Bugs gefunden. Keine Konsolenfehler.
+- [CLAUDE.md](CLAUDE.md) aktualisiert: Freistellungs-Rezept um beide Fixes (Farb-Ausdehnung vor Resize, Kompositieren-auf-Weiß vor Flood-Fill) sowie die Ecken-Heuristik zur Erkennung bereits sauberer Quellen ergänzt.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v90` erhöht (Pflichtregel).
+
+**Hinweis zum Umfang**: Ausschließlich Mobile-Version bearbeitet und verifiziert, wie seit [[feedback-scope-mobile-only-default]] festgelegt — Desktop/Webapp nicht angefasst, nicht getestet, nicht erwähnt.
+
+---
+
 ## 2026-09-05 (44) — Freistellungs-Bug (weiße Ränder) bei Monster Pipeline Punch gefunden und bei ALLEN Bundle-Bildern nachgebessert
 
 **Gemeldeter Bug**: Bei Monster Pipeline Punch 12er zeigte das freigestellte Bild im Dark Mode noch sichtbare weiße/helle Ränder um die Dosen/Box herum statt eines sauberen Ausschnitts.
