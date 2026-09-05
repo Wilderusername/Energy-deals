@@ -4,6 +4,23 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-05 (46) — Monster Ultra 24er tatsächlich behoben: Ursache war eine zu großzügige Flood-Fill-Schwelle, nicht der Resize
+
+**Gemeldet**: Der in (45) als behoben gemeldete Fehler beim Monster Ultra 24er (dunkler Kartonboden im Dark Mode) bestand weiterhin.
+
+**Fehldiagnose in (45) korrigiert**: Der dort vermutete und "behobene" Resize-Farbverlauf-Bug war real, aber NICHT die Ursache dieses konkreten Fehlers — er betraf eine andere Bildstelle. Ausführlich neu untersucht (Pixel-für-Pixel-Vergleich zwischen Original, Zwischenschritten vor/nach Freistellen, vor/nach Padding, vor/nach Resize, sowie ein synthetischer Test der Resize-Mathematik selbst): weder "Randfarben vor dem Resize ausdehnen" noch ein mathematisch korrektes premultiplied-alpha-Resize noch ein nicht-ringender Resize-Filter (BOX statt LANCZOS) haben etwas an dem Fehler geändert — der Bug bestand nachweislich bereits VOR jedem Resize, direkt nach dem Freistellen.
+
+**Tatsächliche Ursache**: Das Flood-Fill (Schwellwert 25) hat sich durch die weißen Lücken des "Monster"-Krallenspur-Logos (dünne schwarze Striche auf weißem Karton-Panel) hindurchgefressen, weil diese Lücken über einen schmalen, ähnlich hellen Pfad entlang der schräg auslaufenden Kartonkante mit dem echten Hintergrund verbunden waren — Flood-Fill kann nicht unterscheiden zwischen "Hintergrund" und "Produktgrafik", sobald beide farblich ununterscheidbar UND verbunden sind. Das Ergebnis: ein großes, krallenspur-förmiges Loch direkt in der Alpha-Maske, sichtbar als "tropfender" schwarzer Fleck nach dem Zusammensetzen auf dunklem Hintergrund — optisch täuschend ähnlich zu einem Resize-Rand-Artefakt, daher die Fehldiagnose in (45).
+- **Fix**: Flood-Fill-Schwellwert von 25 auf 5 reduziert. Bei Schwellwert 5 bleibt die Krallenspur-Grafik intakt (durch mehrfachen Test in 5er-Schritten verifiziert: 5 sauber, 10 leicht angefressen, 15+ zunehmend schlimmer). Die dadurch fehlende Aggressivität beim Entfernen von JPEG-Kompressions-Ausfransungen wird weiterhin vom unabhängigen Randzonen-Cleanup-Schritt aus (44) abgefangen (der hängt nicht vom Flood-Fill-Schwellwert ab) — erneut an allen betroffenen Bildern (Pipeline Punch, Rockstar, Classic, Mango Loco, 28 Black) verifiziert, dass dort weiterhin keine Ränder auftauchen.
+
+Alle 11 lokalen Bundle-Bilder mit dem korrigierten (niedrigeren) Schwellwert neu erzeugt. Systematisch alle 11 erneut bei 2-4-facher Vergrößerung auf hellem UND dunklem Hintergrund geprüft, inklusive eines gezielten Zooms exakt auf die vorher fehlerhafte Kartonstelle beim Monster Ultra 24er — jetzt nachweislich sauber und deckungsgleich mit dem Originalfoto. Zusätzlich per Canvas-Pixel-Sampling in der laufenden App bestätigt, dass das Herz bei allen 13 Bundle-Angeboten weiterhin frei liegt, sowie ein allgemeiner Funktionscheck (Angebotszahl 62, Neuheiten-Filter exakt 1 Treffer, Favoriten-Toggle korrekt) — keine weiteren Bugs gefunden. Keine Konsolenfehler.
+- [CLAUDE.md](CLAUDE.md) aktualisiert: Freistellungs-Rezept korrigiert (niedriger Flood-Fill-Schwellwert statt hoch) und explizit dokumentiert, dass ein "tropfender", einer bestimmten Grafik folgender Fleck fast immer vom Flood-Fill-Schritt kommt, nicht vom Resize — spart bei zukünftigen ähnlichen Fehlern die falsche Fährte, die diese Runde gekostet hat.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v91` erhöht (Pflichtregel).
+
+**Hinweis zum Umfang**: Ausschließlich Mobile-Version bearbeitet und verifiziert, wie seit [[feedback-scope-mobile-only-default]] festgelegt — Desktop/Webapp nicht angefasst, nicht getestet, nicht erwähnt.
+
+---
+
 ## 2026-09-05 (45) — Zwei echte Bugs in der Bildfreistellung gefunden: Schwarz-Verfärbung (Resize-Farbverlauf) und weißer Hintergrund (Flood-Fill-Limitierung)
 
 **Gemeldet**: (a) Monster Energy Ultra 24er zeigt im unteren Kartonbereich Schwarz statt der eigentlichen hellgrauen Verpackung im Dark Mode. (b) Red Bull 12er hat immer noch sichtbaren weißen Hintergrund.
