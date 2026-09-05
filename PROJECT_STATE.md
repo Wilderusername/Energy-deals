@@ -4,6 +4,86 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-05 (33) — Abstand "Sicherheit" → "Konto löschen" vergrößert
+
+**Umgesetzt:** Ausschließlich `margin-top` des `.field-label` "Konto löschen" (das gleichzeitig die Trennlinie trägt) von `32px` auf `44px` erhöht — die Trennlinie wandert dadurch entsprechend weiter nach unten mit. Nichts sonst an diesem Bereich angefasst: `padding-top:22px` (Abstand Linie → Text "Konto löschen"), Beschreibungstext, Button (Größe/Position/Farbe/Radius) und alle anderen Bereiche der Seite unverändert.
+
+**Verifiziert** über einen temporären lokalen Server (Mobile + Desktop): Abstand zwischen Passwort-Feld und Trennlinie per `getBoundingClientRect()` nachgemessen (jetzt 44px statt zuvor 32px), Innenabstände des Löschbereichs selbst unverändert (`padding-top:22px`, Beschreibungstext-`margin-bottom:10px` identisch); keine Konsolenfehler.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v73` erhöht (Pflichtregel).
+
+---
+
+## 2026-09-05 (32) — Bugfix Passwort-Feld + "Konto löschen" zweistufig mit Bestätigung neu gestaltet
+
+**Bugfix (gemeldet): Passwort-Bearbeitungsfeld klappte nie wieder ein.**
+- Ursache: Die Felder Name/E-Mail/Geburtsdatum/Adresse/Passwort (`.field-edit-row`) hatten noch nie ein "Klick außerhalb schließt"-Verhalten - fiel bisher nur beim neuen Passwort-Feld auf, da die anderen meist direkt über "Speichern" wieder geschlossen wurden.
+- Fix: Ein Klick-Handler auf `#accountManageOverlay` prüft bei jedem Klick, ob ein `.field-block` gerade ein offenes Bearbeiten-Feld hat UND der Klick außerhalb dieses Blocks lag - falls ja, wird es eingeklappt. Klicks auf den Stift, in die Eingabefelder selbst oder auf "Speichern" bleiben davon unberührt (lösen weiterhin ihre eigenen, unveränderten Handler aus). Gilt jetzt einheitlich für alle fünf Felder, nicht nur Passwort.
+
+**"Konto löschen" neu gestaltet (zweistufig, gemäß Vorgabe):**
+- Überschrift "Gefahrenzone" → "Konto löschen"; Beschreibungstext ersetzt durch den vorgegebenen Wortlaut; Abschnitt zusätzlich per Trennlinie + größerem Abstand (`border-top`/`margin-top:32px`) sichtbar vom übrigen Kontobereich abgesetzt.
+- Erster Button (`#deleteAccountBtn`) bleibt unverändert der bereits vorhandene `.profile-action-danger`-Stil (dunkler Grund, rote Outline/Schrift/Icon über `currentColor`) - dieser existierte bereits exakt in der gewünschten "nicht vollflächig rot"-Optik, wurde nur inhaltlich (Text) angepasst, nicht das Styling.
+- Klick darauf öffnet jetzt statt direkt eines Toasts eine neue Bestätigungs-Sheet (`#deleteAccountConfirmOverlay`, wiederverwendet die bestehende generische Sheet-Infrastruktur `openSheet`/`closeSheet`/`[data-close]` - keine neue Dialog-Komponente): Überschrift "Konto wirklich löschen?", vorgegebener Text, "Abbrechen" (neuer Einsatz der bereits vorhandenen, bisher ungenutzten `.sheet-btn-secondary`-Klasse) und "Konto endgültig löschen" (neue Klasse `.sheet-btn-danger`, direkt auf `.sheet-btn` aufgesetzt wie `.sheet-btn-secondary` - einzige vollflächig rote Aktion der App, `#ef4444` als modernes Rot gemäß Vorgabe, da die gedeckten `--status-error-*`-Tokens als Flächenfarbe blass gewirkt hätten). Erst ein Klick auf "Konto endgültig löschen" löst den bisherigen (unveränderten) Demo-Hinweis-Toast aus.
+- **Bug gefunden und behoben, bevor er auffiel**: Ein HTML-Kommentar wurde versehentlich mit JS-Syntax `*/` statt `-->` geschlossen - dadurch verschluckte der nicht beendete Kommentar sämtliches nachfolgendes Markup bis zum nächsten zufälligen "-->" im Dokument, wodurch u.a. `#deleteAccountBtn` aus dem DOM verschwand und ein `Cannot read properties of null`-Fehler beim Skriptstart auftrat. Beim ersten Testdurchlauf in der Konsole bemerkt und sofort korrigiert.
+- Verifiziert über einen temporären lokalen Server (Mobile + Desktop): Passwort-Feld (und alle anderen Felder) klappen jetzt beim Klick woanders zuverlässig ein, Tippen in Eingabefeldern und Wechsel zu einem anderen Feld funktionieren weiterhin korrekt; "Konto löschen" öffnet die neue Bestätigung, "Abbrechen" kehrt sauber zu "Konto verwalten" zurück, "Konto endgültig löschen" zeigt den bekannten Demo-Toast; keine doppelten IDs, keine Konsolenfehler nach dem Fix.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v72` erhöht (Pflichtregel).
+
+---
+
+## 2026-09-05 (31) — "Adresse" in "Konto verwalten" optisch ausgeblendet, "Passwort ändern" ergänzt
+
+**Umgesetzt:**
+- **"Adresse" nur optisch entfernt, Funktion vollständig erhalten**: Feld-Label und `#addressBlock` bekommen `style="display:none"`, Markup/JS (`profileStreet`/`profileZip`/`profileCity`/`profileCountry`, `[data-save="address"]`-Zweig, `localStorage`-Schlüssel `canspot-address`) bleiben unverändert bestehen — per Test bestätigt: Speichern über die (aktuell unsichtbaren) Adressfelder schreibt weiterhin korrekt nach `localStorage`. Lässt sich später durch einfaches Entfernen der beiden `display:none` wieder einblenden, ohne etwas neu bauen zu müssen.
+- **Neuer Punkt "Passwort" unter "Sicherheit"** (ersetzt an derselben Stelle die bisherige "Adresse"-Gruppe): folgt exakt demselben Bearbeiten-Muster wie Name/E-Mail/Geburtsdatum (`.field-block`/`.field-view`/`.field-edit-row`, generischer `[data-edit]`/`[data-save]`-Mechanismus). Zeigt im Ruhezustand eine maskierte Platzhalterzeile ("••••••••") statt eines echten Werts (wie in vergleichbaren Apps üblich, da ein Passwort nie im Klartext angezeigt wird); Antippen des Stifts öffnet drei Felder (Aktuelles Passwort, Neues Passwort, Neues Passwort bestätigen) plus "Speichern".
+- **Bewusste Sicherheits-/Demo-Entscheidung**: Anders als Name/E-Mail/Geburtsdatum wird das neue Passwort NICHT in `localStorage` gespeichert (dort gäbe es ohnehin nichts, das es anzeigen oder damit vergleichen könnte, da kein echtes Backend existiert) — "Speichern" validiert nur, dass alle drei Felder ausgefüllt sind und die neuen Passwörter übereinstimmen, zeigt bei Erfolg einen Bestätigungs-Toast und leert die Felder wieder, bei Fehlern bleibt die Zeile offen (gleiches Verhalten wie bei leerem Namen/E-Mail).
+- Verifiziert über einen temporären lokalen Server (Mobile + Desktop): "Adresse" ist nicht mehr sichtbar, "Passwort" erscheint an ihrer Stelle unter neuer Gruppe "Sicherheit"; Validierung (leere Felder, nicht übereinstimmende Passwörter) funktioniert und hält die Zeile offen; erfolgreicher Speichervorgang zeigt Toast, leert Felder, schließt die Zeile, legt nachweislich keinen Wert in `localStorage` ab; Adress-Logik im Hintergrund weiterhin nachweislich funktionsfähig; keine doppelten IDs, keine Konsolenfehler.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v71` erhöht (Pflichtregel).
+
+---
+
+## 2026-09-05 (30) — Geburtsdatum in "Konto verwalten" ergänzt, "Favoriten" aus "Mein Bereich" entfernt
+
+**Umgesetzt:**
+- **Neues Feld "Geburtsdatum"** unter "Konto verwalten" → "Persönliche Daten", direkt zwischen E-Mail-Adresse und Adresse eingefügt. Nutzt exakt dasselbe bereits vorhandene Bearbeiten-Muster wie Name/E-Mail (`.field-block`/`.field-view`/`.field-edit-row`, generischer `[data-edit]`/`[data-save]`-Mechanismus samt `FIELD_FOCUS_TARGET`-Eintrag) - keine neue UI-Logik, nur ein weiteres Feld im bestehenden System. `<input type="date">`, Anzeige über die bereits vorhandene `formatSingleDate()` (liefert "TT.MM.JJJJ", dieselbe Funktion, die auch beim "Preis geprüft"-Hinweis auf den Angebotskarten verwendet wird). Persistiert unter dem neuen `localStorage`-Schlüssel `canspot-birthdate`, wird beim Laden wie Name/E-Mail/Adresse übernommen.
+- **"Favoriten" aus "Mein Bereich" entfernt** (war erst in der vorherigen Änderung hinzugekommen): Zeile unter "Meine Aktivität" samt Klick-Handler restlos entfernt. "Meine Aktivität" enthält jetzt nur noch "Zuletzt angesehen" (Platzhalter). Favoriten bleiben unverändert über den bestehenden Favoriten-Tab der Bottom Navigation erreichbar - daran hat sich nichts geändert, es ist lediglich der zusätzliche Verweis darauf in "Mein Bereich" wieder verschwunden.
+- Verifiziert über einen temporären lokalen Server (Mobile + Desktop): Geburtsdatum lässt sich eingeben, speichern, wird korrekt formatiert angezeigt und übersteht einen Seiten-Reload; "Favoriten"-Zeile ist weg, "Zuletzt angesehen" weiterhin vorhanden und funktionsfähig; keine doppelten IDs, keine Konsolenfehler auf Mobile und Desktop.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v70` erhöht (Pflichtregel).
+
+---
+
+## 2026-09-05 (29) — "Mein Bereich" und "Einstellungen" neu strukturiert (persönlich vs. App-Verhalten)
+
+**Analyse vor der Umsetzung**: Geprüft, welche der elf betroffenen Funktionen bereits existieren, um nichts doppelt zu bauen: Favoriten-Navigation (`#navFav`-Klick-Handler), Alarme-Verwaltung inkl. Löschen/Toggle (`renderAlertsView()`, Alarme-Tab), Standortverwaltung (`locOverlay`, Startseite), Theme-Umschalter (`.theme-option`, bereits global synchron), Push-Benachrichtigungen (`notifOverlay`, seit letzter Änderung im Burger-Menü), Konto verwalten/Abmelden (`accountManageOverlay`/`logoutBtn`), Rechtstexte (`.profile-legal`) — "Zuletzt angesehen" und echte Datenschutz-/Sortier-/Ansichts-Einstellungen existieren dagegen technisch nicht.
+
+**1. Aus "Mein Bereich" entfernt:**
+- Erscheinungsbild (Theme-Umschalter) — lebt jetzt ausschließlich in Einstellungen (war zuvor an beiden Stellen synchron vorhanden).
+- Standort & Umkreis (`profileLocRow`) — Standort bleibt ausschließlich über die unveränderte Startseiten-Funktion (`locOverlay`, "Ändern"-Link) verwaltbar, keine zweite Standortverwaltung.
+- Preisalarme-Liste unter "Meine Aktivität" (`profileAlertList`/`profileAlertCount`, samt `updateProfileAlertList()`) — bereits vollständig über den Alarme-Tab der Bottom Navigation abgedeckt (dort inkl. Löschen/Pausieren, hier war es nur eine zweite, rein lesende Ansicht).
+- (Push-Benachrichtigungen war bereits in der vorherigen Änderung entfernt worden.)
+
+**2. Nach "Einstellungen" verschoben/dort gebündelt** (Burger-Menü, Gruppe "Weitere" enthält jetzt nur noch den einen Punkt "Einstellungen" statt vormals drei separater Punkte):
+- Erscheinungsbild (Theme-Umschalter, unverändert Hell/Dunkel/System) — jetzt Unterabschnitt "Erscheinungsbild" ganz oben in Einstellungen.
+- Push-Benachrichtigungen — bleibt an der gleichen Stelle wie seit der letzten Änderung, jetzt unter Unterabschnitt "Benachrichtigungen".
+- "Hilfe & Feedback" und "Über CanSpot" waren zuvor eigene Top-Level-Accordions neben "Einstellungen" — sind jetzt als verschachtelte Unter-Accordions INNERHALB von Einstellungen untergebracht (Inhalt 1:1 unverändert übernommen).
+- Neu als Platzhalter-Unterabschnitt "Datenschutz" ergänzt (siehe Punkt 4).
+- **Bewusst NICHT hinzugefügt**: "Suche & Angebote" (bevorzugte Händler/Standard-Sortierung/Listen-Kartenansicht als Einstellung) — dafür gibt es aktuell keine entsprechende speicherbare Einstellung, nur die per-Sitzung-UI auf der Startseite (Sortierung/Ansicht-Umschalter), das wäre etwas anderes. Laut Anfrage bewusst nicht ohne echte Funktion dahinter angelegt.
+- **Technischer Nebeneffekt behoben**: Da "Einstellungen" jetzt selbst verschachtelte Accordions enthält, hätte das bestehende Einzel-Öffnen-Verhalten (`toggleMenuAccordion()`) beim Öffnen z.B. von "Datenschutz" das übergeordnete "Einstellungen" gleich wieder geschlossen (die Funktion schloss bisher ALLE offenen Accordions im gesamten Menü, nicht nur Geschwister). Behoben, indem die Funktion jetzt nur noch Geschwister auf derselben Verschachtelungsebene schließt (`:scope`-Query) — vor dem Testen als Bug erkannt und behoben, nicht erst danach aufgefallen.
+
+**3. Wiederverwendete bestehende Funktionen (keine neue Logik gebaut):**
+- "Favoriten" unter "Meine Aktivität" löst per `.click()` denselben `#navFav`-Handler aus wie der Bottom-Nav-Tab — keine zweite Favoriten-Logik.
+- "Konto verwalten"/"Abmelden" unverändert (`accountManageOverlay`/`logoutBtn`).
+- Theme-Umschalter, Push-Benachrichtigungen, Rechtstexte/Version: 1:1 dieselbe Logik/Sheets wie zuvor, nur an neuer Stelle.
+
+**4. Nur als Platzhalter vorbereitet (keine echte Funktion dahinter):**
+- "Zuletzt angesehen" unter "Meine Aktivität" — Zeile vorhanden, Tap zeigt einen Demo-Hinweis (gleiches Muster wie `#logoutBtn`/`#deleteAccountBtn`: `showToast(...)`), da es aktuell keinerlei Tracking angesehener Produkte gibt.
+- "Datenschutz" unter Einstellungen — aufklappbarer Unterabschnitt mit Hinweistext, keine echten Datenschutz-Einstellungen, bewusst ohne komplexen neuen Bereich.
+
+**Wichtiger Hinweis / Nebenwirkung für die Desktop-/Webapp-Ansicht:** Wie schon bei der letzten Änderung (Push-Benachrichtigungen) gilt: Das Burger-Menü existiert nur in der Mobile-Ansicht. Da jetzt auch das Erscheinungsbild (Theme-Umschalter) ausschließlich dort geführt wird und nicht mehr in "Mein Bereich" (welches auch am Desktop erreichbar ist), können Desktop-/Webapp-Nutzer:innen aktuell weder das Theme noch die Push-Benachrichtigungen ändern — beide Funktionen sind dort komplett unerreichbar geworden. War explizit so angefragt, aber als Konsequenz hier festgehalten.
+
+**Verifiziert** über einen temporären lokalen Server (375px + Desktop-Breite): "Mein Bereich" zeigt exakt die angefragte reduzierte Struktur (Profil, Meine Aktivität mit Favoriten/Zuletzt angesehen, Konto, Rechtstexte); "Favoriten"-Zeile navigiert nachweislich zum bestehenden Favoriten-Tab; "Einstellungen" zeigt die gebündelte Struktur mit funktionierenden verschachtelten Accordions (Öffnen eines Unterabschnitts lässt "Einstellungen" selbst offen, öffnen eines anderen TOP-LEVEL-Punkts wie "Händler" schließt "Einstellungen" weiterhin korrekt); Push-Benachrichtigungen öffnet weiterhin dieselbe Sheet; Schließen/Wiederöffnen des Menüs setzt auch die neuen verschachtelten Accordions zurück; keine doppelten IDs, keine Konsolenfehler auf Mobile und Desktop.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v69` erhöht (Pflichtregel).
+
+---
+
 ## 2026-09-05 (28) — "NEU"-Badge-Farbe korrigiert + Push-Benachrichtigungen von "Mein Bereich" ins Burger-Menü verschoben
 
 **Umgesetzt:**

@@ -1353,6 +1353,14 @@ color:var(--text-primary)
 }
 .sheet-btn-secondary:hover{background:var(--border-strong)}
 .sheet-btn-secondary:active{background:var(--border-strong)}
+/* Einzige vollflächig rote Aktion der App - bewusst nur für die endgültige
+   Bestätigung einer destruktiven Aktion (z.B. Konto endgültig löschen), nie
+   für die erste Ebene (dort .profile-action-danger: dunkler Grund + rote
+   Outline/Schrift, siehe dort). Modernes Rot statt der gedeckten
+   --status-error-*-Töne, da diese als Flächenfarbe blass/gedeckt wirken. */
+.sheet-btn-danger{background:#ef4444;color:#fff}
+.sheet-btn-danger:hover{background:#dc2626}
+.sheet-btn-danger:active{background:#b91c1c}
 .sheet-btn.disabled-cta,
 .btn.disabled-cta{
 background:var(--bg-surface-strong);
@@ -2817,6 +2825,7 @@ padding:10px
 <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16.2"/><line x1="12" y1="7.5" x2="12" y2="7.6"/></symbol>
 <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/><path d="M19 3v3M17.5 4.5h3"/><path d="M5 17v2.5M3.75 18.25h2.5"/></symbol>
 <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></symbol>
 </defs>
 </svg>
 
@@ -3215,27 +3224,12 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 </div>
 </div>
 
-<div class="field-label" style="margin-top:22px">Erscheinungsbild</div>
-<div class="theme-switch">
-<button class="theme-option" data-theme="light"><svg class="icon icon-lg"><use href="#i-sun"/></svg><span>Hell</span></button>
-<button class="theme-option" data-theme="dark"><svg class="icon icon-lg"><use href="#i-moon"/></svg><span>Dunkel</span></button>
-<button class="theme-option" data-theme="system"><svg class="icon icon-lg"><use href="#i-monitor"/></svg><span>System</span></button>
-</div>
-
-<div class="field-label" style="margin-top:22px">Einstellungen</div>
-<button class="profile-row" id="profileLocRow" data-open="locOverlay">
-<div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-pin"/></svg></div>
-<div class="profile-row-txt">
-<b>Standort &amp; Umkreis</b>
-<span id="profileLocSummary">59821 Arnsberg · 10 km</span>
-</div>
+<div class="field-label" style="margin-top:22px">Meine Aktivität</div>
+<button class="profile-row" id="profileRecentRow">
+<div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-clock"/></svg></div>
+<div class="profile-row-txt"><b>Zuletzt angesehen</b></div>
 <div class="profile-row-arrow">›</div>
 </button>
-
-
-<div class="field-label" style="margin-top:22px">Meine Aktivität</div>
-<div class="field-sublabel"><span>Preisalarme (<span id="profileAlertCount">0</span>)</span></div>
-<div id="profileAlertList"></div>
 
 <div class="field-label" style="margin-top:22px">Konto</div>
 <button class="profile-row" id="accountManageRow" data-open="accountManageOverlay">
@@ -3292,9 +3286,23 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 <button class="btn primary field-save-btn" data-save="email">Speichern</button>
 </div>
 </div>
+<div class="field-block" id="birthdateBlock">
+<div class="field-mini-label">Geburtsdatum</div>
+<div class="field-view">
+<span id="profileBirthdateText">Noch nicht angegeben</span>
+<button class="field-edit-btn" data-edit="birthdate" aria-label="Geburtsdatum bearbeiten"><svg class="icon icon-sm"><use href="#i-pencil"/></svg></button>
+</div>
+<div class="field-edit-row" id="birthdateEditRow" style="display:none">
+<input class="profile-input" id="profileBirthdate" type="date">
+<button class="btn primary field-save-btn" data-save="birthdate">Speichern</button>
+</div>
+</div>
 
-<div class="field-label" style="margin-top:22px">Adresse</div>
-<div class="field-block" id="addressBlock">
+<!-- "Adresse" bleibt vollständig funktionsfähig (Markup/JS/localStorage
+     unverändert) und nur optisch ausgeblendet, damit sie bei Bedarf später
+     ohne Wiederaufbau reaktiviert werden kann - siehe Anfrage. -->
+<div class="field-label" style="margin-top:22px;display:none">Adresse</div>
+<div class="field-block" id="addressBlock" style="display:none">
 <div class="field-view">
 <span id="profileAddressText">Noch keine Adresse hinterlegt</span>
 <button class="field-edit-btn" data-edit="address" aria-label="Adresse bearbeiten"><svg class="icon icon-sm"><use href="#i-pencil"/></svg></button>
@@ -3310,10 +3318,44 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 </div>
 </div>
 
-<div class="field-label" style="margin-top:22px">Gefahrenzone</div>
-<div class="desc" style="margin-bottom:10px">Das Löschen deines Kontos entfernt alle gespeicherten Daten unwiderruflich.</div>
+<div class="field-label" style="margin-top:22px">Sicherheit</div>
+<div class="field-block" id="passwordBlock">
+<div class="field-mini-label">Passwort</div>
+<div class="field-view">
+<span>••••••••</span>
+<button class="field-edit-btn" data-edit="password" aria-label="Passwort ändern"><svg class="icon icon-sm"><use href="#i-pencil"/></svg></button>
+</div>
+<div class="field-edit-row stacked" id="passwordEditRow" style="display:none">
+<input class="profile-input" id="currentPassword" type="password" placeholder="Aktuelles Passwort" autocomplete="current-password">
+<input class="profile-input" id="newPassword" type="password" placeholder="Neues Passwort" autocomplete="new-password">
+<input class="profile-input" id="confirmPassword" type="password" placeholder="Neues Passwort bestätigen" autocomplete="new-password">
+<button class="btn primary field-save-btn" data-save="password">Speichern</button>
+</div>
+</div>
+
+<!-- Deutlich abgesetzt vom normalen Kontobereich (Trennlinie + größerer
+     Abstand), damit die destruktive Aktion klar erkennbar, aber nicht
+     dominant wirkt - siehe Anfrage. Löschen selbst läuft zweistufig: dieser
+     Button öffnet nur eine Bestätigung (deleteAccountConfirmOverlay), löscht
+     nichts direkt. -->
+<div class="field-label" style="margin-top:44px;padding-top:22px;border-top:1px solid var(--border-subtle)">Konto löschen</div>
+<div class="desc" style="margin-bottom:10px">Dein Konto und deine gespeicherten Daten werden dauerhaft gelöscht. Dieser Vorgang kann nicht rückgängig gemacht werden.</div>
 <button class="profile-action profile-action-danger" id="deleteAccountBtn"><svg class="icon icon-md"><use href="#i-trash"/></svg> Konto löschen</button>
 
+</div>
+</div>
+</div>
+
+<!-- BESTÄTIGUNG "KONTO LÖSCHEN" (Untermenü von "Konto verwalten") -->
+<div class="overlay" id="deleteAccountConfirmOverlay">
+<div class="sheet">
+<div class="sheet-inner">
+<button class="sheet-close" data-close="deleteAccountConfirmOverlay"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
+<div class="handle"></div>
+<h2>Konto wirklich löschen?</h2>
+<div class="desc">Dein Konto und alle damit verbundenen gespeicherten Daten werden dauerhaft gelöscht. Dieser Vorgang kann nicht rückgängig gemacht werden.</div>
+<button class="sheet-btn sheet-btn-secondary" data-close="deleteAccountConfirmOverlay">Abbrechen</button>
+<button class="sheet-btn sheet-btn-danger" id="confirmDeleteAccountBtn">Konto endgültig löschen</button>
 </div>
 </div>
 </div>
@@ -3534,6 +3576,14 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 
 <div class="field-label" style="margin-top:22px">Weitere</div>
 
+<!-- "Einstellungen" bündelt jetzt alles rund um App-Verhalten/-Darstellung an
+     einer Stelle (inkl. der vormals eigenständigen "Hilfe & Feedback"- und
+     "Über CanSpot"-Punkte, jetzt als verschachtelte Unter-Accordions) - siehe
+     Anfrage "Mein Bereich = persönliche Inhalte, Einstellungen = Verhalten
+     der App". toggleMenuAccordion() schließt beim Öffnen nur noch
+     Geschwister auf derselben Ebene (siehe :scope-Query dort), damit ein
+     Unter-Accordion hier drin nicht versehentlich das übergeordnete
+     "Einstellungen" mit schließt. -->
 <div class="menu-acc">
 <button class="profile-row menu-acc-toggle" id="menuSettingsRow" aria-expanded="false" aria-controls="menuSettingsPanel">
 <div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-settings"/></svg></div>
@@ -3542,13 +3592,16 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 </button>
 <div class="menu-acc-panel" id="menuSettingsPanel">
 <div class="menu-acc-panel-inner">
+
 <div class="field-sublabel"><span>Erscheinungsbild</span></div>
 <div class="theme-switch">
 <button class="theme-option" data-theme="light"><svg class="icon icon-lg"><use href="#i-sun"/></svg><span>Hell</span></button>
 <button class="theme-option" data-theme="dark"><svg class="icon icon-lg"><use href="#i-moon"/></svg><span>Dunkel</span></button>
 <button class="theme-option" data-theme="system"><svg class="icon icon-lg"><use href="#i-monitor"/></svg><span>System</span></button>
 </div>
-<button class="profile-row" id="menuNotifRow" data-open="notifOverlay" style="margin-top:14px">
+
+<div class="field-sublabel" style="margin-top:18px"><span>Benachrichtigungen</span></div>
+<button class="profile-row" id="menuNotifRow" data-open="notifOverlay">
 <div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-bell"/></svg></div>
 <div class="profile-row-txt">
 <b>Push-Benachrichtigungen</b>
@@ -3556,10 +3609,22 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 </div>
 <div class="profile-row-arrow">›</div>
 </button>
+
+<div class="field-sublabel" style="margin-top:18px"><span>Datenschutz</span></div>
+<div class="menu-acc">
+<button class="profile-row menu-acc-toggle" id="menuPrivacyRow" aria-expanded="false" aria-controls="menuPrivacyPanel">
+<div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-info"/></svg></div>
+<div class="profile-row-txt"><b>Datenschutz</b></div>
+<svg class="icon icon-md menu-acc-chevron"><use href="#i-chevron-down"/></svg>
+</button>
+<div class="menu-acc-panel" id="menuPrivacyPanel">
+<div class="menu-acc-panel-inner">
+<div class="fav-empty">Detaillierte Datenschutzeinstellungen sind hier noch nicht angebunden.</div>
 </div>
 </div>
 </div>
 
+<div class="field-sublabel" style="margin-top:18px"><span>Hilfe &amp; Feedback</span></div>
 <div class="menu-acc">
 <button class="profile-row menu-acc-toggle" id="menuHelpRow" aria-expanded="false" aria-controls="menuHelpPanel">
 <div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-help"/></svg></div>
@@ -3573,6 +3638,7 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 </div>
 </div>
 
+<div class="field-sublabel" style="margin-top:18px"><span>Über CanSpot</span></div>
 <div class="menu-acc">
 <button class="profile-row menu-acc-toggle" id="menuAboutRow" aria-expanded="false" aria-controls="menuAboutPanel">
 <div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-info"/></svg></div>
@@ -3591,6 +3657,10 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 <a href="mailto:kontakt@canspot.example">Kontakt</a>
 </div>
 <div class="profile-version">CanSpot Demo-Prototyp · Version 1.0.0</div>
+</div>
+</div>
+</div>
+
 </div>
 </div>
 </div>
@@ -4795,7 +4865,6 @@ document.querySelectorAll(".chip[data-radius]").forEach(btn=>{
     render();
     updateStatus();
     updateFilterCount();
-    refreshProfileSummaries();
   });
 });
 
@@ -5271,7 +5340,7 @@ function initSwipeToClose(overlayId){
    konzeptionell nicht zu einem seitlichen Drawer (schiebt sich nach rechts
    raus, nicht nach unten) und hätte per Inline-transform:translateY() mit
    der neuen translateX()-Animation des Menüs kollidiert. */
-["locOverlay","notifOverlay","newsOverlay","filterOverlay","sortOverlay","profileOverlay","accountManageOverlay","histOverlay","productDetailOverlay","storeDetailOverlay"].forEach(initSwipeToClose);
+["locOverlay","notifOverlay","newsOverlay","filterOverlay","sortOverlay","profileOverlay","accountManageOverlay","deleteAccountConfirmOverlay","histOverlay","productDetailOverlay","storeDetailOverlay"].forEach(initSwipeToClose);
 
 /* Zusätzlich zu Pfeil/X und (bei Detail-/Preisverlauf-Fenster) der
    Wischgeste: Tippen auf den Handle-Balken oben mittig schließt das Sheet —
@@ -5285,7 +5354,7 @@ function initHandleTapToClose(overlayId){
    .handle-Balken mehr (macht bei seitlichem statt unterem Einschub keinen
    Sinn) - Schließen läuft dort über das X sowie Tippen auf den abgedunkelten
    Bereich (bestehender generischer Overlay-Klick-Handler weiter oben). */
-["locOverlay","notifOverlay","newsOverlay","filterOverlay","sortOverlay","profileOverlay","accountManageOverlay","histOverlay","productDetailOverlay","storeDetailOverlay"].forEach(initHandleTapToClose);
+["locOverlay","notifOverlay","newsOverlay","filterOverlay","sortOverlay","profileOverlay","accountManageOverlay","deleteAccountConfirmOverlay","histOverlay","productDetailOverlay","storeDetailOverlay"].forEach(initHandleTapToClose);
 
 document.getElementById("locBtn").addEventListener("click",()=>openSheet("locOverlay"));
 document.getElementById("statusEdit").addEventListener("click",()=>openSheet("locOverlay"));
@@ -5320,7 +5389,14 @@ function toggleMenuAccordion(rowId, panelId){
   const panel = document.getElementById(panelId);
   const wasOpen = panel.classList.contains("open");
 
-  document.querySelectorAll("#menuOverlay .menu-acc-toggle[aria-expanded=\"true\"]").forEach(otherRow=>{
+  /* Schließt beim Öffnen nur Geschwister-Accordions auf DERSELBEN Ebene
+     (direkte .menu-acc-Kinder desselben Elternelements) statt aller
+     .menu-acc-toggle in #menuOverlay - "Einstellungen" enthält inzwischen
+     selbst verschachtelte Accordions (Datenschutz/Hilfe & Feedback/Über
+     CanSpot); ohne diese Eingrenzung würde das Öffnen eines davon das
+     übergeordnete "Einstellungen" gleich wieder mitschließen. */
+  const scope = row.closest(".menu-acc").parentElement;
+  scope.querySelectorAll(":scope > .menu-acc > .menu-acc-toggle[aria-expanded=\"true\"]").forEach(otherRow=>{
     if(otherRow!==row){
       otherRow.setAttribute("aria-expanded","false");
       document.getElementById(otherRow.getAttribute("aria-controls")).classList.remove("open");
@@ -5342,6 +5418,9 @@ document.getElementById("menuStoresRow").addEventListener("click",()=>{
 document.getElementById("menuSettingsRow").addEventListener("click",()=>{
   refreshMenuNotifSummary();
   toggleMenuAccordion("menuSettingsRow","menuSettingsPanel");
+});
+document.getElementById("menuPrivacyRow").addEventListener("click",()=>{
+  toggleMenuAccordion("menuPrivacyRow","menuPrivacyPanel");
 });
 document.getElementById("menuHelpRow").addEventListener("click",()=>{
   toggleMenuAccordion("menuHelpRow","menuHelpPanel");
@@ -5424,15 +5503,15 @@ function renderNewArrivals(){
    wurde entfernt, da redundant. */
 
 function openProfile(){
-  refreshProfileSummaries();
-  updateProfileAlertList();
   openSheet("profileOverlay");
 }
 
-function refreshProfileSummaries(){
-  const locSummary = document.getElementById("profileLocSummary");
-  locSummary.textContent = searchWide ? "Ganz Deutschland" : `${locationLabel} · ${radiusKm} km`;
-}
+/* "Zuletzt angesehen" ist noch nicht implementiert und daher nur als
+   Platzhalter vorbereitet (gleiches Muster wie #logoutBtn/#deleteAccountBtn:
+   Demo-Hinweis statt echter Funktion). */
+document.getElementById("profileRecentRow").addEventListener("click", ()=>{
+  showToast("Demo-Prototyp: \"Zuletzt angesehen\" ist hier noch nicht aktiv.");
+});
 
 /* Push-Benachrichtigungen sind aus "Mein Bereich" entfernt und leben jetzt
    ausschließlich im Burger-Menü unter "Einstellungen" (#menuNotifRow) -
@@ -5446,43 +5525,6 @@ function refreshMenuNotifSummary(){
   if(onCount===0) notifSummary.textContent = "Alle Benachrichtigungen aus";
   else if(onCount===4) notifSummary.textContent = "Alle Benachrichtigungen an";
   else notifSummary.textContent = `${onCount} von 4 Benachrichtigungen an`;
-}
-
-function updateProfileAlertList(){
-  const list = document.getElementById("profileAlertList");
-  const countEl = document.getElementById("profileAlertCount");
-  const entries = Object.keys(priceAlerts)
-    .map(pid=>({product: products.find(p=>p.id===pid), alert: priceAlerts[pid]}))
-    .filter(e=>e.product);
-  countEl.textContent = entries.length;
-
-  if(entries.length===0){
-    list.innerHTML = `<div class="fav-empty">Noch keine Preisalarme. Lege im Produktdetail einen Wunschpreis fest.</div>`;
-    return;
-  }
-
-  list.innerHTML = entries.map(e=>`
-    <div class="fav-row">
-      <img class="fav-emoji" src="${e.product.img}" alt="${e.product.name}" loading="lazy" referrerpolicy="no-referrer">
-      <div class="fav-txt">
-        <b>${e.product.name}</b>
-        <span>Alarm bei ${euro(e.alert.target)} €${e.alert.enabled ? "" : " · pausiert"}</span>
-      </div>
-      <button class="avatar-remove-link" data-remove-profile-alert="${e.product.id}">entfernen</button>
-    </div>
-  `).join("");
-
-  list.querySelectorAll("img.fav-emoji").forEach(img=>{
-    img.addEventListener("error", function(){ this.src = FALLBACK_IMG; }, {once:true});
-  });
-  list.querySelectorAll("[data-remove-profile-alert]").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      delete priceAlerts[btn.dataset.removeProfileAlert];
-      savePriceAlerts();
-      updateProfileAlertList();
-      updateAlertsDot();
-    });
-  });
 }
 
 function favRowHtml(p){
@@ -5560,7 +5602,15 @@ function showToast(msg){
 document.getElementById("logoutBtn").addEventListener("click", ()=>{
   showToast("Demo-Prototyp: Abmelden ist hier nicht aktiv.");
 });
+/* Zweistufiges Löschen: der Button auf "Konto verwalten" öffnet nur die
+   Bestätigung, löscht nichts direkt (verhindert einen versehentlichen Klick
+   direkt zur Kontolöschung). "Abbrechen" nutzt den bereits bestehenden
+   generischen [data-close]-Mechanismus, keine eigene Logik nötig. */
 document.getElementById("deleteAccountBtn").addEventListener("click", ()=>{
+  openSheet("deleteAccountConfirmOverlay");
+});
+document.getElementById("confirmDeleteAccountBtn").addEventListener("click", ()=>{
+  closeSheet("deleteAccountConfirmOverlay");
   showToast("Demo-Prototyp: Konto löschen ist hier nicht aktiv.");
 });
 
@@ -5586,9 +5636,14 @@ function setProfileName(val){
 
 const savedName = localStorage.getItem("canspot-name");
 const savedEmail = localStorage.getItem("canspot-email");
+const savedBirthdate = localStorage.getItem("canspot-birthdate");
 const savedAddress = JSON.parse(localStorage.getItem("canspot-address") || "null");
 if(savedName){ profileNameInput.value = savedName; setProfileName(savedName); }
 if(savedEmail){ profileEmailInput.value = savedEmail; profileEmailText.textContent = savedEmail; }
+if(savedBirthdate){
+  document.getElementById("profileBirthdate").value = savedBirthdate;
+  document.getElementById("profileBirthdateText").textContent = formatSingleDate(savedBirthdate);
+}
 if(savedAddress){
   document.getElementById("profileStreet").value = savedAddress.street || "";
   document.getElementById("profileZip").value = savedAddress.zip || "";
@@ -5608,12 +5663,28 @@ function setFieldEditing(field, editing){
   document.getElementById(`${field}EditRow`).style.display = editing ? "flex" : "none";
 }
 
-const FIELD_FOCUS_TARGET = {name:"profileName", email:"profileEmail", address:"profileStreet"};
+const FIELD_FOCUS_TARGET = {name:"profileName", email:"profileEmail", birthdate:"profileBirthdate", address:"profileStreet", password:"currentPassword"};
 document.querySelectorAll("[data-edit]").forEach(btn=>{
   btn.addEventListener("click", ()=>{
     const field = btn.dataset.edit;
     setFieldEditing(field, true);
     document.getElementById(FIELD_FOCUS_TARGET[field]).focus();
+  });
+});
+
+/* Ein aufgeklapptes Bearbeiten-Feld (Name/E-Mail/Geburtsdatum/Adresse/
+   Passwort) klappt automatisch wieder ein, sobald irgendwo anders im Fenster
+   getippt wird - z.B. beim Passwort-Feld fiel sonst auf, dass es sich nach
+   dem Öffnen nie wieder von selbst schließt. Klicks INNERHALB des jeweiligen
+   .field-block (Stift, Eingabefelder, Speichern-Button) lösen das bewusst
+   NICHT aus, deren eigene Handler (s.o./[data-save]) kümmern sich darum. */
+document.getElementById("accountManageOverlay").addEventListener("click", (e)=>{
+  document.querySelectorAll("#accountManageOverlay .field-block").forEach(block=>{
+    const editRow = block.querySelector(".field-edit-row");
+    if(!editRow || editRow.style.display !== "flex") return;
+    if(!block.contains(e.target)){
+      setFieldEditing(block.id.replace("Block",""), false);
+    }
   });
 });
 
@@ -5627,6 +5698,33 @@ document.querySelectorAll("[data-save]").forEach(btn=>{
       localStorage.setItem("canspot-name", val);
       updateAvatarInitials(val);
       showToast("Name aktualisiert.");
+    } else if(field==="birthdate"){
+      const val = document.getElementById("profileBirthdate").value;
+      if(!val) return;
+      document.getElementById("profileBirthdateText").textContent = formatSingleDate(val);
+      localStorage.setItem("canspot-birthdate", val);
+      showToast("Geburtsdatum aktualisiert.");
+    } else if(field==="password"){
+      /* Demo-Prototyp ohne echtes Backend: es gibt kein gespeichertes
+         Passwort, gegen das geprüft werden könnte - "Aktuelles Passwort"
+         wird daher nur auf Ausfüllung geprüft. Das neue Passwort wird
+         bewusst NICHT in localStorage abgelegt (anders als Name/E-Mail/
+         Geburtsdatum, die als reine Anzeige-Werte unproblematisch sind). */
+      const currentPw = document.getElementById("currentPassword");
+      const newPw = document.getElementById("newPassword");
+      const confirmPw = document.getElementById("confirmPassword");
+      if(!currentPw.value || !newPw.value || !confirmPw.value){
+        showToast("Bitte alle Passwortfelder ausfüllen.");
+        return;
+      }
+      if(newPw.value !== confirmPw.value){
+        showToast("Die neuen Passwörter stimmen nicht überein.");
+        return;
+      }
+      currentPw.value = "";
+      newPw.value = "";
+      confirmPw.value = "";
+      showToast("Passwort aktualisiert.");
     } else if(field==="address"){
       const address = {
         street: document.getElementById("profileStreet").value.trim(),
@@ -5773,7 +5871,6 @@ document.querySelector('[data-close="locOverlay"].sheet-btn').addEventListener("
   if(val) locationLabel = val;
   render();
   updateStatus();
-  refreshProfileSummaries();
   updateFilterCount();
   showToast("Standort aktualisiert.");
 });
