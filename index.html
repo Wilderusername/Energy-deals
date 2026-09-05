@@ -3994,26 +3994,35 @@ try{
   const storedFavs = localStorage.getItem("canspot-favorites");
   favorites = new Set(storedFavs===null ? DEFAULT_FAVORITES : JSON.parse(storedFavs));
 }catch(e){ favorites = new Set(DEFAULT_FAVORITES); }
-/* Migration: vor dieser Änderung waren Favoriten reine productIds ohne
-   Unterscheidung Einzelartikel/Bundle - bestehende Einträge werden beim
-   Laden auf das neue "productId:single"/"productId:bundle"-Format
-   angehoben (als "single" interpretiert, da Favorisieren zuvor nur diese
-   eine, nicht unterschiedene Bedeutung hatte). */
-favorites = new Set([...favorites].map(k=>k.includes(":") ? k : `${k}:single`));
+/* Migration: Favoriten waren ursprünglich reine productIds (keine Trennung
+   Einzelartikel/Bundle), ein Zwischenstand nutzte kurzzeitig
+   "productId:single"/"productId:bundle" (EINE gemeinsame Kategorie für alle
+   Bundle-Größen). Beides wird beim Laden auf das jetzige, genauere Format
+   "productId:units" angehoben: die alte "single"-Markierung wird zu ":1"
+   (das war schon immer ihre Bedeutung); die alte generische "bundle"-
+   Markierung lässt sich dagegen nicht eindeutig einer bestimmten
+   Packungsgröße zuordnen und wird verworfen (rein lokale Demo-Daten, kein
+   Datenverlust für echte Nutzer möglich). */
+favorites = new Set([...favorites].map(k=>{
+  if(!k.includes(":")) return `${k}:1`;
+  const [pid, tag] = k.split(":");
+  if(tag==="single") return `${pid}:1`;
+  if(tag==="bundle") return null;
+  return k;
+}).filter(Boolean));
 function saveFavorites(){ localStorage.setItem("canspot-favorites", JSON.stringify([...favorites])); }
 
-/* Favoriten unterscheiden jetzt Einzelartikel (units<=1) und Bundles
-   (units>1) DESSELBEN Produkts als zwei unabhängige Zustände - Favorisieren
-   der Einzeldose lässt Bundles unangetastet und umgekehrt (siehe Anfrage).
-   Alle Bundle-Größen (4er/6er/12er/24er) eines Produkts teilen sich dabei
-   EINEN gemeinsamen "bundle"-Favoritenstatus, statt je Packungsgröße einen
-   eigenen - Favorisieren irgendeiner Packungsgröße gilt für "das Bundle"
-   dieses Produkts insgesamt. */
-function favKeyFor(productId, isBundle){ return `${productId}:${isBundle ? "bundle" : "single"}`; }
-function favKeyForDeal(deal){ return favKeyFor(deal.productId, deal.units>1); }
+/* Favoriten werden je exakter Packungsgröße (productId + units) gespeichert,
+   nicht mehr nur je Produkt - Favorisieren der Einzeldose lässt Bundles
+   unangetastet, und JEDE Bundle-Größe (4er/6er/12er/24er) hat ihren EIGENEN
+   Favoriten-Status statt sich einen gemeinsamen "Bundle"-Status zu teilen
+   (siehe Anfrage: Favorisieren des 12er-Packs darf z.B. nicht auch das
+   24er-Pack als favorisiert erscheinen lassen). */
+function favKeyFor(productId, units){ return `${productId}:${units}`; }
+function favKeyForDeal(deal){ return favKeyFor(deal.productId, deal.units); }
 function favProductId(key){ return key.split(":")[0]; }
-function favIsBundleKey(key){ return key.endsWith(":bundle"); }
-function isProductFavoritedAtAll(productId){ return favorites.has(favKeyFor(productId,false)) || favorites.has(favKeyFor(productId,true)); }
+function favUnitsFromKey(key){ return +key.split(":")[1]; }
+function isProductFavoritedAtAll(productId){ return [...favorites].some(k=>favProductId(k)===productId); }
 
 const DEFAULT_LOCATION_LABEL = "59821 Arnsberg";
 let locationLabel = DEFAULT_LOCATION_LABEL;
@@ -4565,9 +4574,9 @@ dealsContainer.addEventListener("click",(e)=>{
   if(favBtn){
     const key = favBtn.dataset.fav;
     const pid = favProductId(key);
-    /* Bei Produkten mit mehreren Angeboten (z.B. bei mehreren Händlern
-       gelistet, oder mehreren Bundle-Größen) gibt es mehrere Karten mit
-       demselben data-fav="key" im DOM. Nach dem re-render() unten würde eine
+    /* Bei Produkten mit mehreren Angeboten DERSELBEN Packungsgröße (z.B. bei
+       mehreren Händlern gelistet) gibt es mehrere Karten mit demselben
+       data-fav="key" im DOM. Nach dem re-render() unten würde eine
        erneute Suche nur nach [data-fav="key"] immer die ERSTE dieser Karten
        treffen — unabhängig davon, welches Herz tatsächlich angeklickt wurde
        (dort lief die Animation dann sichtbar nie oder an der falschen
@@ -5018,11 +5027,11 @@ function computeFavoriteEvents(){
   const items = [];
   favorites.forEach(key=>{
     const pid = favProductId(key);
-    const isBundle = favIsBundleKey(key);
+    const units = favUnitsFromKey(key);
     const product = products.find(p=>p.id===pid);
     if(!product) return;
 
-    const activeDeals = deals.filter(d=>d.productId===pid && (d.units>1)===isBundle && daysUntil(d.validUntil)>=0);
+    const activeDeals = deals.filter(d=>d.productId===pid && d.units===units && daysUntil(d.validUntil)>=0);
     if(activeDeals.length>0){
       const best = activeDeals.reduce((a,b)=>a.offerPrice<b.offerPrice?a:b);
       const daysLeft = daysUntil(best.validUntil);
@@ -5039,7 +5048,7 @@ function computeFavoriteEvents(){
       return;
     }
 
-    const upcomingDeals = deals.filter(d=>d.productId===pid && (d.units>1)===isBundle && daysUntil(d.validFrom)>0);
+    const upcomingDeals = deals.filter(d=>d.productId===pid && d.units===units && daysUntil(d.validFrom)>0);
     if(upcomingDeals.length>0){
       const next = upcomingDeals.reduce((a,b)=> daysUntil(a.validFrom)<daysUntil(b.validFrom) ? a : b);
       items.push({status:"upcoming", product, deal:next, daysUntilStart: daysUntil(next.validFrom)});
@@ -5945,8 +5954,8 @@ function getRelevantNotifications(){
 
   favorites.forEach(key=>{
     const pid = favProductId(key);
-    const isBundle = favIsBundleKey(key);
-    const activeDeals = deals.filter(d=>d.productId===pid && (d.units>1)===isBundle && daysUntil(d.validUntil)>=0);
+    const units = favUnitsFromKey(key);
+    const activeDeals = deals.filter(d=>d.productId===pid && d.units===units && daysUntil(d.validUntil)>=0);
     if(activeDeals.length===0) return;
     const best = activeDeals.reduce((a,b)=> a.offerPrice<=b.offerPrice ? a : b);
     notifications.push({
@@ -5962,9 +5971,9 @@ function getRelevantNotifications(){
   let hasUpcoming = false;
   favorites.forEach(key=>{
     const pid = favProductId(key);
-    const isBundle = favIsBundleKey(key);
+    const units = favUnitsFromKey(key);
     const upcoming = deals
-      .filter(d=>d.productId===pid && (d.units>1)===isBundle && daysUntil(d.validFrom) > 0)
+      .filter(d=>d.productId===pid && d.units===units && daysUntil(d.validFrom) > 0)
       .sort((a,b)=>daysUntil(a.validFrom)-daysUntil(b.validFrom))[0];
     if(!upcoming) return;
     hasUpcoming = true;
