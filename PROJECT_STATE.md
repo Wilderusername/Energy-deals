@@ -4,6 +4,36 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-05 (35) — Favoriten: Einzelartikel und Bundles unabhängig voneinander favorisierbar (statt Bundles komplett auszuschließen)
+
+**Korrektur der letzten Änderung**: (34) hatte Bundles komplett von der Favoriten-Funktion ausgeschlossen (kein Herz-Symbol mehr auf Mehrpack-Karten). Das war zu weitgehend — gewünscht war stattdessen, dass Einzelartikel und Bundles UNABHÄNGIGE Favoriten-Zustände haben: Favorisieren der Einzeldose darf die Bundles nicht mit favorisieren, aber Bundles sollen weiterhin eigenständig favorisierbar sein (und umgekehrt: Favorisieren eines Bundles darf nicht die Einzeldose mit favorisieren).
+
+**Umsetzung**: Favoriten werden nicht mehr als reine `productId` gespeichert, sondern als zusammengesetzter Schlüssel `"productId:single"` bzw. `"productId:bundle"` (neue Helper `favKeyFor()`/`favKeyForDeal()`/`favProductId()`/`favIsBundleKey()`/`isProductFavoritedAtAll()`). Alle 4er/6er/12er/24er-Packungsgrößen eines Produkts teilen sich dabei EINEN gemeinsamen "bundle"-Status (Favorisieren einer beliebigen Packungsgröße gilt für "das Bundle" dieses Produkts insgesamt, wie in der Anfrage beschrieben), unabhängig vom "single"-Status desselben Produkts.
+- Herz-Symbol ist jetzt wieder auf JEDER Karte vorhanden (Einzelartikel und Bundles), zeigt aber nur noch "aktiv", wenn genau diese Kategorie favorisiert wurde.
+- Betroffen: Angebotskarten-Rendering/Klick-Handler, Favoriten-Tab-Filter, "Umkreis erweitern"-Zählung, "günstiger als dein Favorit"-Vergleich (`favLiterMin`), Neuigkeiten (`getRelevantNotifications()`), Alarme-Hinweise (`computeFavoriteEvents()`) und der Herz-Button im Preisverlauf-Sheet — überall dieselbe `favKeyForDeal()`-Logik statt bloßer `productId`-Prüfung.
+- Die produktbezogene Favoritenliste in den Push-Benachrichtigungen (`renderFavList()`, listet Produkte statt einzelner Angebote) zeigt ein Produkt weiterhin, wenn IRGENDEINE der beiden Kategorien favorisiert ist (`isProductFavoritedAtAll()`) — dort macht die Unterscheidung keinen Sinn, da es ohnehin nur eine Zeile pro Produkt gibt.
+- **Migration bestehender Daten**: Alte, vor dieser Änderung gespeicherte Favoriten (reine `productId` ohne Kategorie) werden beim Laden automatisch auf `"productId:single"` angehoben (einmalige Migration beim Start, da Favorisieren vorher nur diese eine Bedeutung hatte) — verifiziert: vorhandene `["p2","p6"]` wurden korrekt zu `["p2:single","p6:single"]`.
+- Verifiziert über einen temporären lokalen Server (nur Mobile): Favorisieren des Red-Bull-Einzelartikels zeigt in "Favoriten" weiterhin nur die Einzelartikel-Angebote, keines der sechs Bundle-Angebote; Bundle-Karten haben wieder ein Herz-Symbol und lassen sich unabhängig favorisieren; nach Favorisieren des Bundles UND Entfernen des Einzelartikel-Favoriten bleiben alle sechs Bundle-Größen (4er/6er/12er/24er) korrekt in "Favoriten", der Einzelartikel verschwindet; Alarme-Tab und "Deine Favoriten" (Push-Benachrichtigungen) rendern weiterhin fehlerfrei; keine doppelten IDs, keine Konsolenfehler.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v75` erhöht (Pflichtregel).
+
+**Hinweis zum Umfang**: Wie von der Nutzerin/dem Nutzer zuletzt festgelegt, betrifft diese Änderung ausschließlich die Mobile-Version — die Desktop-/Webapp-Version wird nicht mehr bearbeitet oder getestet (siehe [[feedback-scope-mobile-only-default]]-Memory). Da `render()`/die Favoriten-Logik geteilter Code ist, wirkt sich der Fix technisch zwangsläufig auch dort aus, wurde aber bewusst nicht auf Desktop verifiziert.
+
+---
+
+## 2026-09-05 (34) — Bugfix: Favorisieren eines Einzelartikels favorisierte auch dessen Bundles/Mehrpacks
+
+**Ursache**: Favoriten werden je `productId` gespeichert (ein `Set`), Mehrpack-Angebote (4er/6er/12er/24er) sind aber KEINE eigenen Produkte, sondern teilen sich dieselbe `productId` mit dem Einzelartikel (nur `units` unterscheidet sie, siehe `buildDeals()`/`CLAUDE.md`). Dadurch zeigte jede Stelle, die `favorites.has(deal.productId)` prüfte, ALLE Angebote eines favorisierten Produkts als favorisiert an — auch dessen Mehrpack-Varianten, obwohl nur der Einzelartikel angetippt wurde. Betraf laut Datencheck 7 Produkte mit sowohl Einzel- als auch Mehrpack-Angeboten, geräteübergreifend für alle Marken (nicht Red-Bull-spezifisch).
+
+**Fix (rein in `render()`/der Angebotskarten-Logik, keine anderen Bereiche verändert):**
+- Favoriten-Tab-Filter (`viewFavoritesOnly`) und die zugehörige "Umkreis erweitern"-Zählung berücksichtigen jetzt zusätzlich `d.units<=1` — Mehrpack-Angebote eines favorisierten Produkts erscheinen dadurch nie mehr in der Favoriten-Ansicht.
+- Der Favoriten-Herz-Status einer Angebotskarte (`isFav`) wird nur noch für Einzelartikel (`deal.units<=1`) aus `favorites` gelesen.
+- Das Herz-Symbol selbst wird für Mehrpack-Karten gar nicht mehr gerendert (statt es anzuzeigen, aber nie "aktiv" wirken zu lassen — das hätte bei einem Klick wie ein Fehler gewirkt, da sich optisch nichts geändert hätte). Einzelartikel-Karten sind davon nicht betroffen und funktionieren unverändert (Herz weiterhin klickbar, Popup-Animation, Toast, Speichern in `localStorage`).
+- Bewusst NICHT verändert: die produktbezogene Favoritenliste in den Push-Benachrichtigungen (`renderFavList()`, listet Produkte, nicht einzelne Angebote — hatte das Problem nie), der "günstiger als dein Favorit"-Vergleich (`favLiterMin`, vergleicht bewusst weiter über alle Angebotsgrößen hinweg, da Preis-pro-Liter über Packungsgrößen hinweg sinnvoll vergleichbar ist) sowie die Neuigkeiten/Alarme-Hinweise (wählen ohnehin schon das Angebot mit dem niedrigsten Absolutpreis, was in der Praxis so gut wie nie ein Mehrpack ist) — keines davon zeigte das gemeldete Verhalten.
+- Verifiziert über einen temporären lokalen Server (Mobile + Desktop): Favorisieren von "Red Bull Energy Drink 250ml" (Produkt mit 2 Einzel- und 6 Mehrpack-Angeboten) zeigt in der Favoriten-Ansicht nur noch die beiden Einzelartikel-Angebote (bei unterschiedlichen Händlern), keines der sechs Mehrpack-Angebote; Mehrpack-Karten zeigen im normalen Angebots-Feed korrekt kein Herz-Symbol mehr; systematischer Check aller 7 betroffenen Produkte im Datensatz bestätigt, dass der Fix markenübergreifend greift (rein datenbasiert über `units`, nicht Red-Bull-spezifisch); Entfavorisieren funktioniert weiterhin korrekt; keine Konsolenfehler.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v74` erhöht (Pflichtregel).
+
+---
+
 ## 2026-09-05 (33) — Abstand "Sicherheit" → "Konto löschen" vergrößert
 
 **Umgesetzt:** Ausschließlich `margin-top` des `.field-label` "Konto löschen" (das gleichzeitig die Trennlinie trägt) von `32px` auf `44px` erhöht — die Trennlinie wandert dadurch entsprechend weiter nach unten mit. Nichts sonst an diesem Bereich angefasst: `padding-top:22px` (Abstand Linie → Text "Konto löschen"), Beschreibungstext, Button (Größe/Position/Farbe/Radius) und alle anderen Bereiche der Seite unverändert.
