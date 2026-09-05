@@ -4,6 +4,60 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-05 (43) — Red Bull 4er/6er/12er nachgebessert + Fehlersuche: alle restlichen Bundle-Bilder hatten dieselben zwei Bugs
+
+**Red Bull 4er-Pack (`d51`/`d61`) zu klein**: Ursache war die Bildquelle selbst (REWE, vorher nur 840×840 abgerufen) UND zu große Polsterung (oben +550/unten +275 auf 840px Basis), die das Bild stark gestaucht hat. Neu in 1600×1600 abgerufen und mit deutlich weniger Polsterung (oben +720/unten +180, ca. 30 % statt vorher ~36 % Rand) neu freigestellt — Produkt wirkt jetzt spürbar größer und schärfer, Herz bleibt nachweislich frei (Pixel-Check: Herz-Mittelpunkt liegt außerhalb der sichtbaren Bildfläche).
+
+**Red Bull 6er-Pack (`d67`) zu groß / Herz ragt hinein**: Dieses Bild war bisher noch gar nicht bearbeitet (reiner Hotlink von REWE, kein Rand oben). In 1600×1600 abgerufen (bereits nativ transparent, kein Freistellen nötig) und mit Rand oben (+630/unten +160, ~30 %) versehen.
+
+**Red Bull 12er (`d56`) + Monster Mango Loco/Classic/Pipeline Punch 12er (`d64`/`d63`/`d65`) weiß im Dark Mode**: Alle vier waren bisher unbearbeitete Hotlinks (REWE bzw. Amazon) mit undurchsichtigem/weißem Hintergrund. Freigestellt (REWE-Bild war bereits transparent, nur gepolstert; die drei Amazon-Bilder mit Flood-Fill transparent gemacht) und dabei gleich mitgeprüft, ob das Herz hineinragt — bei allen dreien Monster-Bildern war das Faktisch der Fall (Rand oben vorher 0–2 px von ~350px Höhe), also gleich mit behoben (Rand oben jetzt ~30 %).
+
+**Zusätzlich beim Fehler-Check gefunden (nicht explizit gemeldet, aber dieselben zwei Bugs)**: Alle bis dahin noch verbliebenen, unbearbeiteten `bundleImg`-Hotlinks hatten denselben weiß-im-Dark-Mode- und/oder Herz-ragt-rein-Bug:
+- `d52` Monster Ultra 4er-Pack (REWE) — Herz ragte rein (Rand oben nur 2,6 %), jetzt gepolstert.
+- `d66` Rockstar Original 12er (Amazon) — opak/weiß, Herz ragte fast komplett rein (Rand oben 0,3 %), freigestellt + gepolstert.
+- `d60` 28 Black Açaí 24er (Amazon) — opak/weiß, zusätzlich ein von Amazon eingeblendetes "24 pack"-Rundbadge exakt in der Herz-Ecke; da sich der Bundle-Bildparameter dieser ID (wie schon in (38)/(41) festgestellt) nicht ohne ein falsches Foto entfernen lässt, wurde stattdessen genug Rand ergänzt, dass Badge UND Dose komplett unterhalb der Herz-Zone landen.
+
+Damit sind jetzt **alle** `bundleImg`-Werte in `deals.json` lokale, transparente Dateien unter `images/bundles/` — kein Hotlink-`bundleImg` mehr übrig (per Skript geprüft). [CLAUDE.md](CLAUDE.md) entsprechend generalisiert: statt einer wachsenden Datei-für-Datei-Liste jetzt ein festes Rezept (höchste verfügbare Auflösung besorgen, Freistellen falls nötig, Rand oben auf ≥30 % der neuen Canvas-Höhe auffüllen, verkleinern/optimieren, auf hellem UND dunklem Hintergrund gegenprüfen) plus die verbindliche Regel "nie fest weiß/dunkel hinterlegen, immer transparent".
+
+**Verifikation (systematisch, nicht nur stichprobenartig)**: Für ALLE 13 Bundle-Angebote (`d51,d52,d56,d58,d59,d60,d61,d62,d63,d64,d65,d66,d67`) per Canvas-Pixel-Sampling exakt an der gerenderten Herz-Position geprüft (`object-fit:contain`-Skalierung/Offset in Bild-Koordinaten umgerechnet) — bei allen 13 liegt das Herz entweder auf einem vollständig transparenten Pixel oder komplett außerhalb der sichtbaren Bildfläche, nirgends auf undurchsichtigem Produktpixel. Zusätzlich visuell in Light UND Dark Mode durchgesehen. Beim Testen einer Favoriten-Interaktion zunächst ein scheinbarer Bug aufgefallen (Herz-Status schien nach Klick nicht zu kippen) — bei genauerem Hinsehen ein Fehler in meiner eigenen Test-Methode (veraltete DOM-Referenz nach `render()`-Neuaufbau), kein echter App-Bug; mit frischer Elementabfrage erneut geprüft und Favoriten-Toggle funktioniert korrekt. Keine Konsolenfehler.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v88` erhöht (Pflichtregel).
+
+**Hinweis zum Umfang**: Ausschließlich Mobile-Version bearbeitet und verifiziert, wie seit [[feedback-scope-mobile-only-default]] festgelegt — Desktop/Webapp nicht angefasst, nicht getestet, nicht erwähnt. Über die explizit gemeldeten Bilder hinaus wurden 3 weitere Bundle-Bilder (`d52`, `d60`, `d66`) proaktiv mitkorrigiert, da sie beim ausdrücklich gewünschten Fehler-Check dieselben Bugs zeigten — nicht Teil der expliziten Liste, aber im Rahmen von "prüfe auf Fehler oder Bugs und behebe diese".
+
+---
+
+## 2026-09-05 (42) — Theme-Trade-off aus (41) tatsächlich gelöst: transparente Hintergründe statt fest eingefärbter Bilder
+
+**Korrektur von (41)**: Dort wurde der Hintergrund des Red-Bull-24er-Bilds fest auf dunkel gesetzt (löste Dark Mode, brach aber Light Mode) und das Monster-Ultra-24er-Bild blieb fest weiß (löste Light Mode, bricht Dark Mode) — ausdrücklich als bekannter, unerledigter Trade-off dokumentiert. Auf Wunsch jetzt richtig gelöst, orientiert an der Lösung der einzelnen Produktbilder (`products[].img`): dort ist der Hintergrund nie fest eingefärbt, sondern die Bilder sind transparente PNGs, und `.thumb{background:var(--bg-surface-sunken)}` (themenabhängig) scheint durch.
+
+**Umsetzung**: Alle drei betroffenen `images/bundles/`-Dateien (`redbull-4pack.png`, `redbull-24pack.png` neu, `monster-ultra-24pack.png` neu) haben jetzt einen komplett transparenten Hintergrund statt einer fest gebackenen Farbe:
+- `redbull-24pack`: derselbe Flood-Fill wie in (41), aber auf Transparenz statt auf einen dunklen Farbton — dafür zusätzlich das Originalbild in noch höherer Auflösung (2560×2560) erneut passend zugeschnitten.
+- `monster-ultra-24pack`: dieselbe größere Bildquelle wie in (41) (1200×960 statt der ursprünglichen 225×225), diesmal aber mit transparent geflutetem Hintergrund UND transparenter Auffüllung (statt weißer Auffüllung) oben/unten, damit auch der aufgefüllte Rand in beiden Themes zum Container passt.
+- Beide vor dem Freistellen auf Kanten-Halos (helle/dunkle Restränder durch die Freistellung) geprüft (Komposit-Test auf hellem UND dunklem Hintergrund) — sauber, keine sichtbaren Ränder.
+- Dateiendungen von `.jpg` auf `.png` geändert (Transparenz erfordert Alphakanal), `deals.json` (`d58`/`d62`/`d59`) entsprechend angepasst; alte `.jpg`-Dateien entfernt.
+- [CLAUDE.md](CLAUDE.md) aktualisiert: Trade-off-Hinweis aus (41) entfernt, stattdessen als verbindliche Regel für `images/bundles/` festgehalten, dass der Hintergrund IMMER transparent bleiben muss (nie fest weiß/dunkel), damit künftige Bearbeitungen denselben Fehler nicht wiederholen.
+
+Verifiziert über einen temporären lokalen Server (nur Mobile, 375×812), Service-Worker-Cache geleert/neu aufgebaut: Beide Karten in Dark UND Light Mode geprüft (Theme per `data-theme` umgeschaltet) — Canvas-Pixel-Sampling exakt an der Herz-Position ergibt in beiden Themes `(0,0,0,0)` (vollständig transparent) für beide Bilder, d.h. das Herz liegt nachweislich auf dem themenabhängigen Container-Hintergrund, nicht auf einer fest im Bild codierten Farbe. Keine Konsolenfehler. `redbull-4pack.png` (unverändert, war schon transparent) nicht angefasst.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v86` erhöht (Pflichtregel).
+
+**Hinweis zum Umfang**: Ausschließlich Mobile-Version bearbeitet und verifiziert, wie seit [[feedback-scope-mobile-only-default]] festgelegt — Desktop/Webapp nicht angefasst, nicht getestet, nicht erwähnt.
+
+---
+
+## 2026-09-05 (41) — Red Bull 24er: dunkler Bildhintergrund gegen unsichtbares Herz; Monster Ultra 24er: größeres Quellbild
+
+**Red Bull 24er-Pack (`d58`/`d62`)**: Gemeldet, dass das Herz dort weiß-auf-weiß und damit unsichtbar war. Pixelgenau nachgeprüft (Canvas-Sampling exakt an der Herz-Position): anders als bei den zuvor bearbeiteten Bildern liegt hier unter dem Herz nicht Produktgrafik, sondern reiner weißer Bild-Hintergrund. Fix: Originalbild in hoher Auflösung (2560×2560, vorher wurde nur eine 425×425-Version verwendet) besorgt, weißer Hintergrund per Flood-Fill (nicht globaler Schwellwert, um Lichtreflexe auf den Dosen nicht mit zu entfernen) durch einen dunklen, neutralen Ton ersetzt, verkleinert und als `images/bundles/redbull-24pack.jpg` abgelegt; `deals.json` (`d58`, `d62`) zeigt jetzt hierhin. Kein Rahmen/Hintergrund-Element hinter dem Herz ergänzt — das Herz selbst bleibt unverändert (kein Hintergrund, kein Schatten), nur das Foto wurde angepasst, wie gewünscht.
+- **Bekannter, in Kauf genommener Kompromiss**: Die Herz-Farbe ist themenabhängig (`var(--text-primary)`, in Dark Mode nahezu weiß, in Light Mode nahezu schwarz). Der neue dunkle Bildhintergrund macht das Herz in Dark Mode gut sichtbar (das gemeldete Problem), sorgt aber in Light Mode für denselben Kontrastverlust in umgekehrter Richtung (dunkles Herz auf dunklem Bild). Eine themenabhängige Icon-Farbe nur für Kartenbilder hätte das für beide Modi gelöst, war aber nicht Teil des Auftrags ("lasse sonst alles unverändert") — bewusst nicht umgesetzt, in [CLAUDE.md](CLAUDE.md) als bekannter Trade-off dokumentiert statt stillschweigend liegen gelassen.
+
+**Monster Energy Ultra 24er (`d59`)**: Gemeldet, dass das Bild zu klein wirkt. Ursache: die einzige über die Amazon-Bild-ID auffindbare Quelle war nur 225×225px groß, das vorherige Padding stauchte die sichtbare Breite zusätzlich. Über Websuche eine deutlich größere, bildgleiche Produktaufnahme desselben Artikels (Monster Energy Ultra, 12×500ml-Tray + Einzeldose, "Zero Sugar") auf einem anderen Händlershop gefunden (1200×960 statt 225×225), mit demselben Rand-Verfahren wie zuvor oben/unten aufgefüllt (diesmal weniger gestaucht, da die Bildbreite schon deutlich größer war) und `images/bundles/monster-ultra-24pack.jpg` ersetzt (gleicher Dateiname, `deals.json` unverändert).
+
+Alle drei betroffenen Karten (`d51`/`d61` Red Bull 4er, `d59` Monster Ultra 24er, `d58`/`d62` Red Bull 24er) über einen temporären lokalen Server (nur Mobile, 375×812) mit geleertem/neu aufgebautem Service-Worker-Cache verifiziert — zusätzlich per Canvas-Pixel-Sampling exakt an der Herz-Position geprüft (nicht nur visuell): `d58` liegt jetzt auf dunklem Bildpixel, `d59` auf weißem Hintergrundpixel (kein Produkt darunter), `d51`s Herz-Mittelpunkt liegt sogar komplett außerhalb der sichtbaren Bildfläche (im Rahmen-Hintergrund). Alle anderen, nicht gemeldeten Bundle-/Produktbilder unverändert. Keine Konsolenfehler.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v85` erhöht (Pflichtregel).
+
+**Hinweis zum Umfang**: Ausschließlich Mobile-Version bearbeitet und verifiziert, wie seit [[feedback-scope-mobile-only-default]] festgelegt — Desktop/Webapp nicht angefasst, nicht getestet, nicht erwähnt.
+
+---
+
 ## 2026-09-05 (40) — Herz-Icon wieder ohne Hintergrund/Schatten; zwei Bundle-Bilder tatsächlich bearbeitet (statt nur CSS-Overlay)
 
 **Korrektur von (39)**: Der dort eingeführte deckende Kreis-Hintergrund hinter dem Favoriten-Herz löste zwar die Lesbarkeit, aber laut Rückmeldung war das nicht die gewünschte Lösung — das Herz soll komplett ohne Hintergrund/Untergrund/Schatten bleiben ("nur das Herz da sein"). `.thumb-frame .btn.fav` in [index.html](index.html) daher wieder auf die ursprüngliche, unbestückte Regel zurückgesetzt (nur Position/Größe, kein `background`/`border-radius`/`box-shadow`).
