@@ -4,6 +4,22 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-05 (44) — Freistellungs-Bug (weiße Ränder) bei Monster Pipeline Punch gefunden und bei ALLEN Bundle-Bildern nachgebessert
+
+**Gemeldeter Bug**: Bei Monster Pipeline Punch 12er zeigte das freigestellte Bild im Dark Mode noch sichtbare weiße/helle Ränder um die Dosen/Box herum statt eines sauberen Ausschnitts.
+
+**Ursache gefunden**: Der einfache Flood-Fill aus (43) (nur zusammenhängende Hintergrundfläche von den Ecken aus entfernen) reicht bei kleinen, JPEG-komprimierten Quellbildern (die drei Monster-12er, Rockstar 12er, 28 Black) nicht aus — JPEG-Kompression erzeugt an harten Hell/Dunkel-Kanten ein "Ringing" (mehrere Pixel breiter Verlauf zwischen Motiv und Hintergrund), das nicht als zusammenhängende weiße Fläche erkannt wird und daher unangetastet blieb: ein gesprenkelter, unsauberer heller Saum blieb um die gesamte Silhouette stehen. Bei genauerem Hinsehen (3-4-fach gezoomt, nicht nur die kleine Vorschau von (43)) war das schon vorher sichtbar — die Verifikation in (43) hat nur die unvergrößerte Vorschau geprüft und den Fehler dadurch übersehen.
+
+**Fix**: Zweistufige Freistellung statt nur Flood-Fill: nach dem Flood-Fill wird die neu entstandene Transparenz-Maske um 2-3px erweitert ("Randzone" direkt an der neuen Kontur), und NUR innerhalb dieser schmalen Randzone werden zusätzlich alle noch verbliebenen hellen/weißlichen Pixel (mittlere Helligkeit > ~200) transparent gemacht. Die Beschränkung auf die Randzone (statt eines globalen Helligkeits-Schwellwerts) ist wichtig — sie entfernt den Saum, ohne in echte helle Bilddetails weiter innen im Motiv einzugreifen. Alle 11 lokalen Bundle-Bilder mit dieser verbesserten Methode aus den Original-Quellbildern neu erzeugt (identische Zuschnitt-/Rand-Werte wie in (41)-(43) beibehalten, ausschließlich die Freistellung selbst verbessert).
+
+**Verifikation (systematisch, nicht nur das gemeldete Bild)**: Alle 11 Dateien einzeln bei 3-4-facher Vergrößerung auf einem hellen UND einem dunklen Vollton-Hintergrund geprüft (nicht nur in der App-Vorschaugröße) — bei keinem einzigen Bild ist noch ein Rand/Saum sichtbar. Zusätzlich per Canvas-Pixel-Sampling erneut bestätigt, dass das Herz bei allen 13 Bundle-Angeboten weiterhin frei liegt (Zuschnitt/Ränder aus (41)-(43) durch die verbesserte Freistellung nicht verändert). Live im mobilen Layout nachgestellt: Monster Pipeline Punch zeigt jetzt einen sauberen Ausschnitt ohne Ränder. Keine Konsolenfehler.
+- [CLAUDE.md](CLAUDE.md) aktualisiert: Freistellungs-Rezept um den zweistufigen Randzonen-Cleanup ergänzt, plus die Lehre, bei der Sichtprüfung immer gezoomt statt nur in Originalgröße zu prüfen.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v89` erhöht (Pflichtregel).
+
+**Hinweis zum Umfang**: Ausschließlich Mobile-Version bearbeitet und verifiziert, wie seit [[feedback-scope-mobile-only-default]] festgelegt — Desktop/Webapp nicht angefasst, nicht getestet, nicht erwähnt.
+
+---
+
 ## 2026-09-05 (43) — Red Bull 4er/6er/12er nachgebessert + Fehlersuche: alle restlichen Bundle-Bilder hatten dieselben zwei Bugs
 
 **Red Bull 4er-Pack (`d51`/`d61`) zu klein**: Ursache war die Bildquelle selbst (REWE, vorher nur 840×840 abgerufen) UND zu große Polsterung (oben +550/unten +275 auf 840px Basis), die das Bild stark gestaucht hat. Neu in 1600×1600 abgerufen und mit deutlich weniger Polsterung (oben +720/unten +180, ca. 30 % statt vorher ~36 % Rand) neu freigestellt — Produkt wirkt jetzt spürbar größer und schärfer, Herz bleibt nachweislich frei (Pixel-Check: Herz-Mittelpunkt liegt außerhalb der sichtbaren Bildfläche).
