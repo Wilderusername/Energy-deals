@@ -4,6 +4,30 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-06 (50) — Dritter Schritt "Löschgrund" zwischen Sicherheitsabfrage und Kontolöschung eingefügt
+
+**Ausgangslage**: Der Konto-löschen-Ablauf war zweistufig (Button → Sicherheitsabfrage → sofortige Löschung). Gewünscht war ein zusätzlicher, freiwilliger dritter Schritt dazwischen, der den Löschgrund abfragt (nach Vorbild etablierter Kündigungs-Flows), ohne die Löschung selbst von einer Angabe abhängig zu machen.
+
+**Umsetzung**:
+- Neues Sheet `#deleteAccountFeedbackOverlay` ("Schade, dass du gehst") nach dem bestehenden `#deleteAccountConfirmOverlay` eingefügt, gleiche Sheet-/Button-Optik (`.sheet-btn-secondary`/`.sheet-btn-danger`, `.sheet-close`, `.handle`, `.desc`) wie die übrigen Sheets. Da die Inhaltsliste (8 Gründe + optionales Textfeld) auf kleinen Screens scrollen kann, folgt es dem bereits vorhandenen `.sheet-scroll` + `.sheet-footer`-Muster (bisher nur bei `locOverlay`/`filterOverlay` verwendet) statt der einfachen `.sheet-inner`-Variante, damit die beiden Aktions-Buttons immer sichtbar am unteren Rand bleiben.
+- Löschgründe als neue `.reason-row`-Buttons (Einzelauswahl mit Checkmark, `data-reason`) - bewusst eine **eigene** Klasse statt Wiederverwendung von `.sort-row`, obwohl optisch identisch: der bestehende globale `document.querySelectorAll(".sort-row")`-Click-Handler hätte diese sonst fälschlich erfasst und `sort.value`/`closeSheet("sortOverlay")` ausgelöst. Auswahl ist ein Toggle (erneuter Klick auf denselben Grund hebt die Auswahl wieder auf). "Sonstiger Grund" blendet zusätzlich ein optionales `<textarea class="profile-input" id="deleteFeedbackOtherText">` ein (neue `textarea.profile-input`-Regel für Resize/Zeilenhöhe, sonst identische Optik zu den übrigen Profil-Inputs).
+- `confirmDeleteAccountBtn` (Ende von Schritt 2) löscht nicht mehr direkt, sondern öffnet jetzt Schritt 3 (`deleteAccountFeedbackOverlay`), mit zurückgesetztem Formular (`resetDeleteFeedbackForm()`). Beide Aktions-Buttons in Schritt 3 (`Überspringen` und `Konto endgültig löschen`) laufen auf dieselbe Funktion `finalizeAccountDeletion(reason)` - mit `null` beim Überspringen, sonst der gewählten `data-reason` - wodurch die eigentliche Löschung nachweislich nie von einer Feedback-Angabe abhängt. Schließen über X/Wisch/Tap außerhalb (dieselbe generische `[data-close]`/`initSwipeToClose`/`initHandleTapToClose`-Mechanik wie jedes andere Sheet, Overlay-ID einfach in beide bestehenden Arrays ergänzt) bricht die gesamte Löschung ab, ohne etwas zu speichern - keine Sonderlogik nötig.
+- **Datenspeicherung des Feedbacks**: Es gibt in diesem statischen Prototyp weder ein Backend noch sonst eine Datenstruktur, die eine "Kontolöschung" tatsächlich festhält - der bisherige (und weiterhin unveränderte) letzte Schritt hat schon vorher nichts weiter getan als `showToast("Demo-Prototyp: Konto löschen ist hier nicht aktiv.")`. Es gibt also nichts, an das sich ein Löschgrund "anhängen" ließe, außer dem bereits etablierten `localStorage`-Muster (`canspot-name`/`-email`/`-avatar`/... usw., siehe CLAUDE.md). Deshalb rein als Demo-Beleg: bei tatsächlich abgegebenem Feedback wird `{reason, reasonLabel, note, date}` unter dem neuen Schlüssel `canspot-delete-feedback` abgelegt (nur wenn ein Grund gewählt wurde - beim Überspringen wird nichts geschrieben); der abschließende Toast wird bei abgegebenem Feedback leicht ergänzt ("Danke für dein Feedback! …"). Eine **echte** Verknüpfung mit einer tatsächlichen Kontolöschung (z. B. serverseitiges Ablegen des Grundes beim Löschen eines echten Accounts) würde ein Backend/eine API voraussetzen, die es in diesem Prototyp nicht gibt - dafür wurde bewusst keine neue Datenstruktur erfunden, siehe Auftrag.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v95` erhöht (Pflichtregel).
+
+**Verifiziert** (mobil 375×812, per gezielten JS-Klicks auf die echten Event-Handler getestet, da die Klick-Simulation der Browser-Vorschau in dieser Session wiederholt hing/timeoutete - Screenshots und `classList`/`localStorage`-Zustand nach jedem Schritt einzeln geprüft):
+- Schritt 1 → 2 → 3 nacheinander funktioniert; Schritt 2 ("Abbrechen") bricht wie zuvor ohne Öffnen von Schritt 3 ab (keine Regression).
+- Grund auswählen (aktiviert Checkmark, deaktiviert vorherige Auswahl), erneutes Klicken hebt Auswahl auf; "Sonstiger Grund" blendet Textfeld ein/aus.
+- "Überspringen" löscht (Toast erscheint) ohne `canspot-delete-feedback` zu schreiben.
+- Grund + Freitext + "Konto endgültig löschen" schreibt korrektes JSON in `localStorage` und zeigt den erweiterten Dankes-Toast.
+- Schließen über das X in Schritt 3 bricht komplett ab (kein Toast, kein localStorage-Eintrag).
+- Formular ist bei jedem erneuten Eintritt in Schritt 3 nachweislich zurückgesetzt (keine hängengebliebene Auswahl aus einem vorherigen, abgebrochenen Versuch).
+- Light Mode und Dark Mode visuell geprüft (Checkmark, Textarea, Buttons, Divider - durchgängig themenabhängige `--*`-Variablen, keine hartkodierten Farben). Keine Konsolenfehler während des gesamten Tests.
+
+**Hinweis zum Umfang**: Ausschließlich Mobile-Version bearbeitet und verifiziert, wie seit [[feedback-scope-mobile-only-default]] festgelegt - Desktop/Webapp nicht angefasst, nicht getestet. Kein anderer Teil des Account-/Löschungs-Ablaufs oder der übrigen App wurde verändert.
+
+---
+
 ## 2026-09-06 (49) — Wochen-Header zum Akkordeon mit Pfeil-Icon umgebaut (statt kompletter Gruppen ein-/ausblenden)
 
 **Ausgangslage**: (48) hatte den Klick auf "N Angebote" so umgesetzt, dass ANDERE Wochen-Gruppen komplett aus dem DOM verschwanden (Header + Karten), ohne Animation. Gewünscht war stattdessen ein dezenter Pfeil (kein Emoji) vor der Angebotszahl, der nach unten zeigt, die Header aller Wochen bleiben immer sichtbar (damit man jederzeit zu einer anderen Woche wechseln kann), nur die KARTEN einer Gruppe klappen weich auf/zu, und der Pfeil dreht sich beim Aufklappen nach oben (erneuter Klick klappt wieder alle auf) — an anderen Apps orientiert (Standard-Akkordeon-Verhalten), kein neues Fenster/Sheet.

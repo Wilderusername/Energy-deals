@@ -1112,14 +1112,16 @@ box-shadow:var(--shadow-sheet)
 }
 
 #locOverlay .sheet,
-#filterOverlay .sheet{
+#filterOverlay .sheet,
+#deleteAccountFeedbackOverlay .sheet{
 padding:0;
 display:flex;
 flex-direction:column;
 overflow:hidden
 }
 #locOverlay .sheet-scroll,
-#filterOverlay .sheet-scroll{
+#filterOverlay .sheet-scroll,
+#deleteAccountFeedbackOverlay .sheet-scroll{
 overflow:auto;
 overscroll-behavior:contain;
 flex:1;
@@ -1127,7 +1129,8 @@ min-height:0;
 padding:10px 20px 20px
 }
 #locOverlay .sheet-footer,
-#filterOverlay .sheet-footer{
+#filterOverlay .sheet-footer,
+#deleteAccountFeedbackOverlay .sheet-footer{
 flex-shrink:0;
 padding:12px 20px calc(12px + env(safe-area-inset-bottom));
 border-top:1px solid var(--border-subtle);
@@ -1135,6 +1138,11 @@ background:var(--bg-surface-elevated)
 }
 #locOverlay .sheet-footer .sheet-btn,
 #filterOverlay .sheet-footer .sheet-btn{margin-top:0}
+/* Zwei gestapelte Buttons (Überspringen + Konto löschen) statt nur einem
+   ("Anwenden") wie bei Filter/Standort - eigener Abstand per gap statt der
+   einzelnen margin-top:0-Regel oben, die nur für den Einzelbutton-Fall passt. */
+#deleteAccountFeedbackOverlay .sheet-footer{display:flex;flex-direction:column;gap:10px}
+#deleteAccountFeedbackOverlay .sheet-footer .sheet-btn{margin-top:0}
 
 .sheet-title-row{
 display:flex;
@@ -1217,6 +1225,40 @@ text-align:left
 .sort-row:hover{color:var(--brand-primary-blue)}
 .sort-row .sort-check{color:var(--brand-primary-blue);opacity:0}
 .sort-row.active .sort-check{opacity:1}
+
+/* Eigene Klasse statt Wiederverwendung von .sort-row: visuell identisch
+   (gleiche Zeilen-/Checkmark-Optik), aber bewusst getrennt, damit der
+   bestehende globale "document.querySelectorAll('.sort-row')"-Click-Handler
+   (setzt sort.value, schließt sortOverlay) diese Buttons nicht versehentlich
+   mit erfasst. */
+.reason-row{
+width:100%;
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:12px;
+border:0;
+background:none;
+padding:14px 2px;
+border-bottom:1px solid var(--border-subtle);
+font-size:14px;
+font-weight:700;
+color:var(--text-primary);
+cursor:pointer;
+font-family:inherit;
+text-align:left
+}
+.reason-row:last-child{border-bottom:0}
+.reason-row:hover{color:var(--brand-primary-blue)}
+.reason-row .reason-check{color:var(--brand-primary-blue);opacity:0;flex-shrink:0}
+.reason-row.active .reason-check{opacity:1}
+
+textarea.profile-input{
+resize:vertical;
+min-height:72px;
+line-height:1.4;
+font-weight:500
+}
 
 .overlay.open .sheet{
 transform:translateY(0)
@@ -3487,6 +3529,46 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 </div>
 </div>
 
+<!-- FREIWILLIGES LÖSCH-FEEDBACK (dritter Schritt, zwischen Sicherheitsabfrage
+     und der eigentlichen Löschung). "Überspringen" und der Löschen-Button
+     führen beide dieselbe Löschung aus (finalizeAccountDeletion) - der
+     einzige Unterschied ist, ob dabei ein Grund mitgegeben wird. Schließen
+     über X/Wisch/Tap außerhalb bricht die gesamte Löschung ab, genau wie bei
+     jedem anderen Sheet (keine Sonderlogik nötig, gleiche [data-close]-
+     Mechanik). -->
+<div class="overlay" id="deleteAccountFeedbackOverlay">
+<div class="sheet">
+<div class="sheet-scroll">
+<div class="sheet-inner">
+<button class="sheet-close" data-close="deleteAccountFeedbackOverlay"><svg class="icon icon-md"><use href="#i-x"/></svg></button>
+<div class="handle"></div>
+<h2>Schade, dass du gehst</h2>
+<div class="desc">Darf ich fragen, warum du dein Konto löschen möchtest? Deine Angabe ist freiwillig und hilft uns, CanSpot zu verbessern.</div>
+
+<div id="deleteFeedbackReasons">
+<button type="button" class="reason-row" data-reason="unused"><span>Ich nutze CanSpot nicht mehr</span><svg class="icon icon-md reason-check"><use href="#i-check"/></svg></button>
+<button type="button" class="reason-row" data-reason="not-found"><span>Ich finde nicht, was ich suche</span><svg class="icon icon-md reason-check"><use href="#i-check"/></svg></button>
+<button type="button" class="reason-row" data-reason="missing-features"><span>Mir fehlen bestimmte Funktionen</span><svg class="icon icon-md reason-check"><use href="#i-check"/></svg></button>
+<button type="button" class="reason-row" data-reason="not-as-expected"><span>Die App funktioniert nicht so, wie ich es erwartet habe</span><svg class="icon icon-md reason-check"><use href="#i-check"/></svg></button>
+<button type="button" class="reason-row" data-reason="technical-issue"><span>Ich habe ein Problem mit der App</span><svg class="icon icon-md reason-check"><use href="#i-check"/></svg></button>
+<button type="button" class="reason-row" data-reason="offer-volume"><span>Zu viele / zu wenige Angebote</span><svg class="icon icon-md reason-check"><use href="#i-check"/></svg></button>
+<button type="button" class="reason-row" data-reason="privacy"><span>Datenschutz / Privatsphäre</span><svg class="icon icon-md reason-check"><use href="#i-check"/></svg></button>
+<button type="button" class="reason-row" data-reason="other"><span>Sonstiger Grund</span><svg class="icon icon-md reason-check"><use href="#i-check"/></svg></button>
+</div>
+
+<div id="deleteFeedbackOtherWrap" style="display:none;margin-top:4px">
+<textarea class="profile-input" id="deleteFeedbackOtherText" rows="3" maxlength="300" placeholder="Magst du uns mehr erzählen? (optional)"></textarea>
+</div>
+
+</div>
+</div>
+<div class="sheet-footer">
+<button class="sheet-btn sheet-btn-secondary" id="skipDeleteFeedbackBtn">Überspringen</button>
+<button class="sheet-btn sheet-btn-danger" id="confirmDeleteFeedbackBtn">Konto endgültig löschen</button>
+</div>
+</div>
+</div>
+
 <!-- ZULETZT GEPRÜFT (KLICK AUF DEN PREIS) — kleine Sprechblase, siehe showPricePopover() -->
 <div class="price-popover" id="pricePopover" role="tooltip"></div>
 
@@ -5666,7 +5748,7 @@ function initSwipeToClose(overlayId){
    konzeptionell nicht zu einem seitlichen Drawer (schiebt sich nach rechts
    raus, nicht nach unten) und hätte per Inline-transform:translateY() mit
    der neuen translateX()-Animation des Menüs kollidiert. */
-["locOverlay","notifOverlay","newsOverlay","filterOverlay","sortOverlay","profileOverlay","accountManageOverlay","deleteAccountConfirmOverlay","histOverlay","productDetailOverlay","storeDetailOverlay"].forEach(initSwipeToClose);
+["locOverlay","notifOverlay","newsOverlay","filterOverlay","sortOverlay","profileOverlay","accountManageOverlay","deleteAccountConfirmOverlay","deleteAccountFeedbackOverlay","histOverlay","productDetailOverlay","storeDetailOverlay"].forEach(initSwipeToClose);
 
 /* Zusätzlich zu Pfeil/X und (bei Detail-/Preisverlauf-Fenster) der
    Wischgeste: Tippen auf den Handle-Balken oben mittig schließt das Sheet —
@@ -5680,7 +5762,7 @@ function initHandleTapToClose(overlayId){
    .handle-Balken mehr (macht bei seitlichem statt unterem Einschub keinen
    Sinn) - Schließen läuft dort über das X sowie Tippen auf den abgedunkelten
    Bereich (bestehender generischer Overlay-Klick-Handler weiter oben). */
-["locOverlay","notifOverlay","newsOverlay","filterOverlay","sortOverlay","profileOverlay","accountManageOverlay","deleteAccountConfirmOverlay","histOverlay","productDetailOverlay","storeDetailOverlay"].forEach(initHandleTapToClose);
+["locOverlay","notifOverlay","newsOverlay","filterOverlay","sortOverlay","profileOverlay","accountManageOverlay","deleteAccountConfirmOverlay","deleteAccountFeedbackOverlay","histOverlay","productDetailOverlay","storeDetailOverlay"].forEach(initHandleTapToClose);
 
 document.getElementById("locBtn").addEventListener("click",()=>openSheet("locOverlay"));
 document.getElementById("statusEdit").addEventListener("click",()=>openSheet("locOverlay"));
@@ -5928,16 +6010,92 @@ function showToast(msg){
 document.getElementById("logoutBtn").addEventListener("click", ()=>{
   showToast("Demo-Prototyp: Abmelden ist hier nicht aktiv.");
 });
-/* Zweistufiges Löschen: der Button auf "Konto verwalten" öffnet nur die
+/* Dreistufiges Löschen: der Button auf "Konto verwalten" öffnet nur die
    Bestätigung, löscht nichts direkt (verhindert einen versehentlichen Klick
    direkt zur Kontolöschung). "Abbrechen" nutzt den bereits bestehenden
-   generischen [data-close]-Mechanismus, keine eigene Logik nötig. */
+   generischen [data-close]-Mechanismus, keine eigene Logik nötig. Die
+   Bestätigung selbst löscht ebenfalls noch nichts, sondern öffnet den
+   freiwilligen Feedback-Schritt (deleteAccountFeedbackOverlay) - erst von
+   dort aus wird tatsächlich gelöscht. */
 document.getElementById("deleteAccountBtn").addEventListener("click", ()=>{
   openSheet("deleteAccountConfirmOverlay");
 });
 document.getElementById("confirmDeleteAccountBtn").addEventListener("click", ()=>{
   closeSheet("deleteAccountConfirmOverlay");
-  showToast("Demo-Prototyp: Konto löschen ist hier nicht aktiv.");
+  resetDeleteFeedbackForm();
+  openSheet("deleteAccountFeedbackOverlay");
+});
+
+/* Löschgrund-Auswahl (Einzelauswahl, wie das Sortier-Sheet optisch, aber eine
+   eigene Klasse/Variable - siehe Kommentar bei .reason-row). Auswahl wirkt
+   sich nur auf die anschließende finalizeAccountDeletion()-Übergabe aus,
+   schließt das Sheet nicht und triggert selbst keine Löschung. */
+let deleteFeedbackReason = null;
+const deleteFeedbackReasonLabels = {
+  "unused": "Ich nutze CanSpot nicht mehr",
+  "not-found": "Ich finde nicht, was ich suche",
+  "missing-features": "Mir fehlen bestimmte Funktionen",
+  "not-as-expected": "Die App funktioniert nicht so, wie ich es erwartet habe",
+  "technical-issue": "Ich habe ein Problem mit der App",
+  "offer-volume": "Zu viele / zu wenige Angebote",
+  "privacy": "Datenschutz / Privatsphäre",
+  "other": "Sonstiger Grund"
+};
+const deleteFeedbackReasonRows = document.querySelectorAll("#deleteAccountFeedbackOverlay .reason-row");
+const deleteFeedbackOtherWrap = document.getElementById("deleteFeedbackOtherWrap");
+const deleteFeedbackOtherText = document.getElementById("deleteFeedbackOtherText");
+deleteFeedbackReasonRows.forEach(row=>{
+  row.addEventListener("click", ()=>{
+    deleteFeedbackReason = (deleteFeedbackReason === row.dataset.reason) ? null : row.dataset.reason;
+    deleteFeedbackReasonRows.forEach(r=>r.classList.toggle("active", r.dataset.reason===deleteFeedbackReason));
+    deleteFeedbackOtherWrap.style.display = (deleteFeedbackReason==="other") ? "block" : "none";
+  });
+});
+
+function resetDeleteFeedbackForm(){
+  deleteFeedbackReason = null;
+  deleteFeedbackReasonRows.forEach(r=>r.classList.remove("active"));
+  deleteFeedbackOtherWrap.style.display = "none";
+  deleteFeedbackOtherText.value = "";
+}
+
+/* Einziger Ort, an dem die Löschung tatsächlich "ausgeführt" wird (im
+   Demo-Prototyp weiterhin nur ein Toast, siehe bisheriges Verhalten von
+   confirmDeleteAccountBtn) - von "Überspringen" wie vom Löschen-Button aus
+   identisch aufgerufen, nur mit/ohne reason. Die Löschung selbst hängt damit
+   nie davon ab, ob ein Feedback abgegeben wurde. */
+function finalizeAccountDeletion(reason){
+  let feedbackGiven = false;
+  if(reason){
+    const note = (reason==="other") ? deleteFeedbackOtherText.value.trim() : "";
+    /* Es gibt aktuell keinerlei Backend/Datenbank in diesem Prototyp - auch
+       die Kontolöschung selbst persistiert nichts echtes (siehe Toast unten).
+       localStorage ist aber bereits das etablierte Persistenzmuster der App
+       (canspot-name/-email/-avatar/... usw.), daher hier im selben Muster
+       weiterverwendet statt einer neuen Struktur - rein als Demo-Beleg dafür,
+       dass ein Löschgrund grundsätzlich mitgegeben werden kann. */
+    try{
+      localStorage.setItem("canspot-delete-feedback", JSON.stringify({
+        reason,
+        reasonLabel: deleteFeedbackReasonLabels[reason] || reason,
+        note,
+        date: DEMO_TODAY_STR
+      }));
+    }catch(e){}
+    feedbackGiven = true;
+  }
+  closeSheet("deleteAccountFeedbackOverlay");
+  resetDeleteFeedbackForm();
+  showToast(feedbackGiven
+    ? "Danke für dein Feedback! Demo-Prototyp: Konto löschen ist hier nicht aktiv."
+    : "Demo-Prototyp: Konto löschen ist hier nicht aktiv.");
+}
+
+document.getElementById("skipDeleteFeedbackBtn").addEventListener("click", ()=>{
+  finalizeAccountDeletion(null);
+});
+document.getElementById("confirmDeleteFeedbackBtn").addEventListener("click", ()=>{
+  finalizeAccountDeletion(deleteFeedbackReason);
 });
 
 function updateAvatarInitials(name){
