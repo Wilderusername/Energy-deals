@@ -582,6 +582,11 @@ align-items:flex-start
 }
 .card-top .thumb{width:100px;height:100px}
 .thumb-frame{position:relative;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px}
+/* Bewusst OHNE eigenen Hintergrund/Schatten (siehe Anfrage: "nur das Herz,
+   ohne Schatten, ohne Hintergrund/Untergrund") - Lesbarkeit über den
+   Mehrpack-Packshots wird stattdessen durch die Bildauswahl/-bearbeitung
+   selbst sichergestellt (siehe bundleImg-Werte in deals.json), nicht durch
+   ein Overlay-Element. */
 .thumb-frame .btn.fav{
 position:absolute;
 top:-3px;
@@ -605,7 +610,6 @@ border-radius:99px;
 pointer-events:none;
 white-space:nowrap
 }
-:root[data-theme="dark"] .thumb-frame .btn.fav{filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
 .thumb-frame .btn.fav .icon{width:26px;height:26px}
 .card-top-info{flex:1;min-width:0}
 
@@ -3986,8 +3990,7 @@ function buildDeals(offers){
       history: priceHistoryPoints.map(pt=>pt.price),
       checkedMinutesAgo: 3 + (hashStr(d.id) % 118),
       lastCheckedAt: typeof d.lastCheckedAt === "string" ? d.lastCheckedAt : LAST_CHECKED_FALLBACK,
-      isNew: !!product.isNew,
-      unusualOffer: !!d.unusualOffer
+      isNew: !!product.isNew
     };
   });
 }
@@ -4239,6 +4242,16 @@ function render(){
     filtered = filtered.filter(d=>{ const df=daysUntil(d.validFrom)*-1; return df>=0 && df<=3; });
   }
 
+  if(sort.value==="new"){
+    /* "Neuheiten" ist bewusst kein reines Um-Sortieren, sondern schränkt die
+       Liste zusätzlich ein: es sollen wirklich AUSSCHLIESSLICH neu ins
+       Sortiment aufgenommene Sorten erscheinen (deal.isNew, aus
+       products[].isNew in deals.json), keine sonst wie auch immer
+       "auffälligen" Angebote (siehe Anfrage: "wirklich immer nur Sorten
+       gelistet werden, die wir neu hinzufügen"). */
+    filtered = filtered.filter(d=>d.isNew);
+  }
+
   if(sort.value==="price"){
     filtered.sort((a,b)=>a.offerPrice-b.offerPrice);
   } else if(sort.value==="distance"){
@@ -4250,16 +4263,7 @@ function render(){
   } else if(sort.value==="ending"){
     filtered.sort((a,b)=> new Date(a.validUntil) - new Date(b.validUntil));
   } else if(sort.value==="new"){
-    /* "Neuheiten": neue Sorten (deal.isNew, aus products[].isNew) zuerst,
-       danach Angebote, die für ihren Händler untypisch sind (deal.unusualOffer,
-       z.B. eine Marke die dort normalerweise nicht im Sortiment ist), danach
-       alle übrigen Angebote nach Angebotsbeginn absteigend (neueste zuerst). */
-    const newnessRank = d => d.isNew ? 0 : d.unusualOffer ? 1 : 2;
-    filtered.sort((a,b)=>{
-      const ra = newnessRank(a), rb = newnessRank(b);
-      if(ra !== rb) return ra - rb;
-      return new Date(b.validFrom) - new Date(a.validFrom);
-    });
+    filtered.sort((a,b)=> new Date(b.validFrom) - new Date(a.validFrom));
   }
 
   /* Bundles/Mehrpacks (units>1) sollen unabhängig von der Sortierung immer

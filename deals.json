@@ -5,7 +5,7 @@
     "fields": {
       "products[]": "Produktkatalog. Felder: id, name, brand (Marke), sizeMl (Menge in ml), img (hotlinked Produktbild-URL, kein lokaler Download). Optional: isNew (bool) -- markiert ein Produkt als neu ins Sortiment aufgenommen, speist die 'Neuheiten'-Sektion im Burger-Menue (siehe menuNewRow/renderNewArrivals() in index.html); fehlt das Feld, gilt false.",
       "stores{}": "Haendler, keyed by Haendlername (z.B. \"Kaufland\"). Felder: logo (hotlinked Logo-URL), branch { address, geo \"lat,lon\", open/close (Oeffnungszeit in Stunden, 24h-Format, halbe Stunden als .5), closedSun (bool) }. Hinweis: bildet aktuell genau eine Filiale je Haendler in Arnsberg ab (Demo-Gebiet), nicht mehrere Filialen pro Kette -- fuer echte Mehr-Filial-Daten muesste \"store\" bei offers[] um eine eigene branchId erweitert werden.",
-      "offers[]": "Einzelangebote (das eigentliche \"Angebotsformat\"). Felder: id, productId (-> products[].id), store (-> stores{}-Key = Haendler+Filiale), regularPrice/offerPrice (Preis in EUR - bei Mehrfachpackungen der GESAMTPREIS fuer die ganze Packung, nicht pro Dose/Flasche), pfand (Pfand in EUR, bei Mehrfachpackungen ebenfalls der Gesamtbetrag fuer die ganze Packung), packaging (\"Dose\" | \"Flasche\"), distanceKm (Entfernung), validFrom/validUntil (Angebotszeitraum, YYYY-MM-DD), link (Ziel-URL des Angebots). Optional: units (Anzahl Dosen/Flaschen im Angebot, z.B. 4/6/12/24 fuer Multipacks; fehlt das Feld, gilt 1 = Einzelartikel -- siehe UNITS_FALLBACK in index.html), priceHistory (siehe eigener Eintrag 'priceHistory[].fields' unten) -- wenn vorhanden wird er von der App uebernommen (fehlende Detailfelder je Punkt werden ergaenzt), andernfalls synthetisch generiert (Demo-Verhalten). lastCheckedAt (Datum \"YYYY-MM-DD\", Pflichtfeld ab Schema-Version 1: wann der Preis zuletzt manuell geprueft wurde -- rein manuell gepflegtes Redaktionsfeld, wird 1:1 in der UI angezeigt wenn man auf den Preis einer Angebotskarte tippt, keine automatische Berechnung). bundleImg (optionale Bild-URL, ueberschreibt fuer DIESES Angebot das Standard-Produktbild aus products[].img -- gedacht fuer Mehrpack-/Tray-Packshots bei Multipack-Angeboten mit units>1, damit z.B. ein 4er- oder 12er-Pack auch mit einem Bild der tatsaechlichen Verpackungseinheit statt der Einzeldose dargestellt wird; fehlt das Feld, gilt weiterhin ganz normal products[].img wie bisher). unusualOffer (optionales bool, Default false -- rein manuell/redaktionell gepflegtes Flag fuer ein Angebot, das fuer DIESEN Haendler untypisch ist, z.B. eine Marke die dort normalerweise nicht im Sortiment ist; speist zusammen mit products[].isNew die Sortieroption 'Neuheiten' in index.html, siehe newnessRank() in render()).",
+      "offers[]": "Einzelangebote (das eigentliche \"Angebotsformat\"). Felder: id, productId (-> products[].id), store (-> stores{}-Key = Haendler+Filiale), regularPrice/offerPrice (Preis in EUR - bei Mehrfachpackungen der GESAMTPREIS fuer die ganze Packung, nicht pro Dose/Flasche), pfand (Pfand in EUR, bei Mehrfachpackungen ebenfalls der Gesamtbetrag fuer die ganze Packung), packaging (\"Dose\" | \"Flasche\"), distanceKm (Entfernung), validFrom/validUntil (Angebotszeitraum, YYYY-MM-DD), link (Ziel-URL des Angebots). Optional: units (Anzahl Dosen/Flaschen im Angebot, z.B. 4/6/12/24 fuer Multipacks; fehlt das Feld, gilt 1 = Einzelartikel -- siehe UNITS_FALLBACK in index.html), priceHistory (siehe eigener Eintrag 'priceHistory[].fields' unten) -- wenn vorhanden wird er von der App uebernommen (fehlende Detailfelder je Punkt werden ergaenzt), andernfalls synthetisch generiert (Demo-Verhalten). lastCheckedAt (Datum \"YYYY-MM-DD\", Pflichtfeld ab Schema-Version 1: wann der Preis zuletzt manuell geprueft wurde -- rein manuell gepflegtes Redaktionsfeld, wird 1:1 in der UI angezeigt wenn man auf den Preis einer Angebotskarte tippt, keine automatische Berechnung). bundleImg (optionale Bild-URL, ueberschreibt fuer DIESES Angebot das Standard-Produktbild aus products[].img -- gedacht fuer Mehrpack-/Tray-Packshots bei Multipack-Angeboten mit units>1, damit z.B. ein 4er- oder 12er-Pack auch mit einem Bild der tatsaechlichen Verpackungseinheit statt der Einzeldose dargestellt wird; fehlt das Feld, gilt weiterhin ganz normal products[].img wie bisher; ueblicherweise ein Hotlink wie ueberall sonst, in wenigen begruendeten Ausnahmefaellen aber ein relativer Pfad auf ein lokal editiertes Bild unter images/bundles/, siehe CLAUDE.md Abschnitt 'Images').",
       "priceHistory[].fields": "Preisverlaufs-Komponente (Tages-Karussell im Preisverlauf-Sheet). Jeder Eintrag ist ein eigenstaendiger, DATIERTER Preispunkt (kein nackter Zahlenwert): { date: \"YYYY-MM-DD\" (Pflicht, eindeutiger Kalendertag), price: number (Pflicht, EUR - bei Mehrfachpackungen Packungs-Gesamtpreis wie bei offerPrice), retailer: string (optional, Default = das store-Feld des Angebots), deposit: number (optional, EUR, Default = das pfand-Feld des Angebots), unitPrice: number (optional, EUR/L, Default = price / (units*sizeMl/1000) berechnet), available: boolean (optional, Default true - fuer spaeter: Tage ohne verfuegbares Angebot) }. productId/Marke/Menge muessen NICHT je Punkt wiederholt werden, da ein priceHistory-Array immer zu genau einem offers[]-Eintrag (= ein Produkt+Haendler+Gebinde) gehoert. Ist das Feld nicht gesetzt oder leer, generiert die App 90 Tage synthetische Demo-Werte (genPriceHistory() in index.html). Rueckwaerts-kompatibel wird auch ein reines number[] (alte, undatierte Form) akzeptiert - die App zaehlt die Datumswerte dann rueckwaerts vom heutigen Tag; fuer neue Daten bitte aber immer das datierte Objektformat verwenden."
     },
     "derivedClientSide": "Der Oeffnungsstatus (\"Jetzt geoeffnet\"/\"Geschlossen\") wird NICHT gespeichert, sondern zur Laufzeit aus stores{}.branch (open/close/closedSun) gegen die aktuelle Uhrzeit berechnet, damit er nie veraltet. \"Preis geprueft vor ...\" bleibt fuer Demo-Zwecke deterministisch aus der offer-id abgeleitet (kein echter Zeitstempel im Datensatz)."
@@ -599,8 +599,7 @@
       "link": "#",
       "pfand": 0.25,
       "packaging": "Dose",
-      "lastCheckedAt": "2026-09-01",
-      "unusualOffer": true
+      "lastCheckedAt": "2026-09-01"
     },
     {
       "id": "d27",
@@ -948,7 +947,7 @@
       "validFrom": "2026-08-28",
       "validUntil": "2026-09-10",
       "link": "#",
-      "bundleImg": "https://img.rewe-static.de/2843250/698730_digital-image.png?imwidth=840&impolicy=pdp",
+      "bundleImg": "images/bundles/redbull-4pack.png",
       "pfand": 1.0,
       "packaging": "Dose",
       "units": 4,
@@ -1012,7 +1011,7 @@
       "validFrom": "2026-08-28",
       "validUntil": "2026-09-10",
       "link": "#",
-      "bundleImg": "https://m.media-amazon.com/images/I/310lLO8lrDL._PIbundle-24,TopRight,0,0_AA225SH20_.jpg",
+      "bundleImg": "images/bundles/monster-ultra-24pack.jpg",
       "pfand": 6.0,
       "packaging": "Dose",
       "units": 24,
@@ -1044,7 +1043,7 @@
       "validFrom": "2026-08-27",
       "validUntil": "2026-09-12",
       "link": "#",
-      "bundleImg": "https://img.rewe-static.de/2843250/698730_digital-image.png?imwidth=840&impolicy=pdp",
+      "bundleImg": "images/bundles/redbull-4pack.png",
       "pfand": 1.0,
       "packaging": "Dose",
       "units": 4,
