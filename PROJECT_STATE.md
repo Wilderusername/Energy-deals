@@ -4,6 +4,15 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-06 (51) — Button-Text der ersten Löschbestätigung angepasst
+
+Auf Wunsch geändert: Der Button in der ersten Sicherheitsabfrage (`#deleteAccountConfirmOverlay`, `confirmDeleteAccountBtn`) heißt jetzt "Konto löschen" statt "Konto endgültig löschen". Der gleichlautende Button im neuen dritten Schritt (`confirmDeleteFeedbackBtn`, siehe (50)) bleibt bewusst unverändert bei "Konto endgültig löschen" - nur die "erste Meldung" war gemeint. Keine sonstigen Änderungen an Ablauf, Logik oder Optik.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v96` erhöht (Pflichtregel).
+
+Verifiziert (mobil, Dark Mode, per JS-Klicks auf die echten Handler): Schritt 2 zeigt jetzt "Konto löschen", Schritt 3 weiterhin "Konto endgültig löschen"; Übergang Schritt 2 → 3 funktioniert unverändert. Keine Konsolenfehler.
+
+---
+
 ## 2026-09-06 (50) — Dritter Schritt "Löschgrund" zwischen Sicherheitsabfrage und Kontolöschung eingefügt
 
 **Ausgangslage**: Der Konto-löschen-Ablauf war zweistufig (Button → Sicherheitsabfrage → sofortige Löschung). Gewünscht war ein zusätzlicher, freiwilliger dritter Schritt dazwischen, der den Löschgrund abfragt (nach Vorbild etablierter Kündigungs-Flows), ohne die Löschung selbst von einer Angabe abhängig zu machen.
