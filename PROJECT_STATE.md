@@ -4,6 +4,23 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-05 (38) — Sortieroption "Neuheiten" + Red Bull Glacier Edition als echtes Angebot + Service-Worker-Precache-Bug behoben
+
+**Sortieroption "Neuheiten"**: Neue Option im Sortier-Sheet (`data-sort="new"`) und im `#sort`-Select, neben "Günstigster Preis"/"Nächster Händler"/"Beste Ersparnis"/"Endet bald". Bringt zuerst Angebote mit `product.isNew` (Katalog-Neuheiten) nach vorn, danach Angebote mit dem neuen optionalen Feld `offer.unusualOffer` (redaktionell gepflegtes Flag für "diese Marke ist bei diesem Händler eigentlich nicht im Sortiment", analog zu `isNew`/`lastCheckedAt` – kein automatisch berechneter Heuristik-Wert, siehe Anfrage-Beispiel "Rockstar irgendwo, wo es normalerweise nicht im Sortiment ist"), Rest nach `validFrom` absteigend. Als Demo-Beispiel `unusualOffer: true` auf das Rockstar-Punched-Guava-Angebot bei Penny (`d26`) gesetzt. Beide Felder werden in `buildDeals()` von `products[]`/`offers[]` auf das Laufzeit-`deal`-Objekt durchgereicht (`deal.isNew`, `deal.unusualOffer`) und in `deals.json`'s `_meta.fields` dokumentiert.
+
+**Red Bull Glacier Edition als reguläres Angebot**: `products[]` enthielt "Red Bull The Glacier Edition" (`p29`, `isNew:true`) bereits seit einem früheren Commit, aber ohne zugehöriges `offers[]`-Angebot – dadurch erschien das Produkt nirgends als Angebotskarte, nur in der "Neuheiten"-Akkordeon im Burger-Menü. Neues Angebot `d68` (Kaufland, 1,09 € statt 1,35 €) ergänzt, damit es jetzt eine normale Angebotskarte hat. Nährwerte nutzen bewusst weiterhin den Red-Bull-Markendefault (kein eigener `NUTRITION_MOCK_BY_PRODUCT`-Eintrag) – recherchiert und bestätigt, dass Red-Bull-Editions (wie schon die vorhandene Blue Edition) dieselbe Nährwerttabelle wie das Basisprodukt führen. Produktbild war bereits als Hotlink von redbull.com hinterlegt.
+
+**"Neu"-Textfeld auf der Angebotskarte**: Neuer `.new-pill` (dezent, farblich hinterlegt mit `--brand-primary-blue`) wird bei `deal.isNew` unterhalb des Produktbilds im `.thumb-frame` gerendert (dafür `.thumb-frame` auf `display:flex;flex-direction:column` umgestellt). Bewusst nicht klickbar: reines `<span>` ohne `data-product-detail`/`data-deal-id` und zusätzlich `pointer-events:none`.
+
+**Bug gefunden und behoben (Service Worker)**: Beim Verifizieren fiel auf, dass das neue `d68`-Angebot trotz frisch erhöhtem `CACHE_NAME` nicht auftauchte. Ursache: `service-worker.js`s `install`-Handler rief `cache.addAll(APP_SHELL)` mit reinen URL-Strings auf – das läuft über den normalen HTTP-Cache des Browsers, wodurch selbst ein brandneuer, leerer Cache-Name eine veraltete (HTTP-gecachte) Antwort für z.B. `deals.json` übernehmen kann, statt garantiert frisch vom Netzwerk zu laden. Das ist kein neues Problem, sondern bestand vermutlich schon länger latent (z.B. bei schnell aufeinanderfolgenden Deployments). Fix: `APP_SHELL.map(url => new Request(url, {cache:"reload"}))` erzwingt je Datei einen echten Netzwerk-Fetch am HTTP-Cache vorbei.
+
+Alles über einen temporären lokalen Server (nur Mobile, 375×812) verifiziert: "Neuheiten"-Sortierung bringt Glacier Edition (isNew) und Rockstar/Penny (unusualOffer) korrekt an die ersten beiden Plätze; "Neu"-Pill erscheint dezent unter dem Bild, `pointer-events:none` bestätigt, keine `data-*`-Klickattribute; Produktdetail/Nährwerte (113 kcal/27,5 g Zucker/78 mg Koffein/28,3 g Kohlenhydrate pro 250 ml) und Produktbild laden korrekt; Service-Worker-Fix per Cache-Löschung + Neuregistrierung nachgestellt und bestätigt (frische `deals.json` landet jetzt zuverlässig im neuen Cache).
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v82` erhöht (Pflichtregel; v81 für die App-Änderungen, v82 zusätzlich für den Service-Worker-Precache-Fix selbst).
+
+**Hinweis zum Umfang**: Ausschließlich Mobile-Version bearbeitet und verifiziert, wie seit [[feedback-scope-mobile-only-default]] festgelegt — Desktop/Webapp nicht angefasst, nicht getestet, nicht erwähnt.
+
+---
+
 ## 2026-09-05 (37) — Allgemeine Fehlersuche: 3 echte Bugs + 1 Textfehler gefunden und behoben
 
 Auf ausdrücklichen Wunsch ("Prüfe die App nur noch auf Fehler und Bugs und behebe diese") systematisch durch die komplette Mobile-Version geklickt (Burger-Menü, Mein Bereich/Konto verwalten, Suche, Favoriten, Alarme, Produktdetail, Preisverlauf/Preisalarm, Händler-Detail, Filter-/Sortier-Sheet, Kartenansicht, Standort-Sheet). Gefunden und behoben:

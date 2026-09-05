@@ -1,4 +1,4 @@
-const CACHE_NAME = "canspot-cache-v80";
+const CACHE_NAME = "canspot-cache-v82";
 
 const APP_SHELL = [
   "./",
@@ -16,7 +16,13 @@ const APP_SHELL = [
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(APP_SHELL))
+      /* cache.addAll(APP_SHELL) mit reinen URL-Strings wuerde ueber den
+         normalen HTTP-Cache des Browsers laufen -- bei einer geaenderten
+         Datei (z.B. deals.json) koennte so trotz neuem CACHE_NAME eine
+         veraltete, noch HTTP-gecachte Antwort ins neue Precache uebernommen
+         werden. {cache:"reload"} erzwingt je Request einen echten
+         Netzwerk-Fetch am HTTP-Cache vorbei. */
+      .then((cache) => cache.addAll(APP_SHELL.map((url) => new Request(url, { cache: "reload" }))))
       .then(() => self.skipWaiting())
   );
 });

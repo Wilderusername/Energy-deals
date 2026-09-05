@@ -581,13 +581,29 @@ gap:14px;
 align-items:flex-start
 }
 .card-top .thumb{width:100px;height:100px}
-.thumb-frame{position:relative;flex-shrink:0}
+.thumb-frame{position:relative;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:6px}
 .thumb-frame .btn.fav{
 position:absolute;
 top:-3px;
 right:-3px;
 width:30px;
 height:30px
+}
+/* "Neu"-Textfeld für neu ins Sortiment aufgenommene Produkte (deal.isNew,
+   aus products[].isNew in deals.json) - dezent unterhalb des Produktbilds,
+   bewusst nicht als Button/Link: pointer-events:none und kein Klick-Handler,
+   damit es rein informativ bleibt (siehe Anfrage). */
+.new-pill{
+display:inline-block;
+font-size:9px;
+font-weight:800;
+letter-spacing:.03em;
+background:var(--brand-primary-blue);
+color:var(--brand-primary-contrast);
+padding:3px 10px;
+border-radius:99px;
+pointer-events:none;
+white-space:nowrap
 }
 :root[data-theme="dark"] .thumb-frame .btn.fav{filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
 .thumb-frame .btn.fav .icon{width:26px;height:26px}
@@ -2899,6 +2915,7 @@ Aktuelle Energy-Drink-Angebote in deiner Nähe
 <option value="distance">Nächster Händler</option>
 <option value="saving">Beste Ersparnis</option>
 <option value="ending">Endet bald</option>
+<option value="new">Neuheiten</option>
 </select>
 
 <span class="toolbar-count"><span id="count">0</span> Angebote</span>
@@ -3198,6 +3215,10 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 </button>
 <button class="sort-row" data-sort="ending">
 <span>Endet bald</span>
+<svg class="icon icon-md sort-check"><use href="#i-check"/></svg>
+</button>
+<button class="sort-row" data-sort="new">
+<span>Neuheiten</span>
 <svg class="icon icon-md sort-check"><use href="#i-check"/></svg>
 </button>
 </div>
@@ -3964,7 +3985,9 @@ function buildDeals(offers){
       priceHistoryPoints,
       history: priceHistoryPoints.map(pt=>pt.price),
       checkedMinutesAgo: 3 + (hashStr(d.id) % 118),
-      lastCheckedAt: typeof d.lastCheckedAt === "string" ? d.lastCheckedAt : LAST_CHECKED_FALLBACK
+      lastCheckedAt: typeof d.lastCheckedAt === "string" ? d.lastCheckedAt : LAST_CHECKED_FALLBACK,
+      isNew: !!product.isNew,
+      unusualOffer: !!d.unusualOffer
     };
   });
 }
@@ -4226,6 +4249,17 @@ function render(){
     );
   } else if(sort.value==="ending"){
     filtered.sort((a,b)=> new Date(a.validUntil) - new Date(b.validUntil));
+  } else if(sort.value==="new"){
+    /* "Neuheiten": neue Sorten (deal.isNew, aus products[].isNew) zuerst,
+       danach Angebote, die für ihren Händler untypisch sind (deal.unusualOffer,
+       z.B. eine Marke die dort normalerweise nicht im Sortiment ist), danach
+       alle übrigen Angebote nach Angebotsbeginn absteigend (neueste zuerst). */
+    const newnessRank = d => d.isNew ? 0 : d.unusualOffer ? 1 : 2;
+    filtered.sort((a,b)=>{
+      const ra = newnessRank(a), rb = newnessRank(b);
+      if(ra !== rb) return ra - rb;
+      return new Date(b.validFrom) - new Date(a.validFrom);
+    });
   }
 
   /* Bundles/Mehrpacks (units>1) sollen unabhängig von der Sortierung immer
@@ -4322,6 +4356,7 @@ function render(){
           <div class="thumb-frame">
             <img class="thumb" data-product-detail="${deal.productId}" data-deal-id="${deal.id}" src="${deal.img}" alt="${deal.product}" loading="lazy" referrerpolicy="no-referrer">
             <button class="btn fav ${isFav ? "active":""}" data-fav="${favKeyForDeal(deal)}" aria-label="Favorit"><svg class="icon icon-md"><use href="#i-heart"/></svg></button>
+            ${deal.isNew ? `<span class="new-pill">Neu</span>` : ""}
           </div>
           <div class="card-top-info">
             <div class="card-head">
@@ -4535,7 +4570,8 @@ const sortLabels = {
   price: "Günstigster Preis",
   distance: "Nächster Händler",
   saving: "Beste Ersparnis",
-  ending: "Endet bald"
+  ending: "Endet bald",
+  new: "Neuheiten"
 };
 
 function syncSortUI(){
