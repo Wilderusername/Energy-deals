@@ -345,6 +345,21 @@ border-radius:50%;
 background:#fff;
 border:2px solid var(--brand-primary-dark)
 }
+/* Nur der Hinweis-Punkt am Burger-Menü-Button (Mobile) - bewusst ID-gescopt
+   statt die geteilte .iconbtn .dot-Regel zu ändern, damit #notifDot (Glocke,
+   Desktop/Webapp) unangetastet bleibt: minimal größer, helles Marken-Blau
+   (--brand-primary-light, bereits themenunabhängig als Glow-Farbe im
+   dunklen Fokus-Ring verwendet, siehe --focus-ring im dark-Theme - dieselbe
+   Farbe hier nur als sichtbarer Fülltop statt als rgba-Schatten) statt Weiß,
+   plus ein dezenter Glow in derselben Farbe. */
+#menuDot{
+top:5px;
+right:5px;
+width:8px;
+height:8px;
+background:var(--brand-primary-light);
+box-shadow:0 0 4px rgba(112,146,197,.75)
+}
 
 .loc{
 background:rgba(255,255,255,.1);

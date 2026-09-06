@@ -4,6 +4,21 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-06 (58) — Hinweis-Punkt am Burger-Menü-Button: Farbe/Glow/Größe angepasst
+
+**Auftrag**: Der kleine Hinweis-Punkt am Burger-Menü-Button (`#menuDot`, erscheint bei ungelesenen Neuigkeiten) sollte minimal größer werden und von Gelb auf ein helles, leuchtendes Blau wechseln, bestehender Glow-Effekt farblich angepasst erhalten bleiben.
+
+**Ausgangslage geprüft**: `#menuDot` nutzte bislang die geteilte `.iconbtn .dot`-Regel - ein reines, ungefärbtes Weiß (`#fff`) ohne jeglichen `box-shadow`/Glow. Die vom Nutzer beschriebene gelbliche Farbe/der Glow-Effekt ließ sich im Code nicht finden (kein Gelb-/Glow-Wert an dieser Stelle) - vermutlich abhängig von Geräte-/Bildschirmdarstellung (z.B. Nachtmodus-Farbfilter) beim Nutzer. Umgesetzt wurde trotzdem die eindeutig beschriebene Zielrichtung (helles leuchtendes Blau, dezenter Glow, minimal größer).
+
+**Umsetzung**: Neue, ID-gescopte Regel `#menuDot{...}` - bewusst NICHT die geteilte `.iconbtn .dot`-Basisregel geändert, damit `#notifDot` (Glocke-Icon, nur Desktop/Webapp sichtbar) unangetastet bleibt. Größe 7px → 8px (minimal). Farbe: `var(--brand-primary-light)` (`#7092c5`) - ein bereits im Design-System vorhandener, bislang ungenutzter heller Blauton, der schon als Glow-Farbe im dunklen Theme verwendet wird (`--focus-ring` im Dark-Theme nutzt exakt dieselbe RGB-Kombination `112,146,197` als Fokusring-Schatten) - passt dadurch nachweislich zum bestehenden Design statt eine neue Farbe zu erfinden. Deutlich heller als der navyblaue Banner-Hintergrund (`--brand-primary-dark`, theme-unabhängig immer gleich dunkel), bleibt also gut sichtbar. Dezenter Glow via `box-shadow:0 0 4px rgba(112,146,197,.75)` in derselben Farbe (bewusst kleiner Blur-Radius statt eines auffälligen/neonartigen Leuchtens). Dunkler Rand (`border:2px solid var(--brand-primary-dark)`) unverändert übernommen.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v104` erhöht (Pflichtregel).
+
+**Verifiziert** (mobil 375×812, Dark UND Light Mode, auf frisch geladener Datei - Punkt per `updateNotifDot()`/manuellem Anzeigen sichtbar gemacht, da aktuell keine ungelesenen Neuigkeiten in den Demo-Daten): Punkt erscheint sichtbar größer, in hellem Blau mit dezentem Glow, gut lesbar gegen den dunklen Banner-Hintergrund in beiden Themes (Banner-Farbe ist themen-unabhängig). `#notifDot` (Glocke) computed-style-geprüft unverändert (7px, Weiß, kein Glow). Keine Konsolenfehler.
+
+**Hinweis zum Umfang**: Ausschließlich Mobile-Version bearbeitet und verifiziert, wie seit [[feedback-scope-mobile-only-default]] festgelegt.
+
+---
+
 ## 2026-09-06 (57) — Zurück-Pfeil und Teilen-Symbol in die jeweiligen Bild-Ecken verlegt (Produktdetailansicht)
 
 **Weiterentwicklung von (56)**: Statt nur die Höhe des Teilen-Symbols an den (weiterhin über dem gesamten Sheet sitzenden) "Zurück"-Pfeil anzupassen, sitzen jetzt beide Symbole symmetrisch INNERHALB des Produktbild-Rahmens (`.detail-hero`) - "Zurück" oben links, "Teilen" oben rechts, beide mit 12px Abstand zu ihrem jeweiligen Bild-/Kartenrand.
