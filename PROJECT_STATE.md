@@ -4,6 +4,19 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-06 (57) — Zurück-Pfeil und Teilen-Symbol in die jeweiligen Bild-Ecken verlegt (Produktdetailansicht)
+
+**Weiterentwicklung von (56)**: Statt nur die Höhe des Teilen-Symbols an den (weiterhin über dem gesamten Sheet sitzenden) "Zurück"-Pfeil anzupassen, sitzen jetzt beide Symbole symmetrisch INNERHALB des Produktbild-Rahmens (`.detail-hero`) - "Zurück" oben links, "Teilen" oben rechts, beide mit 12px Abstand zu ihrem jeweiligen Bild-/Kartenrand.
+
+**Umsetzung**: Der "Zurück"-Button (`data-close="productDetailOverlay"`) ist im HTML jetzt ein Kind von `.detail-hero` statt wie bei jedem anderen Sheet das erste Element in `.sheet-inner`. Funktional unverändert (dieselbe `.sheet-close`/`.sheet-close-back`-Klasse, derselbe generische `[data-close]`-Delegations-Mechanismus, der unabhängig von der DOM-Position funktioniert). Die Positionierung ist per ID-gescopter Regel `#productDetailOverlay .detail-hero .sheet-close-back{top:12px;left:12px}` überschrieben - bewusst NICHT die geteilte `.sheet-close-back`-Basisregel geändert, damit alle anderen Sheets mit "Zurück"-Pfeil (z.B. Preisverlauf) unangetastet bleiben und weiterhin oben links über dem gesamten Sheet sitzen (per `getBoundingClientRect()` vor/nach dem Fix gegengeprüft: unverändert bei `top:143.6875`). Der vorherige `top:-5px`-Behelfswert an `.detail-hero-actions` aus (56) ist wieder entfernt (nicht mehr nötig, da "Zurück" jetzt ebenfalls per `top:12px` innerhalb von `.detail-hero` positioniert ist statt sheet-weit).
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v103` erhöht (Pflichtregel).
+
+**Verifiziert** (mobil 375×812, Dark UND Light Mode, auf frisch geladener Datei): Beide Symbole exakt auf gleicher Höhe (`top:160.6875`) und mit symmetrischem Abstand (~13px) zu ihrem jeweiligen Bildrand; "Zurück" schließt die Ansicht weiterhin korrekt; "Teilen" löst weiterhin mit dem korrekten Angebot aus; Preisverlauf-Sheet (`#histOverlay`) unverändert (eigener "Zurück"-Pfeil weiterhin oben links über dem gesamten Sheet, Teilen/Favorit unverändert nebeneinander). Keine Konsolenfehler.
+
+**Hinweis zum Umfang**: Ausschließlich Mobile-Version bearbeitet und verifiziert, wie seit [[feedback-scope-mobile-only-default]] festgelegt.
+
+---
+
 ## 2026-09-06 (56) — Teilen-Symbol in der Produktdetailansicht auf Höhe des Zurück-Pfeils gebracht
 
 **Gemeldet**: In der Produktdetailansicht (Klick auf ein Kartenbild, (55)) saß das neue Teilen-Symbol oben rechts im Bild sichtbar tiefer als der "Zurück"-Pfeil oben links.

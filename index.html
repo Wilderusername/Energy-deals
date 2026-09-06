@@ -2226,14 +2226,21 @@ right:12px;
 display:flex;
 gap:8px
 }
-/* Nur in der Produktdetailansicht (Klick auf ein Kartenbild): hier trägt
-   .detail-hero-actions ausschließlich den Teilen-Button (kein Favorit
-   daneben wie im Preisverlauf-Sheet), der dadurch sichtbar tiefer als der
-   "Zurück"-Pfeil oben links saß (.detail-hero beginnt erst nach Handle +
-   eigenem margin-top). ID-Scope statt Änderung der geteilten .detail-hero-
-   actions-Regel, damit das Preisverlauf-Sheet (dort bereits korrekt auf
-   Höhe des dortigen "Zurück"-Pfeils, andere Ausgangslage) unverändert bleibt. */
-#productDetailOverlay .detail-hero-actions{top:-5px}
+
+/* Produktdetailansicht (Klick auf ein Kartenbild): "Zurück" sitzt hier -
+   anders als bei jedem anderen Sheet - INNERHALB von .detail-hero (oben
+   links im Bild), spiegelbildlich zum Teilen-Button oben rechts
+   (.detail-hero-actions, gleicher 12px-Abstand zu beiden Rändern). ID-Scope
+   statt Änderung der geteilten .sheet-close/-back-Basisregel, damit alle
+   anderen Sheets mit "Zurück"-Pfeil (z.B. Preisverlauf, dort oben links über
+   dem gesamten Sheet wie gehabt) unangetastet bleiben. */
+#productDetailOverlay .detail-hero .sheet-close-back{
+position:absolute;
+top:12px;
+left:12px;
+right:auto;
+z-index:2
+}
 
 .detail-badges{
 display:flex;
@@ -3752,10 +3759,17 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <div class="overlay" id="productDetailOverlay">
 <div class="sheet">
 <div class="sheet-inner">
-<button class="sheet-close sheet-close-back" data-close="productDetailOverlay" aria-label="Zurück"><svg class="icon icon-md"><use href="#i-arrow-left"/></svg></button>
 <div class="handle"></div>
 
+<!-- "Zurück" sitzt hier bewusst INNERHALB von .detail-hero (oben links im
+     Bild, spiegelbildlich zum Teilen-Button oben rechts) statt wie bei jedem
+     anderen Sheet oben links über dem gesamten Sheet - siehe Anfrage "beide
+     Symbole in die jeweiligen Ecken vom Bild". Funktional unverändert
+     (data-close, dieselbe .sheet-close/-back-Klasse), nur die Position ist
+     per ID-gescopter Regel (siehe CSS) überschrieben, damit alle anderen
+     Sheets mit .sheet-close-back (z.B. Preisverlauf) unangetastet bleiben. -->
 <div class="detail-hero">
+<button class="sheet-close sheet-close-back" data-close="productDetailOverlay" aria-label="Zurück"><svg class="icon icon-md"><use href="#i-arrow-left"/></svg></button>
 <img class="detail-img" id="pdImg" src="" alt="">
 <div class="detail-hero-actions">
 <button class="btn" id="pdShareBtn" aria-label="Angebot teilen"><svg class="icon icon-md"><use href="#i-share"/></svg></button>
