@@ -4,6 +4,20 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-06 (59) — "Bewerte uns" im Burger-Menü unter "Weitere" ergänzt
+
+**Umsetzung**: Neue Zeile `#menuRateRow` als direktes Geschwister-Element nach dem bestehenden "Einstellungen"-Accordion (beide unter demselben `field-label` "Weitere" in `#menuViewMain`). Bewusst KEIN Accordion (kein `.menu-acc`-Wrapper, kein Chevron) wie "Einstellungen"/"Neuheiten"/"Händler", da es keinen Inhalt zum Aufklappen gibt - stattdessen derselbe einfache `.profile-row`-mit-"›"-Pfeil-Aufbau wie `#menuNewsRow`/`#menuNotifRow` (beide führen ebenfalls nach außen/zu einer anderen Ansicht statt Inhalt direkt aufzuklappen). Neues Icon `#i-star` (schlichtes Stern-Polygon, gleicher Stroke-only-Stil wie alle anderen Icons im Sprite) zum SVG-Sprite ergänzt - kein bereits vorhandenes Icon passte.
+
+**Store-Verlinkung (Platzhalter-Struktur wie gefordert)**: `STORE_RATING_LINKS = {ios, android}` mit klar als Platzhalter erkennbaren Fake-Werten (`idXXXXXXXXXX` für die noch unbekannte Apple-App-ID, `com.canspot.app` als Beispiel-Package-Name) - beide bereits mit den in der Praxis üblichen Deep-Link-Parametern versehen, die den jeweiligen Store möglichst direkt zum Bewertungsdialog statt nur zur allgemeinen Produktseite springen lassen (`?action=write-review` bei Apple, `&showAllReviews=true` bei Google). Sobald CanSpot echte Store-Einträge hat, genügt es, nur diese zwei Werte zu ersetzen. `isIOSDevice()` erkennt die Plattform rein clientseitig über die Browser-`userAgent`-Zeichenkette (iPhone/iPad/iPod direkt; iPadOS meldet sich seit Version 13 selbst als "Macintosh" in der UA, dort zusätzlich per Touch-Support abgesichert) - `openStoreRating()` öffnet dann `STORE_RATING_LINKS.ios` bzw. `.android` per `window.open()` (dasselbe Muster wie die bereits bestehende "Route starten"-Verlinkung zu Google Maps).
+- Beim ersten Testlauf einen echten Erkennungsfehler gefunden und korrigiert: eine anfängliche Variante prüfte zusätzlich `navigator.platform === "MacIntel"` (klassischer iPad-Erkennungs-Trick), das schlug aber in der hiesigen Emulationsumgebung fehl, weil dort `navigator.platform` unabhängig vom eigentlichen (korrekt Android meldenden) `userAgent` auf "MacIntel" hängen blieb - stattdessen wird jetzt ausschließlich der `userAgent`-String selbst geprüft (inkl. eines expliziten `Android`-Kurzschlusses vor der Mac-Prüfung), das ist zuverlässiger. An vier synthetischen User-Agents (iPhone, iPad-als-Mac-UA, echter Desktop-Mac, Android) verifiziert - alle vier korrekt erkannt.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v105` erhöht (Pflichtregel).
+
+**Verifiziert** (mobil 375×812, Dark UND Light Mode, auf frisch geladener Datei): "Bewerte uns" erscheint optisch identisch zu den übrigen Zeilen unter "Weitere", Stern-Icon rendert korrekt; Klick öffnet (in diesem Android-emulierten Test-Browser) korrekt den Play-Store-Platzhalterlink; "Einstellungen"-Accordion bleibt durch das neue Geschwister-Element unbeeinflusst (klappt weiterhin normal auf/zu, "Bewerte uns" bleibt darunter). Keine Konsolenfehler.
+
+**Hinweis zum Umfang**: Ausschließlich Mobile-Version bearbeitet und verifiziert, wie seit [[feedback-scope-mobile-only-default]] festgelegt.
+
+---
+
 ## 2026-09-06 (58) — Hinweis-Punkt am Burger-Menü-Button: Farbe/Glow/Größe angepasst
 
 **Auftrag**: Der kleine Hinweis-Punkt am Burger-Menü-Button (`#menuDot`, erscheint bei ungelesenen Neuigkeiten) sollte minimal größer werden und von Gelb auf ein helles, leuchtendes Blau wechseln, bestehender Glow-Effekt farblich angepasst erhalten bleiben.

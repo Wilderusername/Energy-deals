@@ -3095,6 +3095,7 @@ padding:10px
 <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/><path d="M19 3v3M17.5 4.5h3"/><path d="M5 17v2.5M3.75 18.25h2.5"/></symbol>
 <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
 <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
 </defs>
 </svg>
 
@@ -3999,6 +4000,18 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 </div>
 </div>
 </div>
+
+<!-- "Bewerte uns": kein Accordion (kein Inhalt zum Aufklappen), sondern wie
+     #menuNewsRow/#menuNotifRow ein einfacher .profile-row-Link mit
+     ›-Pfeil, der nach außen führt (App Store/Play Store) statt etwas im
+     Menü selbst zu öffnen. Öffnet plattformabhängig den jeweiligen Store -
+     siehe openStoreRating()/STORE_RATING_LINKS im Script (dort auch die
+     Platzhalter-Links, echte IDs folgen erst nach Store-Veröffentlichung). -->
+<button class="profile-row" id="menuRateRow">
+<div class="profile-row-icon"><svg class="icon icon-lg"><use href="#i-star"/></svg></div>
+<div class="profile-row-txt"><b>Bewerte uns</b></div>
+<div class="profile-row-arrow">›</div>
+</button>
 
 </div>
 
@@ -6003,6 +6016,39 @@ document.getElementById("menuHelpRow").addEventListener("click",()=>{
 document.getElementById("menuAboutRow").addEventListener("click",()=>{
   toggleMenuAccordion("menuAboutRow","menuAboutPanel");
 });
+
+/* "Bewerte uns": Platzhalter-Struktur für die Store-Bewertungslinks, bis
+   CanSpot tatsächlich veröffentlicht ist und echte IDs feststehen - dann
+   hier nur die beiden Werte ersetzen, der Rest (Plattformerkennung,
+   Verlinkung) bleibt unverändert. "action=write-review" (iOS) und
+   "showAllReviews=true" (Android) sind die jeweils üblichen Deep-Link-
+   Parameter, die die Store-App möglichst direkt zum Bewertungsdialog statt
+   nur zur allgemeinen Produktseite springen lassen. */
+const STORE_RATING_LINKS = {
+  ios: "https://apps.apple.com/app/idXXXXXXXXXX?action=write-review",
+  android: "https://play.google.com/store/apps/details?id=com.canspot.app&showAllReviews=true"
+};
+
+function isIOSDevice(){
+  const ua = navigator.userAgent || "";
+  if(/iPad|iPhone|iPod/.test(ua)) return true;
+  if(/Android/.test(ua)) return false;
+  /* iPadOS meldet sich seit Version 13 in der UA selbst als "Macintosh"
+     (Desktop-Safari-UA) - einziger zuverlässiger Unterschied zu einem
+     echten Mac ist Touch-Support. Bewusst auf die UA selbst geprüft statt
+     nur auf navigator.platform === "MacIntel": platform bleibt in manchen
+     Umgebungen (u.a. bei emulierten Android-Geräten in Entwickler-Tools)
+     fälschlich auf "MacIntel" stehen, obwohl die eigentliche UA korrekt
+     Android meldet - das hätte sonst zu Fehlerkennungen geführt. */
+  return /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
+}
+
+function openStoreRating(){
+  const url = isIOSDevice() ? STORE_RATING_LINKS.ios : STORE_RATING_LINKS.android;
+  window.open(url, "_blank");
+}
+
+document.getElementById("menuRateRow").addEventListener("click", openStoreRating);
 
 document.addEventListener("keydown",(e)=>{
   if(e.key==="Escape" && document.getElementById("menuOverlay").classList.contains("open")){
