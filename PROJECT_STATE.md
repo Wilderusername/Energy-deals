@@ -4,6 +4,27 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-06 (55) — Teilen-Button in der Produktdetailansicht (Klick auf Produktbild)
+
+**Ausgangslage geprüft**: Eine vollständige Teilen-Infrastruktur existierte bereits, nur an einer anderen Stelle als gefordert: `shareDeal(deal)` (Web-Share-API mit Zwischenablage-Fallback + Toast, Link-Format `location.origin + pathname + "#deal=<id>"`) plus `checkDeepLink()` (öffnet beim Laden mit `#deal=<id>` in der URL automatisch das Preisverlauf-Sheet mit genau diesem Angebot) waren bereits vollständig gebaut und über einen Teilen-Button im **Preisverlauf**-Sheet (`#histOverlay`, `detailShareBtn`) erreichbar. Die vom Nutzer gemeinte "Produktdetailansicht" (öffnet sich beim Klick auf das Produktbild einer Angebotskarte, `#productDetailOverlay` / `openProductDetail()`) ist ein **anderes** Sheet (Fokus auf Nährwerte/Ähnliche Produkte, siehe bestehender Kommentar dort: "dreht sich ausschließlich um das Produkt selbst... nicht um ein einzelnes Angebot") und hatte bislang gar keinen Teilen-Button.
+
+**Umsetzung**: Statt einer neuen Teilen-Implementierung wird die bestehende `shareDeal()`-Funktion 1:1 wiederverwendet (identischer Linktyp, identischer Textbaustein "Produkt (Marke · Größe) für X € bei Händler – gefunden mit CanSpot", identisches Web-Share/Zwischenablage-Verhalten) - dadurch führt ein geteilter Link aus BEIDEN Sheets zum selben, bereits funktionierenden Tiefen-Link-Mechanismus.
+- Neuer Button `#pdShareBtn` im `.detail-hero` von `#productDetailOverlay`, in einem `.detail-hero-actions`-Wrapper - exakt dieselbe (bereits existierende) CSS-Klasse, die im Preisverlauf-Sheet den Teilen-Button oben rechts im Bild positioniert (`position:absolute;top:12px;right:12px`) - dadurch **keine einzige neue CSS-Regel nötig**, garantiert optisch identisches, bereits etabliertes Erscheinungsbild.
+- Da diese Ansicht - anders als der Rest von ihr - für "Teilen" ein konkretes Angebot (Preis + Händler) braucht: `openProductDetail()` ermittelt jetzt zusätzlich `dealToShare` - das Angebot, von dessen Karte aus geöffnet wurde (`dealId`, falls vorhanden), sonst ersatzweise das aktuell günstigste aktive Angebot für dieses Produkt (dieselbe Logik, die "Ähnliche Produkte" bereits für die "ab X €"-Anzeige verwendet). Gibt es gar kein aktives Angebot für das Produkt (aktuell in den Demo-Daten nicht der Fall, aber möglich z.B. bei manchen "Ähnliche Produkte"-Einträgen), wird der Button ausgeblendet statt ohne Preis/Händler zu teilen.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v101` erhöht (Pflichtregel).
+
+**Verifiziert** (mobil 375×812, Dark UND Light Mode, per JS-Klicks auf die echten Handler + Screenshots sowie einem echten frischen Tab-Load für den Tiefen-Link-Test):
+- Öffnen über Klick auf ein Kartenbild: Teilen-Icon erscheint dezent oben rechts im Bild, bestehendes Design (Zurück-Pfeil, Nährwerte, Ähnliche Produkte) unverändert.
+- Klick auf Teilen löst mit dem korrekten, konkreten Angebot (Marke/Preis/Händler der angeklickten Karte) aus - `navigator.share` ist im Test-Browser nicht verfügbar, der bereits bestehende Zwischenablage-Fallback greift korrekt (erwartetes Verhalten für iOS/Android bleibt native Teilen-Sheet, da `navigator.share` dort vorhanden ist).
+- Öffnen über "Ähnliche Produkte" (ohne konkretes Angebot): Teilen-Button ermittelt korrekt das günstigste aktive Angebot dieses Produkts.
+- Synthetisch ein Produkt ganz ohne aktives Angebot simuliert: Button blendet sich korrekt aus, kein Fehler.
+- Der generierte Link (`#deal=<id>`) öffnet in einem frisch geladenen Tab (simuliert einen echten Klick aus WhatsApp/Mail) automatisch das Preisverlauf-Sheet mit genau diesem Angebot - bereits vorhandener, unveränderter Mechanismus, funktioniert wie erwartet.
+- Klickfunktion des Produktbilds auf den Karten (öffnet die Produktdetailansicht) unverändert getestet - funktioniert weiterhin normal. Keine Konsolenfehler während des gesamten Tests.
+
+**Hinweis zum Umfang**: Ausschließlich Mobile-Version bearbeitet und verifiziert, wie seit [[feedback-scope-mobile-only-default]] festgelegt - Desktop/Webapp nicht angefasst, nicht getestet. Echtes iOS-/Android-Verhalten des nativen Share-Sheets konnte in diesem Browser-Test nicht direkt geprüft werden (kein `navigator.share` in dieser Umgebung) - die Implementierung nutzt aber exakt dieselbe, bereits im Preisverlauf-Sheet produktiv genutzte `shareDeal()`-Funktion, für die also kein neues Risiko entsteht.
+
+---
+
 ## 2026-09-06 (54) — "Deine Favoriten" aus Push-Benachrichtigungen entfernt + "Weitere Händler" im Filter auf-/zuklappbar
 
 **1. Push-Benachrichtigungen**: Die Sektion "Deine Favoriten" (Liste `#favList` unten im `notifOverlay`-Sheet, mit Schnellzugriff zum Setzen von Preisalarmen direkt aus dieser Liste) vollständig entfernt. Die separate "Preisalarm für Favoriten"-Schalterzeile weiter oben im selben Sheet (ein allgemeiner Benachrichtigungs-Schalter, keine Liste) ist NICHT die gemeinte Sektion und blieb unverändert - ebenso die eigentliche Favoriten-Funktion der App (Herz-Symbol auf Karten, "Favoriten"-Tab in der unteren Navigation, `favorites`-Set) komplett unangetastet.

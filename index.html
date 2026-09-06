@@ -3749,6 +3749,9 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 
 <div class="detail-hero">
 <img class="detail-img" id="pdImg" src="" alt="">
+<div class="detail-hero-actions">
+<button class="btn" id="pdShareBtn" aria-label="Angebot teilen"><svg class="icon icon-md"><use href="#i-share"/></svg></button>
+</div>
 </div>
 
 <h2 id="pdTitle">–</h2>
@@ -7136,6 +7139,20 @@ function openProductDetail(productId, dealId){
 
   document.getElementById("pdTitle").textContent = product.name;
   document.getElementById("pdSub").textContent = `${product.brand} · ${product.sizeMl} ml`;
+
+  /* Teilen braucht - anders als der Rest dieser Ansicht - ein konkretes
+     Angebot (Preis/Händler, siehe shareDeal()): das Angebot, von dessen Karte
+     aus geöffnet wurde (deal), sonst ersatzweise das aktuell günstigste aktive
+     Angebot für dieses Produkt (dieselbe "günstigstes Angebot"-Logik wie bei
+     "Ähnliche Produkte" unten). Gibt es gar kein aktives Angebot (z.B. bei
+     manchen Produkten in "Ähnliche Produkte"), wird der Button ausgeblendet
+     statt ohne Preis/Händler zu teilen. */
+  const dealToShare = deal || deals
+    .filter(d=>d.productId===productId && daysUntil(d.validUntil)>=0)
+    .sort((a,b)=>a.offerPrice-b.offerPrice)[0] || null;
+  const pdShareBtn = document.getElementById("pdShareBtn");
+  pdShareBtn.style.display = dealToShare ? "" : "none";
+  pdShareBtn.onclick = dealToShare ? (()=> shareDeal(dealToShare)) : null;
 
   renderNutrition(product);
   renderSimilarProducts(product);
