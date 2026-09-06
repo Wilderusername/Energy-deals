@@ -4,6 +4,20 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-06 (61) — Persönliche-Daten-Felder per Antippen bearbeitbar + Hinweis-Punkt am Burger-Menü minimal verschoben
+
+**1. Persönliche Daten (Name/E-Mail/Geburtsdatum) per Tap aufs Feld bearbeiten**: `data-edit="name"/"email"/"birthdate"` zusätzlich auf den jeweiligen `.field-view`-Container (statt nur auf den Stift-Button) gesetzt. Dadurch greift der bereits bestehende, komplett unveränderte `document.querySelectorAll("[data-edit]")`-Klick-Handler automatisch auch für einen Klick auf das Feld selbst - keine einzige Zeile JS geändert, keine neue Logik nötig, reine HTML-Ergänzung. Ein Klick auf den Stift bubbelt zwar zusätzlich zum jetzt ebenfalls lauschenden Container hoch (ruft `setFieldEditing`/`focus()` doppelt auf), das ist aber folgenlos (idempotent) und ändert nichts sichtbar. `.field-view[data-edit]{cursor:pointer}` ergänzt, damit die Klickbarkeit der ganzen Fläche auch optisch erkennbar ist. "Adresse" und "Passwort" bewusst NICHT angefasst, wie angefragt nur die drei "Persönliche Daten"-Felder betroffen.
+- Fremdverhalten weiterhin unverändert geprüft: Klick auf ein anderes Feld schließt ein zuvor per Tap geöffnetes Feld korrekt wieder (bestehender "Klick außerhalb schließt"-Mechanismus auf `#accountManageOverlay`, unangetastet), Speichern-Funktion/Platzhalter-Verhalten aus (60) unverändert.
+
+**2. Hinweis-Punkt am Burger-Menü neu positioniert**: `#menuDot` von `top:5px;right:5px` auf `top:2px;right:3px` verschoben (etwas mehr nach oben als nach rechts, wie in der Anfrage unterschiedlich stark gewichtet) - rückt ihn dichter an die Ecke des Buttons und damit sichtbar weg vom Hamburger-Icon selbst, ohne den Bezug zum Button zu verlieren. Größe (8px), Farbe (`--brand-primary-light`) und Glow (`box-shadow`) aus (58) unverändert übernommen, wie gefordert.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v107` erhöht (Pflichtregel).
+
+**Verifiziert** (mobil, Dark UND Light Mode, auf frisch geladener Datei mit geleertem `localStorage`): Klick auf "Name eingeben"/"E-Mail-Adresse eingeben"/"TT.MM.JJJJ" öffnet jeweils korrekt den Bearbeitungsmodus mit Fokus im richtigen Eingabefeld; Stift-Symbol funktioniert weiterhin identisch; Speichern (voller Name, E-Mail, Geburtsdatum) funktioniert unverändert; Wechsel zwischen Feldern schließt das jeweils andere korrekt. Hinweis-Punkt sichtbar näher an der Ecke, Größe/Farbe/Glow computed-style-geprüft unverändert. Keine Konsolenfehler.
+
+**Hinweis zum Umfang**: Ausschließlich Mobile-Version bearbeitet und verifiziert, wie seit [[feedback-scope-mobile-only-default]] festgelegt.
+
+---
+
 ## 2026-09-06 (60) — "Persönliche Daten" (Konto verwalten): Beispieldaten entfernt, echte Platzhalter + Vorname/Nachname aufgeteilt
 
 **Rückfrage vor der Umsetzung**: Der Auftrag nannte "Vorname"/"Nachname" als zwei Felder - tatsächlich gab es bisher nur ein gemeinsames Feld "Name" (Wert "Max Mustermann"). Da eine Aufteilung Speicherlogik/Avatar-Initialen/Anzeige in "Mein Bereich" mit betrifft (eigentlich laut Auftrag unverändert zu lassen), habe ich nachgefragt statt zu raten - Nutzer hat sich für die Aufteilung in zwei Felder entschieden.

@@ -353,8 +353,8 @@ border:2px solid var(--brand-primary-dark)
    Farbe hier nur als sichtbarer Fülltop statt als rgba-Schatten) statt Weiß,
    plus ein dezenter Glow in derselben Farbe. */
 #menuDot{
-top:5px;
-right:5px;
+top:2px;
+right:3px;
 width:8px;
 height:8px;
 background:var(--brand-primary-light);
@@ -2507,6 +2507,11 @@ border:1px solid var(--border-subtle);
 border-radius:var(--radius-sm);
 padding:9px 10px
 }
+/* Nur bei Feldern, die auch übers Antippen (nicht nur den Stift) in den
+   Bearbeitungsmodus wechseln (siehe data-edit auf dem Container selbst,
+   [data-edit]-Klick-Handler im Script bereits vorhanden/unverändert) -
+   Cursor als Hinweis, dass die ganze Fläche klickbar ist. */
+.field-view[data-edit]{cursor:pointer}
 .field-view span{
 font-size:13.5px;
 font-weight:700;
@@ -3563,7 +3568,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <div class="field-label" style="margin-top:22px">Persönliche Daten</div>
 <div class="field-block" id="nameBlock">
 <div class="field-mini-label">Name</div>
-<div class="field-view">
+<div class="field-view" data-edit="name">
 <span id="profileNameFieldText" class="placeholder-text">Name eingeben</span>
 <button class="field-edit-btn" data-edit="name" aria-label="Name bearbeiten"><svg class="icon icon-sm"><use href="#i-pencil"/></svg></button>
 </div>
@@ -3577,7 +3582,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 </div>
 <div class="field-block" id="emailBlock">
 <div class="field-mini-label">E-Mail-Adresse</div>
-<div class="field-view">
+<div class="field-view" data-edit="email">
 <span id="profileEmailText" class="placeholder-text">E-Mail-Adresse eingeben</span>
 <button class="field-edit-btn" data-edit="email" aria-label="E-Mail bearbeiten"><svg class="icon icon-sm"><use href="#i-pencil"/></svg></button>
 </div>
@@ -3588,7 +3593,7 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 </div>
 <div class="field-block" id="birthdateBlock">
 <div class="field-mini-label">Geburtsdatum</div>
-<div class="field-view">
+<div class="field-view" data-edit="birthdate">
 <span id="profileBirthdateText" class="placeholder-text">TT.MM.JJJJ</span>
 <button class="field-edit-btn" data-edit="birthdate" aria-label="Geburtsdatum bearbeiten"><svg class="icon icon-sm"><use href="#i-pencil"/></svg></button>
 </div>
