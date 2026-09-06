@@ -1297,6 +1297,20 @@ text-align:left
 .sort-row:hover{color:var(--brand-primary-blue)}
 .sort-row .sort-check{color:var(--brand-primary-blue);opacity:0}
 .sort-row.active .sort-check{opacity:1}
+/* "Am besten bewertet" - bewusst NUR mobil (siehe Anfrage), daher analog zu
+   .detail-rating/.community-rating per @media(max-width:540px) ein-/
+   ausgeblendet statt eines eigenen Markup-Zweigs. Da diese Zeile im DOM nach
+   "Endet bald" folgt, wäre "Endet bald" auf Desktop (wo "Am besten bewertet"
+   unsichtbar bleibt) sonst nicht mehr :last-child und bekäme fälschlich eine
+   neue Trennlinie - daher hier explizit wieder entfernt und nur mobil (wo
+   "Am besten bewertet" tatsächlich die letzte sichtbare Zeile ist und selbst
+   schon über :last-child korrekt ohne Trennlinie auskommt) erneut ergänzt. */
+.sort-row[data-sort="rating"]{display:none}
+.sort-row[data-sort="ending"]{border-bottom:0}
+@media (max-width:540px){
+.sort-row[data-sort="rating"]{display:flex}
+.sort-row[data-sort="ending"]{border-bottom:1px solid var(--border-subtle)}
+}
 
 /* Eigene Klasse statt Wiederverwendung von .sort-row: visuell identisch
    (gleiche Zeilen-/Checkmark-Optik), aber bewusst getrennt, damit der
@@ -3499,6 +3513,7 @@ Aktuelle Energy-Drink-Angebote in deiner Nähe
 <option value="distance">Nächster Händler</option>
 <option value="saving">Beste Ersparnis</option>
 <option value="ending">Endet bald</option>
+<option value="rating">Am besten bewertet</option>
 </select>
 
 <span class="toolbar-count"><span id="count">0</span> Angebote</span>
@@ -3808,6 +3823,15 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 </button>
 <button class="sort-row" data-sort="ending">
 <span>Endet bald</span>
+<svg class="icon icon-md sort-check"><use href="#i-check"/></svg>
+</button>
+<!-- "Am besten bewertet": bewusst NUR mobil (siehe .sort-row[data-sort="rating"]
+     CSS) - Sortierlogik selbst (siehe render()/getWeightedRatingScore()) ist
+     zwar allgemeingültig, aber ohne diese Zeile im Sheet kann sie auf
+     Desktop/Webapp gar nicht ausgewählt werden, Desktop bleibt damit
+     unverändert. -->
+<button class="sort-row" data-sort="rating">
+<span>Am besten bewertet</span>
 <svg class="icon icon-md sort-check"><use href="#i-check"/></svg>
 </button>
 </div>
@@ -4888,7 +4912,59 @@ function getProductRatingSummary(productId){
     const ch = hashStr(productId + "_avg_" + crit.key);
     criteria[crit.key] = 3 + (ch % 21) / 10; // 3.0-5.0 in 0,1-Schritten
   });
-  return {percentPositive, count, criteria};
+  // Einzelner "Sterne"-Gesamtwert (1-5) als Mittel der vier Kriterien - dieselbe
+  // Zahl, die im Community-Popover als Sterne sichtbar ist, keine zusätzliche,
+  // separat erfundene Kennzahl. Grundlage für getWeightedRatingScore() unten
+  // (Sortierung "Am besten bewertet").
+  const avgStars = RATING_CRITERIA.reduce((sum, crit) => sum + criteria[crit.key], 0) / RATING_CRITERIA.length;
+  return {percentPositive, count, criteria, avgStars};
+}
+
+/* ---------------- SORTIERUNG "Am besten bewertet" (Bayesian Average) ----------------
+   Ein reiner Sterne-Durchschnitt würde ein Produkt mit z.B. 5,0 Sternen aus nur
+   1 Bewertung fälschlich vor einem Produkt mit 4,8 Sternen aus 500 Bewertungen
+   einordnen. Der etablierte Bayesian-Average-Ansatz (u.a. von IMDb für "Top
+   250" verwendet) gleicht das aus, indem der Durchschnitt eines Produkts mit
+   wenigen Bewertungen (v) Richtung des globalen Durchschnitts über alle
+   Produkte (C) gezogen wird, gewichtet mit einer Mindest-Stimmenzahl (m):
+     Score = (v/(v+m)) * R + (m/(v+m)) * C
+   Je mehr Bewertungen ein Produkt hat (v groß gegenüber m), desto näher liegt
+   der Score am eigenen Durchschnitt R; je weniger (v klein), desto stärker
+   zieht C den Score Richtung Gesamtdurchschnitt. R und v kommen aus genau den
+   Werten, die dem Nutzer bereits angezeigt werden (getProductRatingSummary()),
+   es wird keine zusätzliche, separat erfundene Bewertung erzeugt - Score dient
+   ausschließlich der Sortierung, die angezeigte Bewertung bleibt unverändert
+   avgStars/percentPositive aus getProductRatingSummary(). Sobald echte
+   Nutzerbewertungen (statt der deterministischen Demo-Werte) vorliegen,
+   funktioniert dieselbe Formel unverändert weiter, da sie nur R/v/C
+   voraussetzt, keine bestimmte Datenquelle dafür. */
+
+// m: Mindestanzahl an Bewertungen, ab der ein Produkt weitgehend nach seinem
+// eigenen Durchschnitt statt dem Gesamtdurchschnitt einsortiert wird. 50 liegt
+// bewusst im unteren Drittel der in getProductRatingSummary() erzeugten
+// count-Spanne (12-331): Produkte mit deutlich weniger als 50 Bewertungen
+// werden spürbar Richtung Gesamtdurchschnitt gezogen, Produkte mit
+// hunderten Bewertungen kaum noch (v/(v+m) geht gegen 1).
+const RATING_BAYESIAN_MIN_VOTES = 50;
+
+// Globaler Durchschnitt (C) über den GESAMTEN Produktkatalog (nicht nur die
+// aktuell gefilterte Liste), damit er ein stabiler, von Suche/Filtern
+// unabhängiger Bezugswert bleibt. products ändert sich nach dem initialen
+// Laden nicht mehr, daher genügt eine einmalige Berechnung pro Seitenaufruf.
+let _globalAvgRatingStarsCache = null;
+function getGlobalAvgRatingStars(){
+  if(_globalAvgRatingStarsCache !== null) return _globalAvgRatingStarsCache;
+  if(!products.length) return 4; // Fallback, falls vor Abschluss von loadDeals() aufgerufen
+  const sum = products.reduce((acc, p) => acc + getProductRatingSummary(p.id).avgStars, 0);
+  _globalAvgRatingStarsCache = sum / products.length;
+  return _globalAvgRatingStarsCache;
+}
+
+function getWeightedRatingScore(productId){
+  const { avgStars: R, count: v } = getProductRatingSummary(productId);
+  const C = getGlobalAvgRatingStars();
+  const m = RATING_BAYESIAN_MIN_VOTES;
+  return (v/(v+m))*R + (m/(v+m))*C;
 }
 
 const dealsContainer = document.getElementById("deals");
@@ -5074,6 +5150,9 @@ function render(){
     );
   } else if(sort.value==="ending"){
     filtered.sort((a,b)=> new Date(a.validUntil) - new Date(b.validUntil));
+  } else if(sort.value==="rating"){
+    // Absteigend nach gewichtetem Score, siehe getWeightedRatingScore().
+    filtered.sort((a,b)=> getWeightedRatingScore(b.productId) - getWeightedRatingScore(a.productId));
   } else if(sort.value==="new"){
     filtered.sort((a,b)=> new Date(b.validFrom) - new Date(a.validFrom));
   }
@@ -5470,7 +5549,8 @@ const sortLabels = {
   distance: "Nächster Händler",
   saving: "Beste Ersparnis",
   ending: "Endet bald",
-  new: "Neuheiten"
+  new: "Neuheiten",
+  rating: "Am besten bewertet"
 };
 
 function syncSortUI(){
