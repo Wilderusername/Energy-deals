@@ -4,6 +4,21 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-06 (69) — Lightmode-Feintuning: Sternfarbe, Bewertungs-Badge- und Preisverlauf-Hintergrund
+
+**Analyse vorab**: Alle drei betroffenen Stellen nutzten bisher geteilte, an anderer Stelle der App breit eingesetzte Farb-Variablen (`--status-warning-text` für Sterne - auch von "Demnächst"-Badges/`.connection-banner` genutzt; `--bg-surface-sunken` für Badge/Preisverlauf-Hintergrund - auch von `.rating-thumb`, `.alert-box`, `.nutrition-grid` u.v.m. genutzt). Eine direkte Änderung dieser Variablen hätte zwangsläufig auch diese unbeteiligten Elemente mitverändert. Stattdessen zwei neue, eigene Design-Token ergänzt (`--rating-star-fill`, `--bg-surface-sunken-strong`), die im Darkmode-Block bewusst 1:1 auf die bisherigen Werte zeigen (`var(--status-warning-text)` bzw. `var(--bg-surface-sunken)`) - dadurch bleibt der Darkmode für alle drei Stellen garantiert pixelgleich, während nur der Lightmode-Wert der neuen Token angepasst wurde.
+
+**1. Sternfarbe**: `--rating-star-fill` im Lightmode neu auf `#c08a2e` gesetzt (statt `#94600b` von `--status-warning-text`) - ein wärmeres, saturierteres Gold in derselben Farbfamilie wie das Darkmode-Gold (`#d4af73`, gleicher Farbton ~37°, nur dunkler/kräftiger für ausreichenden Kontrast auf hellem Grund statt eines blassen Sandtons). `.rating-stars button.filled` (erweiterte Bewertung) und `.cr-pop-stars .icon.filled` (Community-Bewertungs-Popover) darauf umgestellt. Nicht ausgefüllte Sterne (`--border-strong`) unverändert.
+**2. Community-Bewertungs-Badge**: `.community-rating` (siehe (66)) nutzt jetzt `--bg-surface-sunken-strong` statt `--bg-surface-sunken` als Hintergrund - im Lightmode identisch zu `--bg-surface-strong`/`--n200` (`#dbdbe0`, bereits als "nächst dunklere Fläche" etabliert, z.B. bei `.info-badge.expired`), dadurch spürbar mehr Abgrenzung vom weißen Kartenhintergrund als zuvor, ohne wie ein aktiver Button zu wirken.
+**3. "Preisverlauf"-Button**: `.card-bottom .history-link` (bislang nur Schriftgröße/Padding mobil überschrieben, siehe (66)) bekommt dieselbe `--bg-surface-sunken-strong`-Fläche - "gleiche Designlogik" wie beim Badge, wie angefragt. Da `.history-link` als Basisregel auch auf Desktop verwendet wird (dort nur größer dargestellt, nicht separat gestylt), wurde die neue Hintergrundfarbe bewusst NUR innerhalb der bestehenden `@media(max-width:540px)`-Regel für `.card-bottom .history-link` ergänzt statt in der Basisregel - Desktop behält dadurch exakt die bisherige, hellere Fläche.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v115` erhöht (Pflichtregel).
+
+**Verifiziert** (mobil, 375px, Light UND Dark Mode, per `getComputedStyle`): Lightmode zeigt Sterne jetzt in `rgb(192,138,46)` (`#c08a2e`), Badge- und Preisverlauf-Hintergrund in `rgb(219,219,224)` (`#dbdbe0`) statt zuvor `#efeff2` - deutlich sichtbarer gegen den weißen Kartenhintergrund (`#ffffff`), ohne grell zu wirken. Darkmode zeigt für alle drei weiterhin exakt dieselben Werte wie vor der Änderung (`rgb(212,175,115)` Sterne, `rgb(8,10,13)` Badge/Preisverlauf-Hintergrund). Bei 1200px Breite (Desktop) zeigt `.history-link` weiterhin die alte, hellere `#efeff2`-Fläche (Bewertungsbereich/-Badge dort ohnehin unsichtbar). Größen/Abstände/Positionen/Icons/Schriftarten aller drei Elemente unverändert. Keine Konsolenfehler.
+
+**Hinweis zum Umfang**: Ausschließlich Mobile-Version bearbeitet und verifiziert (die Preisverlauf-Änderung wurde zusätzlich extra auf mobil eingegrenzt, obwohl `.history-link` technisch auch auf Desktop erscheint), wie seit [[feedback-scope-mobile-only-default]] festgelegt.
+
+---
+
 ## 2026-09-06 (68) — "Bewertung speichern"-Button für die erweiterte Bewertung (Entwurf statt Sofort-Speichern)
 
 **Analyse vorab**: Die vier Sterne-Kriterien (`renderProductRating()`, siehe (62)) speicherten bisher bei jedem Stern-Tap sofort in `productRatings`/`localStorage`. Die Anfrage verlangt einen zweistufigen Ablauf (Sterne wählen → erst per Button endgültig übernehmen), daher wurde die Stern-Klick-Logik von "sofort speichern" auf "nur einen Entwurf im Speicher ändern" umgestellt - das bestehende Layout/die Anordnung der vier Kriterien-Zeilen selbst blieb dabei unverändert, nur ihr Verhalten beim Antippen.

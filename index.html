@@ -109,6 +109,14 @@
 --highlight-text:var(--status-warning-text);
 --highlight-border:var(--status-warning-border);
 
+/* ===== Bewertung: eigene Token statt Wiederverwendung von --status-warning-text
+   / --bg-surface-sunken, damit Lightmode-Feintuning hier NICHT auch andere
+   Warnhinweise/Flächen (z.B. "Demnächst"-Badge, .alert-box) mitverändert.
+   Im Darkmode zeigen beide unten bewusst exakt auf die bisherigen Werte -
+   dort bleibt nichts sichtbar anders. */
+--rating-star-fill:#c08a2e;
+--bg-surface-sunken-strong:var(--n200);
+
 /* ===== Typography ===== */
 --font-family-base:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 --fs-display:26px;--lh-display:1.15;--fw-display:800;--ls-display:-0.01em;
@@ -174,6 +182,11 @@ color-scheme:light
 --status-info-bg:#0c1829;
 --status-info-text:#859cc1;
 --status-info-border:#182f51;
+
+/* Bewertung (siehe Kommentar im Lightmode-Block oben) - hier bewusst
+   unverändert auf die bisherigen Darkmode-Werte gesetzt. */
+--rating-star-fill:var(--status-warning-text);
+--bg-surface-sunken-strong:var(--bg-surface-sunken);
 
 color-scheme:dark
 }
@@ -1458,7 +1471,7 @@ transform:translateX(-50%) rotate(45deg)
 .cr-pop-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11.5px;color:var(--text-secondary)}
 .cr-pop-stars{display:flex;gap:1px;flex-shrink:0}
 .cr-pop-stars .icon{width:11px;height:11px;color:var(--border-strong)}
-.cr-pop-stars .icon.filled{color:var(--status-warning-text);fill:currentColor;stroke:none}
+.cr-pop-stars .icon.filled{color:var(--rating-star-fill);fill:currentColor;stroke:none}
 
 /* location sheet */
 
@@ -2611,7 +2624,7 @@ color:var(--border-strong);
 cursor:pointer
 }
 .rating-stars button .icon{width:15px;height:15px}
-.rating-stars button.filled{color:var(--status-warning-text)}
+.rating-stars button.filled{color:var(--rating-star-fill)}
 .rating-stars button.filled .icon{fill:currentColor;stroke:none}
 
 /* "Bewertung speichern" - bewusst dezenter Sekundär-Look (Rahmen+gedämpfte
@@ -3060,7 +3073,7 @@ margin-left:auto;
 flex-shrink:0;
 border:1px solid var(--border-subtle);
 border-radius:var(--radius-pill);
-background:var(--bg-surface-sunken);
+background:var(--bg-surface-sunken-strong);
 color:var(--text-secondary);
 padding:3px 7px;
 font-size:10.5px;
@@ -3087,7 +3100,13 @@ transition:transform .1s ease
 .card-bottom .store-sub{font-size:10px}
 .card-bottom .meta{font-size:10px;white-space:nowrap}
 .card-bottom .meta .icon{width:9px;height:9px}
-.card-bottom .history-link{font-size:9.5px;padding:5px 8px;gap:3px}
+/* Nur mobil (siehe Anfrage) etwas dunklerer, dezenter Kontrast-Hintergrund -
+   dieselbe --bg-surface-sunken-strong wie das Community-Bewertungs-Badge
+   oben ("gleiche Designlogik"), Desktop behält die bisherige, hellere
+   --bg-surface-sunken-Fläche aus der Basisregel (.history-link{...} weiter
+   oben im Stylesheet) unverändert bei, da diese Regel hier nur <=540px
+   greift. */
+.card-bottom .history-link{font-size:9.5px;padding:5px 8px;gap:3px;background:var(--bg-surface-sunken-strong)}
 .card-bottom .history-link .icon{width:10px;height:10px}
 .hero-top{padding:14px 18px 0}
 .hero-search-sticky{padding:12px 18px 16px}
