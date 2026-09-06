@@ -2263,6 +2263,39 @@ right:auto;
 z-index:2
 }
 
+/* Preisalarm-Glocke unten rechts im Bild (vierte Ecke, spiegelbildlich zu
+   "Zurück" oben links) - bewusst NUR mobil (siehe .detail-rating-Kommentar
+   weiter unten: dasselbe geteilte #productDetailOverlay-Sheet dient auch der
+   Desktop-/Webapp-Ansicht, die unverändert bleiben soll). */
+.pd-alert-btn{display:none}
+@media (max-width:540px){
+#productDetailOverlay .detail-hero .pd-alert-btn{
+display:flex;
+position:absolute;
+bottom:12px;
+right:12px;
+z-index:2
+}
+}
+.pd-alert-btn{position:relative}
+.pd-alert-btn[aria-expanded="true"]{
+background:var(--brand-primary-subtle);
+border-color:var(--brand-primary-blue);
+color:var(--brand-primary-blue)
+}
+.pd-alert-btn .alert-dot{
+display:none;
+position:absolute;
+top:-2px;
+right:-2px;
+width:8px;
+height:8px;
+border-radius:50%;
+background:var(--brand-primary-light);
+border:2px solid var(--bg-surface-sunken)
+}
+.pd-alert-btn .alert-dot.show{display:block}
+
 .detail-badges{
 display:flex;
 flex-wrap:wrap;
@@ -2434,6 +2467,26 @@ font-size:12.5px
 .detail-rating{display:block;margin-top:10px}
 }
 .rating-quick{display:flex;align-items:center;gap:6px}
+/* Kompakte Gesamtbewertung - gleiche "Pille" wie z.B. .saving-percent (Fläche
+   var(--bg-surface-sunken) + border-subtle + radius-pill, bereits an anderer
+   Stelle der App etabliert), bewusst sehr klein/stumpf eingefärbt (text-muted)
+   statt einer eigenen Akzentfarbe, damit sie neben den Daumen-Buttons nicht
+   mit ihnen um Aufmerksamkeit konkurriert. */
+.rating-summary{
+display:inline-flex;
+align-items:center;
+gap:3px;
+flex-shrink:0;
+padding:4px 8px;
+border:1px solid var(--border-subtle);
+border-radius:var(--radius-pill);
+background:var(--bg-surface-sunken);
+color:var(--text-muted);
+font-size:11px;
+white-space:nowrap
+}
+.rating-summary .icon{width:9px;height:9px}
+.rating-summary b{color:var(--text-secondary);font-weight:700}
 .rating-thumb{
 display:flex;
 align-items:center;
@@ -2517,6 +2570,23 @@ cursor:pointer
 .rating-stars button .icon{width:15px;height:15px}
 .rating-stars button.filled{color:var(--status-warning-text)}
 .rating-stars button.filled .icon{fill:currentColor;stroke:none}
+
+/* Preisalarm-Panel (siehe pdAlertBtn) - bewusst NUR mobil, exakt dasselbe
+   Muster wie .detail-rating oben. Grid-Höhen-/Opacity-Technik 1:1 von
+   .rating-adv/-inner übernommen (eigene Klasse statt Wiederverwendung, da
+   fachfremd zur Bewertung), Inhalt selbst nutzt die bereits bestehenden
+   .alert-box/-input-row/-active-Klassen aus dem Preisverlauf-Sheet. */
+.detail-alert-panel{display:none}
+@media (max-width:540px){
+.detail-alert-panel{
+display:grid;
+grid-template-rows:0fr;
+opacity:0;
+transition:grid-template-rows .28s ease, opacity .2s ease
+}
+.detail-alert-panel.open{grid-template-rows:1fr;opacity:1}
+}
+.detail-alert-panel-inner{overflow:hidden;min-height:0}
 
 .similar-scroll{
 display:flex;
@@ -3917,6 +3987,14 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <div class="detail-hero-actions">
 <button class="btn" id="pdShareBtn" aria-label="Angebot teilen"><svg class="icon icon-md"><use href="#i-share"/></svg></button>
 </div>
+<!-- Preisalarm-Glocke: eigene, vierte Ecke (unten rechts im Bild) neben
+     Zurück (oben links)/Teilen (oben rechts) - siehe .pd-alert-btn CSS
+     (ID-gescopt, nur mobil sichtbar wie .detail-rating). Öffnet/schließt
+     #pdAlertPanel weiter unten, siehe renderProductAlertPanel(). -->
+<button class="btn pd-alert-btn" id="pdAlertBtn" aria-label="Preisalarm" aria-expanded="false" aria-controls="pdAlertPanel">
+<svg class="icon icon-md"><use href="#i-bell"/></svg>
+<span class="alert-dot" id="pdAlertDot"></span>
+</button>
 </div>
 
 <h2 id="pdTitle">–</h2>
@@ -3931,6 +4009,11 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <div class="rating-quick">
 <button class="rating-thumb" id="pdThumbUp" data-vote="up" aria-label="Gefällt mir" aria-pressed="false"><svg class="icon"><use href="#i-thumb-up"/></svg></button>
 <button class="rating-thumb" id="pdThumbDown" data-vote="down" aria-label="Gefällt mir nicht" aria-pressed="false"><svg class="icon"><use href="#i-thumb-down"/></svg></button>
+<!-- Kompakte Gesamtbewertung (alle Nutzer) - eigenständig von der eigenen
+     Stimme der beiden Daumen-Buttons oben, siehe getProductRatingSummary().
+     Bewusst nur Prozent+Icon (kein Wort), damit die Zeile bei zusätzlich
+     vorhandenem "Erweitert bewerten" auf schmalen Screens nicht umbricht. -->
+<span class="rating-summary" id="pdRatingSummary"><svg class="icon"><use href="#i-thumb-up"/></svg><b>–</b></span>
 <button class="rating-adv-toggle" id="pdRatingAdvToggle" aria-expanded="false" aria-controls="pdRatingAdv">
 <span>Erweitert bewerten</span>
 <svg class="icon"><use href="#i-chevron-down"/></svg>
@@ -3938,6 +4021,29 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 </div>
 <div class="rating-adv" id="pdRatingAdv">
 <div class="rating-adv-inner" id="pdRatingAdvInner"></div>
+</div>
+</div>
+
+<!-- Preisalarm-Panel (siehe pdAlertBtn oben): dieselbe Grid-Höhen-
+     Einblendtechnik wie .rating-adv/-inner, bewusst als eigene, gleich
+     benannte Klasse dupliziert statt die "rating-*"-Klassen semantisch
+     fachfremd wiederzuverwenden. Inhalt/Klassen (.alert-box/.alert-input-row/
+     .alert-active) sind dieselben wie im bestehenden Preisalarm im
+     Preisverlauf-Sheet (histOverlay) - eigene IDs (pdAlert*), damit beide
+     Instanzen unabhängig voneinander funktionieren. Sitzt bewusst NACH der
+     Bewertung (Priorität lt. Anfrage: Bewertung vor "zusätzlichen
+     Funktionen wie Preisalarm"). -->
+<div class="detail-alert-panel" id="pdAlertPanel">
+<div class="detail-alert-panel-inner">
+<div class="alert-box">
+<div class="desc" style="margin-bottom:0">Benachrichtige mich, sobald der Preis auf … fällt</div>
+<div class="alert-input-row">
+<input type="text" inputmode="decimal" id="pdAlertPriceInput">
+<span>€</span>
+<button class="btn primary" id="pdAlertSetBtn">Preisalarm aktivieren</button>
+</div>
+<div class="alert-active" id="pdAlertActiveMsg" style="display:none"></div>
+</div>
 </div>
 </div>
 
@@ -4613,6 +4719,20 @@ const RATING_CRITERIA = [
   {key:"intensity", label:"Intensität"},
   {key:"aftertaste", label:"Nachgeschmack"}
 ];
+
+/* Kompakte Gesamtbewertung ("wie andere Nutzer das Produkt bewertet haben")
+   für die Detailansicht (siehe #pdRatingSummary) - es gibt in diesem
+   Demo-Prototyp keinen Server/keine echten Mehrnutzer-Bewertungsdaten (siehe
+   deals.json _meta.description), daher deterministisch aus der Produkt-ID
+   erzeugt wie an anderer Stelle bereits üblich (z.B. checkedMinutesAgo via
+   hashStr(), genPriceHistory()) - stabil über Re-Renders/Reloads hinweg,
+   unabhängig von der eigenen Daumen-Stimme des aktuellen Nutzers. */
+function getProductRatingSummary(productId){
+  const h = hashStr(productId + "_ratingSummary");
+  const percentPositive = 68 + (h % 30); // 68-97%
+  const count = 12 + (Math.floor(h/30) % 320); // 12-331
+  return {percentPositive, count};
+}
 
 const dealsContainer = document.getElementById("deals");
 const mapView = document.getElementById("mapView");
@@ -7498,6 +7618,7 @@ function openProductDetail(productId, dealId){
 
   renderNutrition(product);
   renderProductRating(productId);
+  renderProductAlertPanel(productId, dealToShare);
   renderSimilarProducts(product);
 
   openSheet("productDetailOverlay");
@@ -7567,6 +7688,11 @@ function renderProductRating(productId){
   const advPanel = document.getElementById("pdRatingAdv");
   const advInner = document.getElementById("pdRatingAdvInner");
 
+  const summary = getProductRatingSummary(productId);
+  const summaryEl = document.getElementById("pdRatingSummary");
+  summaryEl.querySelector("b").textContent = `${summary.percentPositive}%`;
+  summaryEl.setAttribute("aria-label", `${summary.percentPositive}% positive Bewertungen von ${summary.count} Nutzern`);
+
   function applyVoteState(){
     const vote = (productRatings[productId] || {}).vote || null;
     thumbUpBtn.classList.toggle("active", vote === "up");
@@ -7628,6 +7754,70 @@ function renderProductRating(productId){
     });
   });
 }
+
+/* Preisalarm-Panel in der Produkt-Detailansicht (siehe #pdAlertBtn/#pdAlertPanel
+   im Markup) - eigenständiger Einstiegspunkt in denselben priceAlerts-Speicher
+   (keyed by productId) wie der bereits bestehende Preisalarm im Preisverlauf-
+   Sheet (histOverlay, siehe alertSetBtn/updateAlertActiveMsg weiter unten) -
+   bewusst eigene IDs/Funktion statt Wiederverwendung, da beide Instanzen
+   unabhängig voneinander (verschiedene Sheets, verschiedene DOM-Elemente)
+   funktionieren müssen. deal wird von openProductDetail() durchgereicht
+   (dieselbe "aktuelles bzw. günstigstes Angebot"-Logik wie beim Teilen-Button
+   dort) und liefert Referenzpreis + Produktname für den Alarm; ohne aktives
+   Angebot (deal===null) bleibt die Glocke ausgeblendet, analog zu pdShareBtn. */
+function renderProductAlertPanel(productId, deal){
+  const btn = document.getElementById("pdAlertBtn");
+  const panel = document.getElementById("pdAlertPanel");
+  const dot = document.getElementById("pdAlertDot");
+  const input = document.getElementById("pdAlertPriceInput");
+  const setBtn = document.getElementById("pdAlertSetBtn");
+  const activeMsg = document.getElementById("pdAlertActiveMsg");
+
+  btn.style.display = deal ? "" : "none";
+  panel.classList.remove("open");
+  btn.setAttribute("aria-expanded", "false");
+  if(!deal) return;
+
+  function renderActiveState(){
+    const alert = priceAlerts[productId];
+    dot.classList.toggle("show", !!alert);
+    if(!alert){
+      activeMsg.style.display = "none";
+      activeMsg.innerHTML = "";
+      return;
+    }
+    activeMsg.style.display = "flex";
+    activeMsg.innerHTML = `<span><svg class="icon icon-sm"><use href="#i-target"/></svg> Aktiver Alarm bei ${euro(alert.target)} €</span><button type="button" data-remove-pd-alert>entfernen</button>`;
+    activeMsg.querySelector("[data-remove-pd-alert]").addEventListener("click", ()=>{
+      delete priceAlerts[productId];
+      savePriceAlerts();
+      renderActiveState();
+      updateAlertsDot();
+      showToast("Preisalarm entfernt.");
+    });
+  }
+
+  const existingAlert = priceAlerts[productId];
+  input.value = euro(existingAlert ? existingAlert.target : Math.max(0, +(deal.offerPrice - 0.10).toFixed(2)));
+  renderActiveState();
+
+  btn.onclick = () => {
+    const nowOpen = !panel.classList.contains("open");
+    panel.classList.toggle("open", nowOpen);
+    btn.setAttribute("aria-expanded", String(nowOpen));
+  };
+
+  setBtn.onclick = () => {
+    const val = parseGermanPrice(input.value);
+    if(!val || val<=0) return;
+    priceAlerts[productId] = {target: val, enabled: true};
+    savePriceAlerts();
+    renderActiveState();
+    updateAlertsDot();
+    showToast(`Preisalarm gesetzt: ${deal.product} unter ${euro(val)} €`);
+  };
+}
+attachGermanPriceInput(document.getElementById("pdAlertPriceInput"));
 
 function renderSimilarProducts(product){
   const sameBrand = products.filter(p=>p.brand===product.brand && p.id!==product.id);
