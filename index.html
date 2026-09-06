@@ -1417,6 +1417,49 @@ border-top:1px solid var(--border-subtle);
 transform:translateX(-50%) rotate(45deg)
 }
 
+/* Community-Bewertungs-Popover (Klick auf das "Ø …%"-Badge einer Karte) -
+   gleiche Sprechblasen-Mechanik/Animation wie .price-popover oben (fixed +
+   opacity/translateY-Transition + kleiner Pfeil), nur breiter/mehrzeilig
+   für den strukturierten Inhalt (Titel, Prozent+Anzahl, 4 Kriterien-Zeilen
+   mit rein informativen Sternen - siehe showCommunityRatingPopover()). */
+.community-rating-popover{
+position:fixed;
+z-index:70;
+background:var(--bg-surface-elevated);
+border:1px solid var(--border-subtle);
+color:var(--text-primary);
+padding:12px 14px;
+border-radius:var(--radius-md);
+box-shadow:var(--shadow-md);
+width:200px;
+max-width:calc(100vw - 24px);
+opacity:0;
+transform:translateY(4px);
+pointer-events:none;
+transition:opacity .15s ease,transform .15s ease
+}
+.community-rating-popover.open{opacity:1;transform:translateY(0);pointer-events:auto}
+.community-rating-popover::after{
+content:"";
+position:absolute;
+top:-5px;
+left:var(--cr-popover-arrow, 16px);
+width:9px;
+height:9px;
+background:var(--bg-surface-elevated);
+border-left:1px solid var(--border-subtle);
+border-top:1px solid var(--border-subtle);
+transform:translateX(-50%) rotate(45deg)
+}
+.cr-pop-title{font-size:12.5px;font-weight:800;color:var(--text-primary)}
+.cr-pop-summary{font-size:12px;color:var(--text-secondary);margin-top:4px;margin-bottom:9px}
+.cr-pop-summary b{color:var(--text-primary);font-weight:800}
+.cr-pop-criteria{display:flex;flex-direction:column;gap:6px}
+.cr-pop-row{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11.5px;color:var(--text-secondary)}
+.cr-pop-stars{display:flex;gap:1px;flex-shrink:0}
+.cr-pop-stars .icon{width:11px;height:11px;color:var(--border-strong)}
+.cr-pop-stars .icon.filled{color:var(--status-warning-text);fill:currentColor;stroke:none}
+
 /* location sheet */
 
 .field-label{
@@ -2954,6 +2997,11 @@ animation:skeleton-pulse 1.1s ease-in-out infinite
    deren Position weiter oben), und bewusst als max-width Query, damit
    Desktop (>540px, deckt bereits alle Tablet-/Desktop-Breiten ab, da .app
    ohnehin bei 560px deckelt) komplett unangetastet bleibt. */
+/* Basis-Regel AUSSERHALB der Media Query: ohne dieses display:none würde der
+   <button> auf Desktop-Breiten (wo die Regel unten nicht greift) mit reinen
+   Browser-Standardstilen (Rahmen/Innenabstand) sichtbar bleiben, statt wie
+   gewollt komplett zu verschwinden. */
+.community-rating{display:none}
 @media (max-width:540px){
 .card{padding:12px}
 .card-top{gap:9px}
@@ -2961,6 +3009,36 @@ animation:skeleton-pulse 1.1s ease-in-out infinite
 .thumb-frame .btn.fav{top:-1px;right:-1px;width:24px;height:24px}
 .thumb-frame .btn.fav .icon{width:20px;height:20px}
 .card .price{font-size:19px}
+/* Community-Bewertung in der Preiszeile - siehe getProductRatingSummary()/
+   showCommunityRatingPopover(). Bewusst NUR mobil (siehe Anfrage), daher
+   hier innerhalb der bereits bestehenden Mobile-Card-Media-Query ergänzt
+   statt einer eigenen; auf Desktop (>540px) bleibt .price-line unverändert
+   zweiteilig (Preis + Pfand), da diese Regel dort gar nicht greift.
+   margin-left:auto schiebt NUR das Badge selbst an den rechten Rand der
+   Zeile, ohne den bestehenden Preis/Pfand-Abstand (.price-line gap) oder
+   deren gegenseitige Position zu verändern. "Ø" (bereits an anderer Stelle
+   der App als Durchschnitts-Kennzeichnung verwendet, siehe .avg-context)
+   statt eines Symbols/Icons - macht auf einen Blick klar, dass es sich um
+   einen Fremd-/Durchschnittswert handelt, nicht um den eigenen Daumen aus
+   der Detailansicht. */
+.community-rating{
+display:inline-flex;
+align-items:center;
+margin-left:auto;
+flex-shrink:0;
+border:1px solid var(--border-subtle);
+border-radius:var(--radius-pill);
+background:var(--bg-surface-sunken);
+color:var(--text-secondary);
+padding:3px 7px;
+font-size:10.5px;
+font-weight:700;
+font-family:inherit;
+white-space:nowrap;
+cursor:pointer;
+transition:transform .1s ease
+}
+.community-rating:active{transform:scale(.94)}
 .unit{font-size:10px}
 .price-cta-row{gap:6px}
 .saving{font-size:9.5px;gap:3px}
@@ -3886,6 +3964,14 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <!-- ZULETZT GEPRÜFT (KLICK AUF DEN PREIS) — kleine Sprechblase, siehe showPricePopover() -->
 <div class="price-popover" id="pricePopover" role="tooltip"></div>
 
+<!-- COMMUNITY-BEWERTUNG (KLICK AUF DAS "Ø …%"-BADGE IN DER PREISZEILE) — eigene,
+     etwas größere Sprechblase (mehrzeiliger Inhalt statt reinem Text), siehe
+     showCommunityRatingPopover(). Gleiches Positionierungs-/Öffnen-Schließen-
+     Prinzip wie #pricePopover oben (eine wiederverwendete Instanz, pro Klick
+     neu verankert), bewusst eigenes Element statt Wiederverwendung, da der
+     Inhalt strukturiert (Titel/Zahlen/Sterne-Zeilen) statt reiner Text ist. -->
+<div class="community-rating-popover" id="communityRatingPopover" role="dialog" aria-label="Community-Bewertung"></div>
+
 <!-- PRODUKTDETAILS / PRICE HISTORY MODAL -->
 <div class="overlay" id="histOverlay">
 <div class="sheet">
@@ -4731,7 +4817,17 @@ function getProductRatingSummary(productId){
   const h = hashStr(productId + "_ratingSummary");
   const percentPositive = 68 + (h % 30); // 68-97%
   const count = 12 + (Math.floor(h/30) % 320); // 12-331
-  return {percentPositive, count};
+  /* Durchschnittliche Kriterien-Sterne (rein informativ, siehe
+     communityRatingPopover) - ebenfalls deterministisch je Kriterium, damit
+     unterschiedliche Kriterien eines Produkts nicht zufällig alle denselben
+     Wert zeigen. Bereich 3,0-5,0 (Demo-Produkte sind hier grundsätzlich eher
+     positiv bewertet, siehe auch percentPositive-Untergrenze oben). */
+  const criteria = {};
+  RATING_CRITERIA.forEach(crit => {
+    const ch = hashStr(productId + "_avg_" + crit.key);
+    criteria[crit.key] = 3 + (ch % 21) / 10; // 3.0-5.0 in 0,1-Schritten
+  });
+  return {percentPositive, count, criteria};
 }
 
 const dealsContainer = document.getElementById("deals");
@@ -5080,6 +5176,11 @@ function buildDealCardEl(deal, isBest, favLiterMin){
   const literPrice = deal.offerPrice / (deal.totalMl/1000);
   const savingPct = Math.round((1 - deal.offerPrice/deal.regularPrice) * 100);
   const badges = buildBadges(deal, isFav, favLiterMin);
+  // Dieselbe deterministische Demo-Kennzahl wie in der Detailansicht (siehe
+  // getProductRatingSummary()/#pdRatingSummary) - identischer Wert pro
+  // Produkt an beiden Stellen, da beide dieselbe productId-basierte Funktion
+  // aufrufen statt eigener, potenziell abweichender Zufallswerte.
+  const ratingSummary = getProductRatingSummary(deal.productId);
   const pfand = deal.pfand;
   const branch = storeBranches[deal.store];
   const openNow = branch ? isStoreOpenNow(branch) : null;
@@ -5109,6 +5210,7 @@ function buildDealCardEl(deal, isBest, favLiterMin){
         <div class="price-line">
           <button class="price" data-checked="${deal.id}">${euro(deal.offerPrice)} €</button>
           <span class="pfand-note">+ ${euro(pfand)} € Pfand</span>
+          <button type="button" class="community-rating" data-community-rating="${deal.productId}" aria-label="Community-Bewertung: ${ratingSummary.percentPositive}% positiv von ${ratingSummary.count} Nutzern. Details antippen.">Ø ${ratingSummary.percentPositive}%</button>
         </div>
         <div class="unit">${euro(literPrice)} €/L · Gesamt an der Kasse: ${euro(deal.offerPrice+pfand)} €</div>
         <div class="price-cta-row">
@@ -5393,6 +5495,11 @@ dealsContainer.addEventListener("click",(e)=>{
   const checkedBtn = e.target.closest("[data-checked]");
   if(checkedBtn){
     togglePricePopover(checkedBtn);
+    return;
+  }
+  const communityRatingBtn = e.target.closest("[data-community-rating]");
+  if(communityRatingBtn){
+    toggleCommunityRatingPopover(communityRatingBtn);
     return;
   }
   const productDetailBtn = e.target.closest("[data-product-detail]");
@@ -7371,6 +7478,77 @@ document.addEventListener("click",(e)=>{
 });
 window.addEventListener("scroll", ()=>{ if(pricePopoverBtn) hidePricePopover(); }, {capture:true, passive:true});
 window.addEventListener("resize", ()=>{ if(pricePopoverBtn) hidePricePopover(); });
+
+/* Community-Bewertungs-Popover (Klick auf das "Ø …%"-Badge einer Karte) -
+   1:1 dasselbe Verankern/Öffnen/Schließen-Prinzip wie #pricePopover oben
+   (eigener Button-Tracker communityRatingPopoverBtn, eigene Instanz statt
+   Wiederverwendung, da der Inhalt strukturiert statt reiner Text ist).
+   Sterne sind hier bewusst reine <svg>-Icons ohne <button> - rein
+   informativ, kein interaktives Bewertungssystem (das gibt es nur in der
+   Detailansicht für die EIGENE Stimme). */
+let communityRatingPopoverBtn = null;
+
+function hideCommunityRatingPopover(){
+  document.getElementById("communityRatingPopover").classList.remove("open");
+  communityRatingPopoverBtn = null;
+}
+
+function communityStarsHtml(avg){
+  const filled = Math.round(avg);
+  return Array.from({length:5}, (_, i) =>
+    `<svg class="icon${i < filled ? " filled" : ""}"><use href="#i-star"/></svg>`
+  ).join("");
+}
+
+function showCommunityRatingPopover(btn, productId){
+  const bubble = document.getElementById("communityRatingPopover");
+  const summary = getProductRatingSummary(productId);
+  bubble.classList.remove("open");
+  bubble.innerHTML = `
+    <div class="cr-pop-title">Community-Bewertung</div>
+    <div class="cr-pop-summary"><b>${summary.percentPositive}%</b> positiv · ${summary.count} Bewertungen</div>
+    <div class="cr-pop-criteria">
+      ${RATING_CRITERIA.map(crit => `
+        <div class="cr-pop-row">
+          <span>${crit.label}</span>
+          <span class="cr-pop-stars">${communityStarsHtml(summary.criteria[crit.key])}</span>
+        </div>
+      `).join("")}
+    </div>
+  `;
+  communityRatingPopoverBtn = btn;
+
+  const margin = 8, gap = 8;
+  const btnRect = btn.getBoundingClientRect();
+  const bubbleRect = bubble.getBoundingClientRect();
+
+  let left = btnRect.left + btnRect.width/2 - bubbleRect.width/2;
+  left = Math.max(margin, Math.min(left, window.innerWidth - bubbleRect.width - margin));
+
+  const top = btnRect.bottom + gap;
+
+  const arrowLeft = Math.max(12, Math.min(btnRect.left + btnRect.width/2 - left, bubbleRect.width - 12));
+
+  bubble.style.left = left + "px";
+  bubble.style.top = top + "px";
+  bubble.style.setProperty("--cr-popover-arrow", arrowLeft + "px");
+  bubble.classList.add("open");
+}
+
+function toggleCommunityRatingPopover(btn){
+  const productId = btn.dataset.communityRating;
+  if(!productId) return;
+  if(communityRatingPopoverBtn === btn) hideCommunityRatingPopover();
+  else showCommunityRatingPopover(btn, productId);
+}
+
+document.addEventListener("click",(e)=>{
+  if(!communityRatingPopoverBtn) return;
+  if(e.target.closest("#communityRatingPopover") || e.target.closest("[data-community-rating]")) return;
+  hideCommunityRatingPopover();
+});
+window.addEventListener("scroll", ()=>{ if(communityRatingPopoverBtn) hideCommunityRatingPopover(); }, {capture:true, passive:true});
+window.addEventListener("resize", ()=>{ if(communityRatingPopoverBtn) hideCommunityRatingPopover(); });
 
 /* Sticky-Suchleiste im Hero-Banner (siehe CSS-Kommentar bei .hero-search-
    sticky für den Grund, warum das per JS statt nativem position:sticky
