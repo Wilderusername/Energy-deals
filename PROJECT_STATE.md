@@ -4,6 +4,17 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-06 (67) — Community-Bewertungs-Badge: "Ø" durch Daumen-hoch-Icon ersetzt
+
+**Umsetzung**: Im Bewertungs-Badge der Produktkarte (`.community-rating`, siehe (66)) den Text `Ø ${percent}%` durch `<svg class="icon"><use href="#i-thumb-up"/></svg> ${percent}%` ersetzt - dasselbe `#i-thumb-up`-Icon, das bereits für die eigene Daumen-Bewertung in der Detailansicht verwendet wird (siehe (62)), also identische Strichstärke/visuelle Sprache statt eines Emojis. Da `.community-rating` bereits `display:inline-flex;align-items:center` war, genügte eine kleine `gap:3px` (analog zur bereits bestehenden `.rating-summary` in der Detailansicht) sowie eine explizite Icon-Größe `.community-rating .icon{width:9px;height:9px}`, passend zur 10,5px-Schrift des Badges. Das Icon erbt über `currentColor` automatisch dieselbe gedämpfte `text-secondary`-Farbe wie die Prozentzahl - keine eigene Farblogik nötig, dadurch unverändert dezent und in Light/Dark automatisch stimmig. Ausdrücklich NICHT verändert: Position (`margin-left:auto`), Größe/Padding, Hintergrundfarbe, Schriftgröße/-gewicht, Rahmen der Badge-"Pille" sowie das Popover bei Klick darauf.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v113` erhöht (Pflichtregel).
+
+**Verifiziert** (mobil, 375px, Dark UND Light Mode): Icon erscheint klar erkennbar vor der Prozentzahl, Badge-Höhe/-Breite/-Hintergrund optisch unverändert zu vorher. Popover öffnet weiterhin korrekt bei Klick auf das Badge. Bei 1200px Breite weiterhin vollständig `display:none` (Desktop unangetastet). Keine neuen Konsolenfehler.
+
+**Hinweis zum Umfang**: Ausschließlich Mobile-Version bearbeitet und verifiziert, wie seit [[feedback-scope-mobile-only-default]] festgelegt.
+
+---
+
 ## 2026-09-06 (66) — Community-Bewertung auf der Produktkarte (Badge + Popover)
 
 **Analyse vorab**: Die Preiszeile einer Karte (`.price-line`, in `buildDealCardEl()`) enthält bisher nur Preis-Button + `.pfand-note`, beide linksbündig mit kleinem Gap - rechts davon war ungenutzter Freiraum bis zum Kartenrand. Für die eigentliche Bewertungslogik existierte aus (62)/(65) bereits `getProductRatingSummary(productId)` (deterministische Demo-Kennzahl `percentPositive`/`count`) sowie `RATING_CRITERIA` - beide direkt wiederverwendet statt einer zweiten, potenziell abweichenden Berechnung, damit Karte und Detailansicht für dasselbe Produkt immer denselben Prozentwert zeigen.

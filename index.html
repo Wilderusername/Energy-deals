@@ -3016,14 +3016,15 @@ animation:skeleton-pulse 1.1s ease-in-out infinite
    zweiteilig (Preis + Pfand), da diese Regel dort gar nicht greift.
    margin-left:auto schiebt NUR das Badge selbst an den rechten Rand der
    Zeile, ohne den bestehenden Preis/Pfand-Abstand (.price-line gap) oder
-   deren gegenseitige Position zu verändern. "Ø" (bereits an anderer Stelle
-   der App als Durchschnitts-Kennzeichnung verwendet, siehe .avg-context)
-   statt eines Symbols/Icons - macht auf einen Blick klar, dass es sich um
-   einen Fremd-/Durchschnittswert handelt, nicht um den eigenen Daumen aus
-   der Detailansicht. */
+   deren gegenseitige Position zu verändern. Daumen-hoch-Icon (dasselbe
+   #i-thumb-up wie die eigene Bewertung in der Detailansicht, siehe (62)) vor
+   der Prozentzahl - erbt über currentColor automatisch dieselbe gedämpfte
+   Textfarbe wie die Zahl, dadurch weiterhin dezent und in Light/Dark
+   automatisch stimmig, ohne eigene Farblogik. */
 .community-rating{
 display:inline-flex;
 align-items:center;
+gap:3px;
 margin-left:auto;
 flex-shrink:0;
 border:1px solid var(--border-subtle);
@@ -3038,6 +3039,7 @@ white-space:nowrap;
 cursor:pointer;
 transition:transform .1s ease
 }
+.community-rating .icon{width:9px;height:9px}
 .community-rating:active{transform:scale(.94)}
 .unit{font-size:10px}
 .price-cta-row{gap:6px}
@@ -5210,7 +5212,7 @@ function buildDealCardEl(deal, isBest, favLiterMin){
         <div class="price-line">
           <button class="price" data-checked="${deal.id}">${euro(deal.offerPrice)} €</button>
           <span class="pfand-note">+ ${euro(pfand)} € Pfand</span>
-          <button type="button" class="community-rating" data-community-rating="${deal.productId}" aria-label="Community-Bewertung: ${ratingSummary.percentPositive}% positiv von ${ratingSummary.count} Nutzern. Details antippen.">Ø ${ratingSummary.percentPositive}%</button>
+          <button type="button" class="community-rating" data-community-rating="${deal.productId}" aria-label="Community-Bewertung: ${ratingSummary.percentPositive}% positiv von ${ratingSummary.count} Nutzern. Details antippen."><svg class="icon"><use href="#i-thumb-up"/></svg> ${ratingSummary.percentPositive}%</button>
         </div>
         <div class="unit">${euro(literPrice)} €/L · Gesamt an der Kasse: ${euro(deal.offerPrice+pfand)} €</div>
         <div class="price-cta-row">
