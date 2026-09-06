@@ -2614,6 +2614,37 @@ cursor:pointer
 .rating-stars button.filled{color:var(--status-warning-text)}
 .rating-stars button.filled .icon{fill:currentColor;stroke:none}
 
+/* "Bewertung speichern" - bewusst dezenter Sekundär-Look (Rahmen+gedämpfte
+   Fläche, kein .btn.primary), damit er den vier Kriterien darüber nicht die
+   Aufmerksamkeit nimmt, aber durch den Rahmen erkennbar antippbar bleibt. */
+.rating-save-btn{
+display:inline-flex;
+align-items:center;
+gap:5px;
+margin-top:10px;
+border:1px solid var(--border-subtle);
+background:var(--bg-surface-sunken);
+color:var(--text-secondary);
+border-radius:var(--radius-sm);
+padding:7px 12px;
+font-size:12px;
+font-weight:700;
+font-family:inherit;
+cursor:pointer;
+transition:background-color .15s ease,color .15s ease,border-color .15s ease,opacity .15s ease
+}
+.rating-save-btn .icon{width:11px;height:11px}
+.rating-save-btn:active:not(:disabled){transform:scale(.97)}
+.rating-save-btn:disabled{opacity:.45;cursor:default}
+/* Dezente Erfolgsrückmeldung nach dem Speichern - dieselben Status-Farben
+   wie z.B. .alert-active (bereits etabliert, automatisch Light/Dark-fähig)
+   statt einer eigenen Akzentfarbe oder Animation. */
+.rating-save-btn.saved{
+background:var(--status-success-bg);
+border-color:var(--status-success-border);
+color:var(--status-success-text)
+}
+
 /* Preisalarm-Panel (siehe pdAlertBtn) - bewusst NUR mobil, exakt dasselbe
    Muster wie .detail-rating oben. Grid-Höhen-/Opacity-Technik 1:1 von
    .rating-adv/-inner übernommen (eigene Klasse statt Wiederverwendung, da
@@ -4108,7 +4139,16 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 </button>
 </div>
 <div class="rating-adv" id="pdRatingAdv">
-<div class="rating-adv-inner" id="pdRatingAdvInner"></div>
+<div class="rating-adv-inner">
+<div id="pdRatingAdvInner"></div>
+<!-- Sterne oben ändern nur einen Entwurf im Speicher (siehe renderProductRating()/
+     pending) - erst dieser Button übernimmt ihn endgültig in productRatings.
+     Bewusst dezent (Sekundär-Look wie .rating-adv-toggle/.nutrition-toggle,
+     kein .btn.primary) und standardmäßig deaktiviert, solange kein Kriterium
+     ausgewählt ist, damit nie versehentlich eine leere Bewertung gespeichert
+     werden kann. -->
+<button type="button" class="rating-save-btn" id="pdRatingSaveBtn" disabled>Bewertung speichern</button>
+</div>
 </div>
 </div>
 
@@ -7913,26 +7953,59 @@ function renderProductRating(productId){
     </div>
   `).join("");
 
+  /* Entwurf statt Sofort-Speichern: Sterne-Taps ändern zunächst nur "pending"
+     (im Speicher, pro Aufruf neu), erst der Speichern-Button unten übernimmt
+     ihn in productRatings/localStorage - siehe Anfrage "Erst durch Antippen
+     von 'Bewertung speichern' soll die Bewertung endgültig übernommen
+     werden". Start-Werte kommen aus dem zuletzt gespeicherten Stand, damit
+     bereits bewertete Kriterien beim erneuten Öffnen korrekt angezeigt
+     werden. */
+  const savedEntry = productRatings[productId] || {};
+  const pending = {};
+  RATING_CRITERIA.forEach(crit => { pending[crit.key] = savedEntry[crit.key] || 0; });
+
+  const saveBtn = document.getElementById("pdRatingSaveBtn");
+
   function paintStars(critKey){
-    const value = (productRatings[productId] || {})[critKey] || 0;
+    const value = pending[critKey] || 0;
     advInner.querySelectorAll(`.rating-stars[data-crit="${critKey}"] button`).forEach(btn => {
       btn.classList.toggle("filled", Number(btn.dataset.val) <= value);
     });
   }
+
+  function setSaveBtnState(saved){
+    const hasAny = RATING_CRITERIA.some(crit => pending[crit.key] > 0);
+    saveBtn.disabled = !hasAny;
+    saveBtn.classList.toggle("saved", saved);
+    saveBtn.innerHTML = saved
+      ? `<svg class="icon"><use href="#i-check"/></svg> Gespeichert`
+      : "Bewertung speichern";
+  }
+  // Stimmen die Entwurfswerte beim Öffnen bereits mit dem gespeicherten Stand
+  // überein (Normalfall, nichts wurde seither geändert) und es gibt
+  // mindestens eine Bewertung, direkt im "Gespeichert"-Zustand starten.
+  setSaveBtnState(RATING_CRITERIA.some(crit => pending[crit.key] > 0));
 
   RATING_CRITERIA.forEach(crit => {
     paintStars(crit.key);
     advInner.querySelectorAll(`.rating-stars[data-crit="${crit.key}"] button`).forEach(btn => {
       btn.onclick = () => {
         const val = Number(btn.dataset.val);
-        const entry = productRatings[productId] || {};
-        entry[crit.key] = entry[crit.key] === val ? 0 : val;
-        productRatings[productId] = entry;
-        saveProductRatings();
+        pending[crit.key] = pending[crit.key] === val ? 0 : val;
         paintStars(crit.key);
+        setSaveBtnState(false);
       };
     });
   });
+
+  saveBtn.onclick = () => {
+    if(saveBtn.disabled) return;
+    const entry = productRatings[productId] || {};
+    RATING_CRITERIA.forEach(crit => { entry[crit.key] = pending[crit.key]; });
+    productRatings[productId] = entry;
+    saveProductRatings();
+    setSaveBtnState(true);
+  };
 }
 
 /* Preisalarm-Panel in der Produkt-Detailansicht (siehe #pdAlertBtn/#pdAlertPanel
