@@ -351,13 +351,18 @@ border:2px solid var(--brand-primary-dark)
    (--brand-primary-light, bereits themenunabhängig als Glow-Farbe im
    dunklen Fokus-Ring verwendet, siehe --focus-ring im dark-Theme - dieselbe
    Farbe hier nur als sichtbarer Fülltop statt als rgba-Schatten) statt Weiß,
-   plus ein dezenter Glow in derselben Farbe. */
+   plus ein dezenter Glow in derselben Farbe. border-color wird zusätzlich
+   auf dieselbe Farbe wie background gesetzt (die geteilte .iconbtn .dot-Regel
+   liefert sonst border-color:var(--brand-primary-dark), einen anderen Farbton
+   als der innere Punkt) - dadurch wirkt der 2px-Rahmen als Teil desselben
+   Punkts statt als andersfarbiger Ring darum. */
 #menuDot{
 top:2px;
 right:3px;
 width:8px;
 height:8px;
 background:var(--brand-primary-light);
+border-color:var(--brand-primary-light);
 box-shadow:0 0 4px rgba(112,146,197,.75)
 }
 
@@ -2474,8 +2479,21 @@ transition:color .15s
 .rating-adv-toggle:hover{color:var(--text-primary)}
 .rating-adv-toggle .icon{width:10px;height:10px;transition:transform .2s}
 .rating-adv-toggle[aria-expanded="true"] .icon{transform:rotate(180deg)}
-.rating-adv{display:none;margin-top:2px}
-.rating-adv.open{display:block}
+/* Sanftes Rein-/Ausfahren statt hartem display:none/block-Umschalten -
+   dieselbe Grid-Höhen-Transition-Technik wie .store-more-group/.period-group
+   (siehe dortige Kommentare): animiert zuverlässig auf die tatsächliche
+   Inhaltshöhe statt eines geschätzten max-height-Werts, .rating-adv-inner
+   clippt den Inhalt während der Transition. Zusätzliches opacity-Fade sorgt
+   für den "fließend entfalten"-Effekt statt eines reinen Höhen-Sprungs. */
+.rating-adv{
+display:grid;
+grid-template-rows:0fr;
+opacity:0;
+transition:grid-template-rows .28s ease, opacity .2s ease;
+margin-top:2px
+}
+.rating-adv.open{grid-template-rows:1fr;opacity:1}
+.rating-adv-inner{overflow:hidden;min-height:0}
 .rating-crit-row{
 display:flex;
 align-items:center;
@@ -3912,7 +3930,9 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <svg class="icon"><use href="#i-chevron-down"/></svg>
 </button>
 </div>
-<div class="rating-adv" id="pdRatingAdv"></div>
+<div class="rating-adv" id="pdRatingAdv">
+<div class="rating-adv-inner" id="pdRatingAdvInner"></div>
+</div>
 </div>
 
 <div class="field-label" style="margin-top:18px">Nährwerte</div>
@@ -4569,10 +4589,10 @@ try{ priceAlerts = JSON.parse(localStorage.getItem("canspot-alerts") || "{}"); }
 function savePriceAlerts(){ localStorage.setItem("canspot-alerts", JSON.stringify(priceAlerts)); }
 
 /* Produkt-Bewertung (Detailansicht, nur mobil - siehe .detail-rating CSS):
-   { [productId]: { vote: "up"|"down"|null, taste, sweetness, intensity, value } }
-   - taste/sweetness/intensity/value sind 1-5 oder fehlen (=noch nicht bewertet).
+   { [productId]: { vote: "up"|"down"|null, taste, sweetness, intensity, aftertaste } }
+   - taste/sweetness/intensity/aftertaste sind 1-5 oder fehlen (=noch nicht bewertet).
    Kriterien speziell für Energy Drinks gewählt statt eines generischen
-   1-5-Sterne-Gesamtwerts: Geschmack und Preis-Leistung sind Standardkriterien
+   1-5-Sterne-Gesamtwerts: Geschmack und Nachgeschmack sind Standardkriterien
    bei so gut wie jeder Getränkebewertung, Süße und Intensität (Koffein-/
    Wirkungs-"Kick") sind die beiden Eigenschaften, in denen sich Energy Drinks
    untereinander tatsächlich am meisten unterscheiden und die beim Kauf am
@@ -4585,7 +4605,7 @@ const RATING_CRITERIA = [
   {key:"taste", label:"Geschmack"},
   {key:"sweetness", label:"Süße"},
   {key:"intensity", label:"Intensität"},
-  {key:"value", label:"Preis-Leistung"}
+  {key:"aftertaste", label:"Nachgeschmack"}
 ];
 
 const dealsContainer = document.getElementById("deals");
@@ -7476,6 +7496,7 @@ function renderProductRating(productId){
   const thumbDownBtn = document.getElementById("pdThumbDown");
   const advToggle = document.getElementById("pdRatingAdvToggle");
   const advPanel = document.getElementById("pdRatingAdv");
+  const advInner = document.getElementById("pdRatingAdvInner");
 
   function applyVoteState(){
     const vote = (productRatings[productId] || {}).vote || null;
@@ -7508,7 +7529,7 @@ function renderProductRating(productId){
     advToggle.setAttribute("aria-expanded", String(nowOpen));
   };
 
-  advPanel.innerHTML = RATING_CRITERIA.map(crit => `
+  advInner.innerHTML = RATING_CRITERIA.map(crit => `
     <div class="rating-crit-row">
       <span>${crit.label}</span>
       <div class="rating-stars" data-crit="${crit.key}">
@@ -7519,14 +7540,14 @@ function renderProductRating(productId){
 
   function paintStars(critKey){
     const value = (productRatings[productId] || {})[critKey] || 0;
-    advPanel.querySelectorAll(`.rating-stars[data-crit="${critKey}"] button`).forEach(btn => {
+    advInner.querySelectorAll(`.rating-stars[data-crit="${critKey}"] button`).forEach(btn => {
       btn.classList.toggle("filled", Number(btn.dataset.val) <= value);
     });
   }
 
   RATING_CRITERIA.forEach(crit => {
     paintStars(crit.key);
-    advPanel.querySelectorAll(`.rating-stars[data-crit="${crit.key}"] button`).forEach(btn => {
+    advInner.querySelectorAll(`.rating-stars[data-crit="${crit.key}"] button`).forEach(btn => {
       btn.onclick = () => {
         const val = Number(btn.dataset.val);
         const entry = productRatings[productId] || {};
