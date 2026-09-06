@@ -3068,12 +3068,18 @@ margin-top:18px
    initNewsSwipe() im Script. */
 .news-inbox-row-wrap{position:relative;overflow:hidden}
 .news-inbox-row-wrap:last-child .news-inbox-row{border-bottom:0}
+/* Breite deckt REVEAL (76px, wo das Symbol vollständig sichtbar ist) PLUS
+   den maximalen Widerstandsweg (MAX_EXTRA, siehe initNewsSwipe()) ab, damit
+   beim Überziehen über den Einrast-Punkt hinaus dieselbe Fläche sichtbar
+   bleibt statt eine Lücke zur Sheet-Hintergrundfarbe zu zeigen. Icon-Position
+   (padding-right/-left von der jeweils verankerten Kante) bleibt dadurch
+   unverändert - nur die dahinterliegende Fläche ist jetzt breiter. */
 .news-inbox-delete-bg,
 .news-inbox-toggle-read-bg{
 position:absolute;
 top:0;
 bottom:0;
-width:76px;
+width:122px;
 display:flex;
 align-items:center;
 cursor:pointer
@@ -6963,19 +6969,40 @@ function renderNewsInboxList(){
 /* Wisch nach links deckt eine dezente Löschfläche (roter Papierkorb) auf,
    Wisch nach rechts eine Gelesen/Ungelesen-Fläche (blaues Umschlag-Symbol) -
    dieselbe "Dominante-Richtung"-Erkennung wie initSwipeToClose() weiter oben,
-   nur horizontal statt vertikal. Ein Tap auf eine aufgedeckte Fläche führt
-   sofort die jeweilige Aktion aus, ein erneuter Tap auf die Zeile selbst
-   schließt sie nur wieder (siehe Klick-Handler oben). */
+   nur horizontal statt vertikal. Zweistufige Geste statt eines harten Anschlags
+   mit anschließend erzwungenem Tap: bis REVEAL folgt die Zeile 1:1 dem Finger,
+   an REVEAL "rastet" sie ein (Symbol vollständig sichtbar, dezenter Vibrations-
+   Puls falls unterstützt) und bekommt beim Weiterziehen spürbaren, gedämpften
+   Widerstand (RESISTANCE) bis zu einem harten Anschlag (MAX_EXTRA). Wird dabei
+   die tatsächliche Fingerbewegung (nicht die gedämpfte Anzeige) um COMMIT_EXTRA
+   über REVEAL hinaus gezogen, führt das Loslassen die Aktion direkt aus -
+   alternativ bleibt weiterhin ein Tap auf das eingerastete Symbol möglich
+   (siehe Klick-Handler oben), ein Tap auf die Zeile selbst schließt sie nur. */
+/* navigator.vibrate() kann trotz Feature-Check ablehnen (z.B. Chrome-Policy
+   "kein echter Nutzer-Tap in diesem Frame") - try/catch verhindert, dass eine
+   von der Plattform verweigerte Vibration die Swipe-Animation/-Aktion selbst
+   unterbricht, da dieses haptische Feedback rein optional ist. */
+function vibrateSafe(ms){
+  try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){}
+}
+
 function initNewsSwipe(wrap){
   const row = wrap.querySelector(".news-inbox-row");
   const REVEAL = 76;
+  const RESISTANCE = 0.4;
+  const COMMIT_EXTRA = 70;
+  const MAX_EXTRA = 46;
+  const SNAP_TRANSITION = "transform .25s cubic-bezier(.22,1,.36,1)";
   let startX = 0, startY = 0, baseX = 0, dragging = false, tracking = false;
+  let lastRaw = 0, thresholdArmed = false;
 
   row.addEventListener("touchstart", (e)=>{
     if(e.touches.length!==1) return;
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
     baseX = wrap.classList.contains("swiped-left") ? -REVEAL : wrap.classList.contains("swiped-right") ? REVEAL : 0;
+    lastRaw = baseX;
+    thresholdArmed = false;
     tracking = true;
     dragging = false;
     row.style.transition = "none";
@@ -6996,25 +7023,67 @@ function initNewsSwipe(wrap){
         }
       });
     }
-    const next = Math.max(-REVEAL, Math.min(REVEAL, baseX + deltaX));
+    const raw = baseX + deltaX;
+    lastRaw = raw;
+    const absRaw = Math.abs(raw);
+    let next;
+    if(absRaw <= REVEAL){
+      next = raw;
+    } else {
+      const sign = raw < 0 ? -1 : 1;
+      const extra = Math.min((absRaw - REVEAL) * RESISTANCE, MAX_EXTRA);
+      next = sign * (REVEAL + extra);
+    }
     row.style.transform = `translateX(${next}px)`;
+
+    // Dezentes Feedback genau am Einrast-Punkt REVEAL - einmalig pro
+    // Durchquerung (Richtungswechsel setzt es zurück), kein wiederholtes
+    // oder übertriebenes Vibrieren während des restlichen Widerstandswegs.
+    if(absRaw >= REVEAL && !thresholdArmed){
+      thresholdArmed = true;
+      vibrateSafe(8);
+    } else if(absRaw < REVEAL && thresholdArmed){
+      thresholdArmed = false;
+    }
     e.preventDefault();
   }, {passive:false});
+
+  function commitSwipeAction(direction){
+    vibrateSafe(14);
+    if(direction === "left"){
+      row.style.transition = "transform .22s ease-in";
+      row.style.transform = "translateX(-100%)";
+      setTimeout(()=>{
+        deleteNotifications([wrap.dataset.newsId]);
+        renderNewsInboxList();
+      }, 220);
+    } else {
+      row.style.transition = SNAP_TRANSITION;
+      row.style.transform = "translateX(0)";
+      setTimeout(()=>{
+        toggleNotificationRead(wrap.dataset.newsId);
+        renderNewsInboxList();
+      }, 250);
+    }
+  }
 
   function endDrag(){
     if(!dragging){ tracking = false; return; }
     tracking = false;
     dragging = false;
-    row.style.transition = "";
-    const match = /translateX\((-?\d+(?:\.\d+)?)px\)/.exec(row.style.transform);
-    const current = match ? parseFloat(match[1]) : 0;
+    const absRaw = Math.abs(lastRaw);
+    const direction = lastRaw < 0 ? "left" : "right";
     wrap.classList.remove("swiped-left","swiped-right");
-    if(current < -REVEAL/2){
-      row.style.transform = `translateX(-${REVEAL}px)`;
-      wrap.classList.add("swiped-left");
-    } else if(current > REVEAL/2){
-      row.style.transform = `translateX(${REVEAL}px)`;
-      wrap.classList.add("swiped-right");
+
+    if(absRaw - REVEAL >= COMMIT_EXTRA){
+      commitSwipeAction(direction);
+      return;
+    }
+
+    row.style.transition = SNAP_TRANSITION;
+    if(absRaw > REVEAL/2){
+      row.style.transform = `translateX(${direction==="left" ? -REVEAL : REVEAL}px)`;
+      wrap.classList.add(direction==="left" ? "swiped-left" : "swiped-right");
     } else {
       row.style.transform = "translateX(0)";
     }
