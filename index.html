@@ -2569,6 +2569,42 @@ margin-top:10px
 
 .filter-chip-row{display:flex;gap:8px;flex-wrap:wrap}
 
+/* "Weitere Händler" auf-/zuklappen - eigene Klassen statt Wiederverwendung
+   von .period-toggle/-chevron/-group (obwohl optisch/technisch derselbe
+   Aufklapp-Mechanismus: Grid-Höhen-Transition + rotierender Chevron), damit
+   künftige, rein wochenbezogene Anpassungen an .period-* diesen Filter nicht
+   versehentlich mit verändern. */
+.store-more-toggle{
+display:inline-flex;
+align-items:center;
+gap:4px;
+background:none;
+border:none;
+padding:6px 0 2px;
+margin-top:2px;
+color:var(--text-muted);
+font-size:12.5px;
+font-weight:700;
+cursor:pointer;
+font-family:inherit
+}
+.store-more-toggle:hover{color:var(--brand-primary-blue)}
+.store-more-chevron{
+width:13px;
+height:13px;
+transition:transform .25s ease;
+flex-shrink:0
+}
+.store-more-toggle[aria-expanded="true"] .store-more-chevron{transform:rotate(180deg)}
+.store-more-group{
+display:grid;
+grid-template-rows:0fr;
+transition:grid-template-rows .3s ease
+}
+.store-more-group.open{grid-template-rows:1fr}
+.store-more-group-inner{overflow:hidden;min-height:0}
+.store-more-group-inner .filter-chip-row{padding-top:8px}
+
 .count-badge{
 position:absolute;
 top:-6px;
@@ -3273,9 +3309,6 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 
 <div class="notif-hint" id="notifEmptyHint"><svg class="icon icon-sm"><use href="#i-bell-off"/></svg> Du erhältst aktuell keine Benachrichtigungen. Aktiviere mindestens eine Option, um informiert zu bleiben.</div>
 
-<div class="field-label">Deine Favoriten</div>
-<div id="favList"></div>
-
 <button class="sheet-btn" data-close="notifOverlay">Speichern</button>
 </div>
 </div>
@@ -3336,8 +3369,17 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 <button class="chip" data-store="Kaufland">Kaufland</button>
 <button class="chip" data-store="Lidl">Lidl</button>
 <button class="chip" data-store="Netto">Netto</button>
+</div>
+<button type="button" class="store-more-toggle" id="storeMoreToggle" aria-expanded="false" aria-controls="storeMoreGroup">
+Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chevron-down"/></svg>
+</button>
+<div class="store-more-group" id="storeMoreGroup">
+<div class="store-more-group-inner">
+<div class="filter-chip-row">
 <button class="chip" data-store="Penny">Penny</button>
 <button class="chip" data-store="REWE">REWE</button>
+</div>
+</div>
 </div>
 
 <div class="field-label" style="margin-top:20px">Volumen</div>
@@ -4993,7 +5035,7 @@ dealsContainer.addEventListener("click",(e)=>{
     if(wasFav) favorites.delete(key); else favorites.add(key);
     saveFavorites();
     render();
-    renderFavList();
+    updateNotifDot();
     if(!wasFav){
       const cardEl = dealId ? dealsContainer.querySelector(`.card[data-id="${dealId}"]`) : null;
       const iconEl = (cardEl || dealsContainer).querySelector(`[data-fav="${key}"] .icon`);
@@ -5318,6 +5360,20 @@ document.querySelectorAll(".chip[data-store]").forEach(btn=>{
     updateStatus();
     updateFilterCount();
   });
+});
+
+/* "Weitere Händler" ein-/ausklappen - reines Anzeige-Detail, hat keinen
+   Einfluss auf storeFilter/die Chip-Klick-Logik oben: die zusätzlichen Chips
+   (Penny, REWE) sind bereits vorher normal im DOM vorhanden und mit
+   demselben Klick-Handler verdrahtet, nur optisch per Grid-Höhen-Transition
+   ein-/ausgeblendet (dieselbe Technik wie bei den Wochen-Gruppen in der
+   Angebotsliste, siehe .period-group). */
+const storeMoreToggle = document.getElementById("storeMoreToggle");
+const storeMoreGroup = document.getElementById("storeMoreGroup");
+storeMoreToggle.addEventListener("click", ()=>{
+  const nowOpen = !storeMoreGroup.classList.contains("open");
+  storeMoreGroup.classList.toggle("open", nowOpen);
+  storeMoreToggle.setAttribute("aria-expanded", String(nowOpen));
 });
 
 document.querySelectorAll(".chip[data-radius]").forEach(btn=>{
@@ -6004,60 +6060,6 @@ function refreshMenuNotifSummary(){
   if(onCount===0) notifSummary.textContent = "Alle Benachrichtigungen aus";
   else if(onCount===4) notifSummary.textContent = "Alle Benachrichtigungen an";
   else notifSummary.textContent = `${onCount} von 4 Benachrichtigungen an`;
-}
-
-function favRowHtml(p){
-  const available = deals.some(d=>d.productId===p.id);
-  const alert = priceAlerts[p.id];
-  let extra = "";
-  if(!available){
-    extra = alert
-      ? `<div class="alert-active" style="margin-top:6px"><span><svg class="icon icon-sm"><use href="#i-target"/></svg> Preisalarm bei ${euro(alert.target)} €</span></div>`
-      : `<button class="avatar-remove-link" data-quick-alert-toggle="${p.id}" style="margin-top:4px">Preisalarm setzen</button>
-      <div class="alert-input-row" data-quick-alert-form="${p.id}" style="display:none;margin-top:8px">
-        <input type="text" inputmode="decimal" value="0,99" data-quick-alert-input="${p.id}">
-        <span>€</span>
-        <button class="btn primary" data-quick-alert-submit="${p.id}">Setzen</button>
-      </div>`;
-  }
-  return `
-    <div class="fav-row">
-      <img class="fav-emoji" src="${p.img}" alt="${p.name}" loading="lazy" referrerpolicy="no-referrer">
-      <div class="fav-txt">
-        <b>${p.name}</b>
-        <span>${p.brand} · ${p.sizeMl} ml${available ? "" : " · aktuell nicht verfügbar"}</span>
-        ${extra}
-      </div>
-      <svg class="icon icon-sm filled" style="color:var(--danger-text)"><use href="#i-heart"/></svg>
-    </div>
-  `;
-}
-
-function bindFavRowEvents(container, rerender){
-  container.querySelectorAll("img.fav-emoji").forEach(img=>{
-    img.addEventListener("error", function(){ this.src = FALLBACK_IMG; }, {once:true});
-  });
-  container.querySelectorAll("[data-quick-alert-input]").forEach(attachGermanPriceInput);
-  container.querySelectorAll("[data-quick-alert-toggle]").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      const form = container.querySelector(`[data-quick-alert-form="${btn.dataset.quickAlertToggle}"]`);
-      if(form) form.style.display = form.style.display==="none" ? "flex" : "none";
-    });
-  });
-  container.querySelectorAll("[data-quick-alert-submit]").forEach(btn=>{
-    btn.addEventListener("click", ()=>{
-      const pid = btn.dataset.quickAlertSubmit;
-      const input = container.querySelector(`[data-quick-alert-input="${pid}"]`);
-      const val = parseGermanPrice(input.value);
-      if(!val || val<=0) return;
-      priceAlerts[pid] = {target: val, enabled: true};
-      savePriceAlerts();
-      updateAlertsDot();
-      const product = products.find(pr=>pr.id===pid);
-      showToast(`Preisalarm gesetzt: ${product ? product.name : "Produkt"} unter ${euro(val)} €`);
-      rerender();
-    });
-  });
 }
 
 document.querySelectorAll(".profile-row[data-open]").forEach(row=>{
@@ -6812,23 +6814,6 @@ function showMenuView(viewId, direction){
   });
 }
 
-/* ---------------- NOTIFICATIONS SHEET ---------------- */
-
-function renderFavList(){
-  const favList = document.getElementById("favList");
-  const favProducts = products.filter(p=>isProductFavoritedAtAll(p.id));
-
-  updateNotifDot();
-
-  if(favProducts.length===0){
-    favList.innerHTML = `<div class="fav-empty">Noch keine Favoriten. Tippe <svg class="icon icon-xs"><use href="#i-heart"/></svg> bei einem Angebot.</div>`;
-    return;
-  }
-
-  favList.innerHTML = favProducts.map(favRowHtml).join("");
-  bindFavRowEvents(favList, renderFavList);
-}
-
 /* ---------------- FEINERE PUSH-EINSTELLUNGEN ---------------- */
 
 const notifToggleIds = ["notifBest","notifFav","notifNearby","notifWeekly"];
@@ -6992,7 +6977,7 @@ function openHistory(dealId){
     if(wasFav) favorites.delete(key); else favorites.add(key);
     saveFavorites();
     render();
-    renderFavList();
+    updateNotifDot();
     showToast(wasFav ? `${deal.product} aus Favoriten entfernt` : `${deal.product} zu Favoriten hinzugefügt`);
     openHistory(dealId);
     if(!wasFav){
@@ -7573,7 +7558,7 @@ function delay(ms){
 
 function finishInit(){
   render();
-  renderFavList();
+  updateNotifDot();
   updateStatus();
   updateAlertsDot();
   syncRadiusChips();

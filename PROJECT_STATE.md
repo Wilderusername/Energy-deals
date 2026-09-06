@@ -4,6 +4,22 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-06 (54) — "Deine Favoriten" aus Push-Benachrichtigungen entfernt + "Weitere Händler" im Filter auf-/zuklappbar
+
+**1. Push-Benachrichtigungen**: Die Sektion "Deine Favoriten" (Liste `#favList` unten im `notifOverlay`-Sheet, mit Schnellzugriff zum Setzen von Preisalarmen direkt aus dieser Liste) vollständig entfernt. Die separate "Preisalarm für Favoriten"-Schalterzeile weiter oben im selben Sheet (ein allgemeiner Benachrichtigungs-Schalter, keine Liste) ist NICHT die gemeinte Sektion und blieb unverändert - ebenso die eigentliche Favoriten-Funktion der App (Herz-Symbol auf Karten, "Favoriten"-Tab in der unteren Navigation, `favorites`-Set) komplett unangetastet.
+- Aufräumen der dadurch verwaisten Hilfsfunktionen `renderFavList()`, `favRowHtml()`, `bindFavRowEvents()` (ausschließlich für diese eine Liste geschrieben, sonst nirgends verwendet - geprüft). `renderFavList()` rief nebenbei auch `updateNotifDot()` auf (Neuigkeiten-Glocke, thematisch unabhängig von Favoriten) - die 3 bisherigen Aufrufstellen (Favorisieren einer Karte, Favorisieren im Produktdetail, App-Start) rufen jetzt direkt `updateNotifDot()` auf, damit dieser an sich unabhängige Seiteneffekt exakt wie zuvor an denselben drei Stellen weiterhin passiert - ohne diesen Umweg wäre `document.getElementById("favList")` dort `null` gewesen und hätte die eigentliche Favoriten-Funktion (Pop-Animation, Toast, Rest der App-Initialisierung) an allen drei Stellen zum Absturz gebracht.
+
+**2. Filter → Händler auf-/zuklappbar**: Von den 6 Händlern + "Alle" sind jetzt nur "Alle, EDEKA, Kaufland, Lidl, Netto" (5, unveränderte Reihenfolge) direkt sichtbar; "Penny" und "REWE" stehen weiterhin unverändert im DOM (gleiche `.chip[data-store]`-Buttons, gleicher Klick-Handler, gleiche `syncStoreChips()`-Logik), nur optisch in einer zunächst eingeklappten Gruppe. Dezenter Text-Button "Weitere Händler" mit rotierendem Chevron darunter (`#i-chevron-down`, `aria-expanded`), klappt beim Antippen auf/zu. Eigene, neue Klassen (`.store-more-toggle`/`-chevron`/`-group`/`-group-inner`) statt Wiederverwendung der optisch identischen `.period-toggle`/`.period-group`-Klassen aus der Wochen-Gruppierung - bewusst getrennt, damit künftige, rein wochenbezogene Anpassungen dort diesen Filter nicht versehentlich mitverändern (gleiches Prinzip wie zuvor schon bei `.reason-row` vs. `.sort-row`). Auf-/Zuklappen per CSS-Grid-Höhen-Transition (dieselbe bewährte Technik wie bei den Wochen-Gruppen), keine neue JS-Filterlogik nötig - der Toggle betrifft ausschließlich die Sichtbarkeit, `storeFilter`/die Auswahl selbst bleibt exakt wie zuvor.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v100` erhöht (Pflichtregel).
+
+**Verifiziert** (mobil 375×812, Dark UND Light Mode, per JS-Klicks auf die echten Handler + Screenshots):
+- Push-Benachrichtigungen: "Deine Favoriten"-Sektion nicht mehr vorhanden, restliche 4 Schalter + Hinweistext unverändert. Favorisieren einer Angebotskarte UND im Produktdetail-Sheet funktioniert weiterhin normal (Herz-Status, Zähler, Toast) - auf frisch geladener Datei ohne jegliche Session-Altlasten erneut bestätigt.
+- Filter: "Weitere Händler" klappt sauber auf/zu (Chevron rotiert), Auswahl eines zunächst versteckten Händlers (REWE) filtert die Angebotsliste korrekt (9 Treffer), Auswahl bleibt beim Wieder-Einklappen erhalten, "Zurücksetzen" setzt Auswahl UND sichtbaren "Alle"-Chip korrekt zurück. Keine Konsolenfehler während des gesamten Tests.
+
+**Hinweis zum Umfang**: Ausschließlich Mobile-Version bearbeitet und verifiziert, wie seit [[feedback-scope-mobile-only-default]] festgelegt - Desktop/Webapp nicht angefasst, nicht getestet.
+
+---
+
 ## 2026-09-06 (53) — "Suche" in der unteren Navigation durch eigenen "Neuheiten"-Tab ersetzt
 
 **Ausgangslage geprüft**: Der bisherige "Suche"-Tab (`navSearch`) hatte gar keine eigene Seite - er zeigte nur die normale Startansicht und fokussierte das ohnehin permanent im Hero-Banner sichtbare Suchfeld. Die Suche selbst lebt unverändert dort weiter (nicht entfernt, wie gefordert). Für "Neuheiten" gab es bereits eine passende Datengrundlage: `products[].isNew` (aus `deals.json`) sowie ein bereits bestehender, aber getrennter Mechanismus, der diese Angebote herausfiltert (`sort.value==="new"` im Sortier-Sheet, siehe Kommentar dort).
