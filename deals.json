@@ -100,14 +100,16 @@
       "name": "Monster Ultra Watermelon",
       "brand": "Monster",
       "sizeMl": 500,
-      "img": "https://web-assests.monsterenergy.com/mnst/1cb31b0a-fd8d-42b4-8e3b-e9fcb0f6bb80.png"
+      "img": "https://web-assests.monsterenergy.com/mnst/1cb31b0a-fd8d-42b4-8e3b-e9fcb0f6bb80.png",
+      "isNew": true
     },
     {
       "id": "p16",
       "name": "Rockstar Energy Punched Guava",
       "brand": "Rockstar",
       "sizeMl": 500,
-      "img": "https://www.rockstarenergy.co.uk/prod/s3fs-public/2024-07/rockstar_packshot_500ml_Front_TropicalGuava_NoRTB_157x420px.png"
+      "img": "https://www.rockstarenergy.co.uk/prod/s3fs-public/2024-07/rockstar_packshot_500ml_Front_TropicalGuava_NoRTB_157x420px.png",
+      "isNew": true
     },
     {
       "id": "p17",

@@ -3161,8 +3161,8 @@ Produktbilder und Händler-Logos werden direkt von den offiziellen Hersteller-/H
 <button class="navitem active" id="navHome" data-nav="home">
 <span class="navicon"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg></span>Start
 </button>
-<button class="navitem" id="navSearch" data-nav="search">
-<span class="navicon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>Suche
+<button class="navitem" id="navNeu" data-nav="neu">
+<span class="navicon"><svg viewBox="0 0 24 24"><use href="#i-sparkle"/></svg></span>Neuheiten
 </button>
 <button class="navitem" id="navFav" data-nav="fav">
 <span class="navicon"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-10-9.3C.5 8.4 2 4.5 6 4c2.2-.3 4 1 6 3 2-2 3.8-3.3 6-3 4 .5 5.5 4.4 4 7.7C19.5 16.4 12 21 12 21z"/></svg></span>Favoriten
@@ -4323,6 +4323,15 @@ function saveLocation(){
 }
 
 let viewFavoritesOnly = false;
+/* Filter für den "Neuheiten"-Tab der unteren Navigation - bewusst eine
+   eigene, von viewFavoritesOnly unabhängige Variable (nicht der bereits
+   bestehende sort.value==="new"-Mechanismus, siehe dortigen Kommentar):
+   sort.value ist ein einzelner globaler Zustand, der auch direkt im
+   Sortier-Sheet wählbar ist - würde der Tab stattdessen sort.value setzen,
+   bliebe die Einschränkung beim Wechsel zu Favoriten/Alarme über die
+   unveränderte navFav/navAlerts-Logik fälschlich bestehen. Mit einer eigenen
+   Variable genügt ein Reset in navHome/navNeu/navFav (siehe dort). */
+let viewNewOnly = false;
 let viewMode = "list";
 let selectedMapStore = null;
 let currentDetailDealId = null;
@@ -4473,6 +4482,9 @@ function render(){
        productId) favorisiert wurde (siehe Anfrage). */
     filtered = filtered.filter(d=>favorites.has(favKeyForDeal(d)));
   }
+  if(viewNewOnly){
+    filtered = filtered.filter(d=>d.isNew);
+  }
   if(selectedBrand !== "Alle"){
     filtered = filtered.filter(d=>d.brand===selectedBrand);
   }
@@ -4552,9 +4564,10 @@ function render(){
 
   if(filtered.length===0){
     let radiusExpansionCount = null;
-    if(!viewFavoritesOnly && !searchWide){
+    if(!viewFavoritesOnly && !viewNewOnly && !searchWide){
       radiusExpansionCount = deals.filter(d=>{
         if(viewFavoritesOnly && !favorites.has(favKeyForDeal(d))) return false;
+        if(viewNewOnly && !d.isNew) return false;
         if(selectedBrand!=="Alle" && d.brand!==selectedBrand) return false;
         if(storeFilter.value!=="Alle" && d.store!==storeFilter.value) return false;
         if(searchText && !(normalizeSearchText(d.product).includes(searchText) || normalizeSearchText(d.brand).includes(searchText) || normalizeSearchText(d.store).includes(searchText))) return false;
@@ -4574,6 +4587,13 @@ function render(){
         Tippe bei einem Angebot auf <svg class="icon icon-xs"><use href="#i-heart"/></svg>, um es hier zu sammeln.
         <br><br>
         <button class="btn primary" data-reset="fav" style="display:inline-flex">Alle Angebote ansehen</button>
+      </div>` : viewNewOnly ? `
+      <div class="empty">
+        <svg class="icon icon-xl"><use href="#i-sparkle"/></svg><br><br>
+        <b>Aktuell keine Neuheiten.</b><br>
+        Schau bald wieder vorbei - neue Sorten erscheinen hier, sobald sie bei CanSpot gelistet werden.
+        <br><br>
+        <button class="btn primary" data-reset="new" style="display:inline-flex">Alle Angebote ansehen</button>
       </div>` : radiusExpansionCount ? `
       <div class="empty">
         <svg class="icon icon-xl"><use href="#i-pin"/></svg><br><br>
@@ -5004,6 +5024,9 @@ dealsContainer.addEventListener("click",(e)=>{
     if(resetBtn.dataset.reset==="fav"){
       viewFavoritesOnly = false;
       setActiveNav("home");
+    } else if(resetBtn.dataset.reset==="new"){
+      viewNewOnly = false;
+      setActiveNav("home");
     } else {
       search.value = "";
       committedSearch = "";
@@ -5365,6 +5388,7 @@ function showAlertsView(){
 document.getElementById("navHome").addEventListener("click", ()=>{
   closeAllSheets();
   viewFavoritesOnly = false;
+  viewNewOnly = false;
   search.value = "";
   committedSearch = "";
   hideSearchSuggestions();
@@ -5380,26 +5404,29 @@ document.getElementById("navHome").addEventListener("click", ()=>{
   window.scrollTo({top:0, behavior:"smooth"});
 });
 
-document.getElementById("navSearch").addEventListener("click", ()=>{
+/* Der frühere "Suche"-Tab (fokussierte nur das ohnehin permanent sichtbare
+   Suchfeld im Hero-Banner) wurde durch "Neuheiten" ersetzt (siehe Anfrage) -
+   die Suche selbst wurde NICHT entfernt, sie bleibt unverändert oben im
+   Banner erreichbar. "Neuheiten" filtert wie "Favoriten" die bestehende
+   Angebotsliste (viewNewOnly, siehe render()), statt eine komplett neue
+   Seite/Datenstruktur zu bauen - dadurch bekommen die Karten automatisch
+   exakt dasselbe Design und dieselbe Funktionalität (Favorisieren,
+   Preisverlauf, Kartenansicht, Marken-Chips, Sortierung) wie überall sonst
+   in der App. */
+document.getElementById("navNeu").addEventListener("click", ()=>{
   closeAllSheets();
   viewFavoritesOnly = false;
+  viewNewOnly = true;
   showDealsView();
-  setActiveNav("search");
+  setActiveNav("neu");
   updateStatus();
-  /* Erst fokussieren, dann scrollen (nicht umgekehrt): mobile Browser
-     scrollen ein neu fokussiertes Feld automatisch mit ins Bild, sobald
-     die virtuelle Tastatur den sichtbaren Bereich verkleinert - das würde
-     einen vorher gestarteten "scroll to top" sonst wieder überschreiben.
-     So gewinnt zuverlässig unser eigener Scroll an den Seitenanfang, und
-     focus() läuft weiterhin synchron im Klick-Handler (nötig, damit
-     mobile Browser die Tastatur überhaupt automatisch öffnen). */
-  search.focus();
   window.scrollTo({top:0, behavior:"smooth"});
 });
 
 document.getElementById("navFav").addEventListener("click", ()=>{
   closeAllSheets();
   viewFavoritesOnly = true;
+  viewNewOnly = false;
   showDealsView();
   setActiveNav("fav");
   updateStatus();
