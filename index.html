@@ -2226,6 +2226,14 @@ right:12px;
 display:flex;
 gap:8px
 }
+/* Nur in der Produktdetailansicht (Klick auf ein Kartenbild): hier trägt
+   .detail-hero-actions ausschließlich den Teilen-Button (kein Favorit
+   daneben wie im Preisverlauf-Sheet), der dadurch sichtbar tiefer als der
+   "Zurück"-Pfeil oben links saß (.detail-hero beginnt erst nach Handle +
+   eigenem margin-top). ID-Scope statt Änderung der geteilten .detail-hero-
+   actions-Regel, damit das Preisverlauf-Sheet (dort bereits korrekt auf
+   Höhe des dortigen "Zurück"-Pfeils, andere Ausgangslage) unverändert bleibt. */
+#productDetailOverlay .detail-hero-actions{top:-5px}
 
 .detail-badges{
 display:flex;

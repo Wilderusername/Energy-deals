@@ -4,6 +4,21 @@ Laufendes Änderungsprotokoll für CanSpot. Neuester Eintrag oben. Für dauerhaf
 
 ---
 
+## 2026-09-06 (56) — Teilen-Symbol in der Produktdetailansicht auf Höhe des Zurück-Pfeils gebracht
+
+**Gemeldet**: In der Produktdetailansicht (Klick auf ein Kartenbild, (55)) saß das neue Teilen-Symbol oben rechts im Bild sichtbar tiefer als der "Zurück"-Pfeil oben links.
+
+**Ursache**: `.detail-hero-actions` (enthält dort nur den Teilen-Button) ist relativ zu `.detail-hero` positioniert (`top:12px`), `.detail-hero` selbst beginnt aber erst nach dem Sheet-Handle (`margin:6px auto 14px` + 4px Höhe) plus eigenem `margin-top:4px` - in Summe ca. 28px unterhalb des Sheet-Anfangs, während der "Zurück"-Pfeil (`.sheet-close-back`, geteilte Klasse aller Sheets) bei `top:14px` sitzt. Per `getBoundingClientRect()` gemessener Versatz: 17px.
+
+**Fix**: Neue, ID-gescopte Regel `#productDetailOverlay .detail-hero-actions{top:-5px}` - bewusst NUR für dieses eine Sheet statt die geteilte `.detail-hero-actions`-Basisregel zu ändern, damit das Preisverlauf-Sheet (`#histOverlay`, dort mit Teilen UND Favorit nebeneinander, andere Ausgangslage, vom Nutzer nicht bemängelt) unverändert bleibt - per `getBoundingClientRect()` vor/nach dem Fix gegengeprüft, unverändert bei `top:160.6875`. Pixelwert (-5px) direkt live im Browser ermittelt (nicht nur rechnerisch), bis beide Elemente exakt denselben `top`-Wert (`143.6875`) hatten.
+
+**Verifiziert** (mobil 375×812, Dark UND Light Mode, auf frisch geladener Datei): Zurück-Pfeil und Teilen-Symbol exakt auf einer Höhe; Preisverlauf-Sheet unverändert; restliches Design/Funktion der Produktdetailansicht (Nährwerte, Ähnliche Produkte, Teilen-Funktion selbst) unangetastet. Keine Konsolenfehler.
+- `CACHE_NAME` in `service-worker.js` auf `canspot-cache-v102` erhöht (Pflichtregel).
+
+**Hinweis zum Umfang**: Ausschließlich Mobile-Version bearbeitet und verifiziert, wie seit [[feedback-scope-mobile-only-default]] festgelegt.
+
+---
+
 ## 2026-09-06 (55) — Teilen-Button in der Produktdetailansicht (Klick auf Produktbild)
 
 **Ausgangslage geprüft**: Eine vollständige Teilen-Infrastruktur existierte bereits, nur an einer anderen Stelle als gefordert: `shareDeal(deal)` (Web-Share-API mit Zwischenablage-Fallback + Toast, Link-Format `location.origin + pathname + "#deal=<id>"`) plus `checkDeepLink()` (öffnet beim Laden mit `#deal=<id>` in der URL automatisch das Preisverlauf-Sheet mit genau diesem Angebot) waren bereits vollständig gebaut und über einen Teilen-Button im **Preisverlauf**-Sheet (`#histOverlay`, `detailShareBtn`) erreichbar. Die vom Nutzer gemeinte "Produktdetailansicht" (öffnet sich beim Klick auf das Produktbild einer Angebotskarte, `#productDetailOverlay` / `openProductDetail()`) ist ein **anderes** Sheet (Fokus auf Nährwerte/Ähnliche Produkte, siehe bestehender Kommentar dort: "dreht sich ausschließlich um das Produkt selbst... nicht um ein einzelnes Angebot") und hatte bislang gar keinen Teilen-Button.
