@@ -2418,6 +2418,88 @@ font-size:12.5px
 .nutrition-full-row span.nutrition-full-sub{padding-left:10px}
 .nutrition-full-row b{color:var(--text-primary);font-weight:700;white-space:nowrap}
 
+/* Bewertung (Daumen + optionale erweiterte Kriterien) - bewusst NUR mobil
+   (siehe Anfrage "ausschließlich mobile Version"), daher analog zum
+   Burger-Menü/Glocke-Muster weiter oben per @media(max-width:540px)
+   ein-/ausgeblendet statt eigener Markup-Zweige, damit die Desktop-/
+   Webapp-Ansicht von #productDetailOverlay (dasselbe geteilte Sheet)
+   unverändert bleibt. */
+.detail-rating{display:none}
+@media (max-width:540px){
+.detail-rating{display:block;margin-top:10px}
+}
+.rating-quick{display:flex;align-items:center;gap:6px}
+.rating-thumb{
+display:flex;
+align-items:center;
+justify-content:center;
+width:30px;
+height:30px;
+flex-shrink:0;
+border:1px solid var(--border-subtle);
+border-radius:var(--radius-pill);
+background:var(--bg-surface-sunken);
+color:var(--text-muted);
+cursor:pointer;
+transition:color .15s,border-color .15s,background-color .15s
+}
+.rating-thumb:active{transform:scale(.94)}
+.rating-thumb .icon{width:14px;height:14px}
+.rating-thumb.active[data-vote="up"]{
+color:var(--status-success-text);
+border-color:var(--status-success-border);
+background:var(--status-success-bg)
+}
+.rating-thumb.active[data-vote="down"]{
+color:var(--status-error-text);
+border-color:var(--status-error-border);
+background:var(--status-error-bg)
+}
+.rating-thumb.active .icon{fill:currentColor;stroke:none}
+.rating-adv-toggle{
+display:flex;
+align-items:center;
+gap:4px;
+margin-left:auto;
+border:0;
+background:none;
+padding:6px 2px;
+font-size:11.5px;
+font-weight:700;
+color:var(--text-muted);
+cursor:pointer;
+font-family:inherit;
+transition:color .15s
+}
+.rating-adv-toggle:hover{color:var(--text-primary)}
+.rating-adv-toggle .icon{width:10px;height:10px;transition:transform .2s}
+.rating-adv-toggle[aria-expanded="true"] .icon{transform:rotate(180deg)}
+.rating-adv{display:none;margin-top:2px}
+.rating-adv.open{display:block}
+.rating-crit-row{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:10px;
+padding:7px 0;
+border-bottom:1px solid var(--border-subtle);
+font-size:12.5px;
+color:var(--text-secondary)
+}
+.rating-crit-row:last-child{border-bottom:0}
+.rating-stars{display:flex;gap:2px}
+.rating-stars button{
+border:0;
+background:none;
+padding:3px;
+line-height:0;
+color:var(--border-strong);
+cursor:pointer
+}
+.rating-stars button .icon{width:15px;height:15px}
+.rating-stars button.filled{color:var(--status-warning-text)}
+.rating-stars button.filled .icon{fill:currentColor;stroke:none}
+
 .similar-scroll{
 display:flex;
 gap:10px;
@@ -3112,6 +3194,8 @@ padding:10px
 <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></symbol>
 <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></symbol>
 <symbol id="i-star" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
+<symbol id="i-thumb-up" viewBox="0 0 24 24"><path d="M8 21H5a1 1 0 01-1-1v-9a1 1 0 011-1h3"/><path d="M8 11l3-7a2 2 0 012 2v4h5.5a2 2 0 011.94 2.5l-1.6 6.5A2 2 0 0116.9 21H8V11z"/></symbol>
+<symbol id="i-thumb-down" viewBox="0 0 24 24"><path d="M16 3h3a1 1 0 011 1v9a1 1 0 01-1 1h-3"/><path d="M16 13l-3 7a2 2 0 01-2-2v-4H5.5a2 2 0 01-1.94-2.5l1.6-6.5A2 2 0 017.1 3H16v10z"/></symbol>
 </defs>
 </svg>
 
@@ -3814,6 +3898,23 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <h2 id="pdTitle">–</h2>
 <div class="desc" id="pdSub">–</div>
 
+<!-- Bewertung: schnelle Daumen-Bewertung + optionale erweiterte
+     Kriterien-Bewertung, siehe renderProductRating() im Script. Bewusst
+     kein eigener .field-label-Abschnitt ("Nährwerte"-Stil), damit es sich
+     nicht wie ein großer eigener Bereich anfühlt, sondern dezent direkt
+     unter Titel/Untertitel sitzt. -->
+<div class="detail-rating" id="detailRating">
+<div class="rating-quick">
+<button class="rating-thumb" id="pdThumbUp" data-vote="up" aria-label="Gefällt mir" aria-pressed="false"><svg class="icon"><use href="#i-thumb-up"/></svg></button>
+<button class="rating-thumb" id="pdThumbDown" data-vote="down" aria-label="Gefällt mir nicht" aria-pressed="false"><svg class="icon"><use href="#i-thumb-down"/></svg></button>
+<button class="rating-adv-toggle" id="pdRatingAdvToggle" aria-expanded="false" aria-controls="pdRatingAdv">
+<span>Erweitert bewerten</span>
+<svg class="icon"><use href="#i-chevron-down"/></svg>
+</button>
+</div>
+<div class="rating-adv" id="pdRatingAdv"></div>
+</div>
+
 <div class="field-label" style="margin-top:18px">Nährwerte</div>
 <div class="nutrition-note" id="pdNutritionCaption">–</div>
 <div class="nutrition-grid" id="pdNutritionGrid"></div>
@@ -4466,6 +4567,26 @@ let chartRangeDays = 30;
 let priceAlerts = {};
 try{ priceAlerts = JSON.parse(localStorage.getItem("canspot-alerts") || "{}"); }catch(e){ priceAlerts = {}; }
 function savePriceAlerts(){ localStorage.setItem("canspot-alerts", JSON.stringify(priceAlerts)); }
+
+/* Produkt-Bewertung (Detailansicht, nur mobil - siehe .detail-rating CSS):
+   { [productId]: { vote: "up"|"down"|null, taste, sweetness, intensity, value } }
+   - taste/sweetness/intensity/value sind 1-5 oder fehlen (=noch nicht bewertet).
+   Kriterien speziell für Energy Drinks gewählt statt eines generischen
+   1-5-Sterne-Gesamtwerts: Geschmack und Preis-Leistung sind Standardkriterien
+   bei so gut wie jeder Getränkebewertung, Süße und Intensität (Koffein-/
+   Wirkungs-"Kick") sind die beiden Eigenschaften, in denen sich Energy Drinks
+   untereinander tatsächlich am meisten unterscheiden und die beim Kauf am
+   ehesten den Ausschlag geben - anders als z.B. "Aussehen"/"Mundgefühl" aus
+   Bier-/Wein-Bewertungen, die hier keine sinnvolle Entsprechung hätten. */
+let productRatings = {};
+try{ productRatings = JSON.parse(localStorage.getItem("canspot-ratings") || "{}"); }catch(e){ productRatings = {}; }
+function saveProductRatings(){ localStorage.setItem("canspot-ratings", JSON.stringify(productRatings)); }
+const RATING_CRITERIA = [
+  {key:"taste", label:"Geschmack"},
+  {key:"sweetness", label:"Süße"},
+  {key:"intensity", label:"Intensität"},
+  {key:"value", label:"Preis-Leistung"}
+];
 
 const dealsContainer = document.getElementById("deals");
 const mapView = document.getElementById("mapView");
@@ -7287,6 +7408,7 @@ function openProductDetail(productId, dealId){
   pdShareBtn.onclick = dealToShare ? (()=> shareDeal(dealToShare)) : null;
 
   renderNutrition(product);
+  renderProductRating(productId);
   renderSimilarProducts(product);
 
   openSheet("productDetailOverlay");
@@ -7347,6 +7469,74 @@ function renderNutrition(product){
     toggleBtn.setAttribute("aria-expanded", String(nowOpen));
     toggleBtn.querySelector("span").textContent = nowOpen ? "Nährwerte ausblenden" : "Alle Nährwerte anzeigen";
   };
+}
+
+function renderProductRating(productId){
+  const thumbUpBtn = document.getElementById("pdThumbUp");
+  const thumbDownBtn = document.getElementById("pdThumbDown");
+  const advToggle = document.getElementById("pdRatingAdvToggle");
+  const advPanel = document.getElementById("pdRatingAdv");
+
+  function applyVoteState(){
+    const vote = (productRatings[productId] || {}).vote || null;
+    thumbUpBtn.classList.toggle("active", vote === "up");
+    thumbUpBtn.setAttribute("aria-pressed", String(vote === "up"));
+    thumbDownBtn.classList.toggle("active", vote === "down");
+    thumbDownBtn.setAttribute("aria-pressed", String(vote === "down"));
+  }
+
+  function setVote(vote){
+    const entry = productRatings[productId] || {};
+    entry.vote = entry.vote === vote ? null : vote;
+    productRatings[productId] = entry;
+    saveProductRatings();
+    applyVoteState();
+  }
+
+  thumbUpBtn.onclick = () => setVote("up");
+  thumbDownBtn.onclick = () => setVote("down");
+  applyVoteState();
+
+  // Erweiterte Kriterien: bei jedem Öffnen der Detailansicht eingeklappt
+  // starten (wie das Nährwerte-Akkordeon), gespeicherte Werte bleiben aber
+  // in productRatings erhalten und werden nur neu dargestellt.
+  advPanel.classList.remove("open");
+  advToggle.setAttribute("aria-expanded", "false");
+  advToggle.onclick = () => {
+    const nowOpen = !advPanel.classList.contains("open");
+    advPanel.classList.toggle("open", nowOpen);
+    advToggle.setAttribute("aria-expanded", String(nowOpen));
+  };
+
+  advPanel.innerHTML = RATING_CRITERIA.map(crit => `
+    <div class="rating-crit-row">
+      <span>${crit.label}</span>
+      <div class="rating-stars" data-crit="${crit.key}">
+        ${[1,2,3,4,5].map(n => `<button type="button" data-val="${n}" aria-label="${crit.label}: ${n} von 5"><svg class="icon"><use href="#i-star"/></svg></button>`).join("")}
+      </div>
+    </div>
+  `).join("");
+
+  function paintStars(critKey){
+    const value = (productRatings[productId] || {})[critKey] || 0;
+    advPanel.querySelectorAll(`.rating-stars[data-crit="${critKey}"] button`).forEach(btn => {
+      btn.classList.toggle("filled", Number(btn.dataset.val) <= value);
+    });
+  }
+
+  RATING_CRITERIA.forEach(crit => {
+    paintStars(crit.key);
+    advPanel.querySelectorAll(`.rating-stars[data-crit="${crit.key}"] button`).forEach(btn => {
+      btn.onclick = () => {
+        const val = Number(btn.dataset.val);
+        const entry = productRatings[productId] || {};
+        entry[crit.key] = entry[crit.key] === val ? 0 : val;
+        productRatings[productId] = entry;
+        saveProductRatings();
+        paintStars(crit.key);
+      };
+    });
+  });
 }
 
 function renderSimilarProducts(product){
