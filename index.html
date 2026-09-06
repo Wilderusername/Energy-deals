@@ -249,10 +249,50 @@ box-shadow:var(--shadow-focus-ring)
 /* ---------- HERO ---------- */
 
 .hero{
+color:#fff
+}
+
+/* Oberer Banner-Teil (Logo/Icons + Headline + Untertitel) - scrollt ganz
+   normal aus dem sichtbaren Bereich heraus, NICHT sticky. Trägt jetzt die
+   obere/seitliche Polsterung, die vorher am äußeren .hero hing; die untere
+   Polsterung ist an den Sticky-Suchbereich gewandert (siehe dort), da dieser
+   jetzt das visuelle Bannerende bildet. */
+.hero-top{
 background:var(--brand-primary-dark);
-color:#fff;
-padding:20px 18px 20px;
+padding:20px 18px 0
+}
+
+/* Schmaler Sticky-Bereich NUR für die Suchleiste - eigener blauer
+   Hintergrund + der abgerundete untere Rand, den vorher der komplette
+   .hero-Block hatte (dadurch bei Scroll-Position 0 optisch nicht von einem
+   einzigen durchgehenden Banner zu unterscheiden).
+   Bewusst KEIN natives position:sticky: .app hat weiter oben overflow:hidden
+   (zum horizontalen Clipping auf breiten Screens) - ein overflow:hidden/auto-
+   Vorfahre, der selbst nicht scrollt (weil stattdessen das Fenster scrollt,
+   da .app nur min-height statt einer festen Höhe hat), verhindert nach der
+   CSS-Spec, dass sticky-Kinder greifen (bekannte, gut dokumentierte
+   Einschränkung, kein Tippfehler). Da .app nicht angetastet werden soll,
+   stattdessen position:fixed + JS-Toggle (siehe updateHeroSearchSticky()) -
+   fixed ignoriert overflow von Vorfahren komplett. */
+.hero-search-sticky{
+background:var(--brand-primary-dark);
+padding:17px 18px 20px;
 border-radius:0 0 var(--radius-2xl) var(--radius-2xl)
+}
+.hero-search-sticky.is-stuck{
+position:fixed;
+top:0;
+left:0;
+right:0;
+max-width:560px;
+margin:auto;
+z-index:20
+}
+/* Hält die Höhe offen, sobald die Suchleiste aus dem normalen Fluss
+   herausgenommen wird (position:fixed), damit .tabs/der Rest nicht nach oben
+   springt. Höhe wird nur per JS gesetzt (updateHeroSearchSticky()). */
+.hero-search-spacer{
+height:0
 }
 
 .top{
@@ -339,7 +379,6 @@ color:rgba(255,255,255,.72)
 
 .search{
 position:relative;
-margin-top:17px;
 background:rgba(255,255,255,.96);
 color:var(--text-muted);
 border-radius:var(--radius-lg);
@@ -2687,9 +2726,9 @@ animation:skeleton-pulse 1.1s ease-in-out infinite
 .card-bottom .meta .icon{width:9px;height:9px}
 .card-bottom .history-link{font-size:9.5px;padding:5px 8px;gap:3px}
 .card-bottom .history-link .icon{width:10px;height:10px}
-.hero{padding:14px 18px 16px}
+.hero-top{padding:14px 18px 0}
+.hero-search-sticky{padding:12px 18px 16px}
 .headline{margin-top:16px}
-.search{margin-top:12px}
 .period-header{margin:22px 2px 10px}
 .period-title{font-size:12px}
 .period-count{font-size:9.5px}
@@ -2998,6 +3037,7 @@ padding:10px
 
 <header class="hero">
 
+<div class="hero-top">
 <div class="top">
 <div class="brand"><svg viewBox="0 0 1396.1 350.6" role="img" aria-label="CanSpot"><defs>
     <style>
@@ -3037,12 +3077,16 @@ Dein bester Preis.
 <div class="sub">
 Aktuelle Energy-Drink-Angebote in deiner Nähe
 </div>
+</div>
 
+<div class="hero-search-sticky" id="heroSearchSticky">
 <div class="search">
 <svg class="icon icon-lg"><use href="#i-search"/></svg>
 <input type="search" id="search" placeholder="Energy Drink oder Marke eingeben" autocomplete="off">
 <div class="search-suggestions" id="searchSuggestions"></div>
 </div>
+</div>
+<div class="hero-search-spacer" id="heroSearchSpacer"></div>
 
 </header>
 
@@ -6850,6 +6894,42 @@ document.addEventListener("click",(e)=>{
 });
 window.addEventListener("scroll", ()=>{ if(pricePopoverBtn) hidePricePopover(); }, {capture:true, passive:true});
 window.addEventListener("resize", ()=>{ if(pricePopoverBtn) hidePricePopover(); });
+
+/* Sticky-Suchleiste im Hero-Banner (siehe CSS-Kommentar bei .hero-search-
+   sticky für den Grund, warum das per JS statt nativem position:sticky
+   läuft). heroSearchThreshold ist die normale, eingeflossene Position der
+   Suchleiste (Logo/Headline/Sub-Bereich hat feste Höhe, ändert sich nicht
+   durch Angebotsdaten) - nur bei Resize neu vermessen, nicht bei jedem
+   Scroll. */
+const heroSearchSticky = document.getElementById("heroSearchSticky");
+const heroSearchSpacer = document.getElementById("heroSearchSpacer");
+let heroSearchThreshold = 0;
+
+function measureHeroSearchThreshold(){
+  if(!heroSearchSticky.classList.contains("is-stuck")){
+    heroSearchThreshold = heroSearchSticky.offsetTop;
+  }
+}
+
+function updateHeroSearchSticky(){
+  const shouldStick = window.scrollY >= heroSearchThreshold;
+  const isStuck = heroSearchSticky.classList.contains("is-stuck");
+  if(shouldStick && !isStuck){
+    heroSearchSpacer.style.height = heroSearchSticky.offsetHeight + "px";
+    heroSearchSticky.classList.add("is-stuck");
+  }else if(!shouldStick && isStuck){
+    heroSearchSticky.classList.remove("is-stuck");
+    heroSearchSpacer.style.height = "0";
+  }
+}
+
+measureHeroSearchThreshold();
+updateHeroSearchSticky();
+window.addEventListener("scroll", updateHeroSearchSticky, {passive:true});
+window.addEventListener("resize", ()=>{
+  measureHeroSearchThreshold();
+  updateHeroSearchSticky();
+});
 
 function openHistory(dealId){
   const deal = deals.find(d=>d.id===dealId);
