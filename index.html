@@ -1733,6 +1733,7 @@ overflow:hidden;
 text-overflow:ellipsis;
 white-space:nowrap
 }
+.profile-name-display.placeholder-text{color:var(--text-disabled);font-weight:600}
 
 .profile-input{
 border:1px solid var(--border-default);
@@ -2514,6 +2515,11 @@ overflow:hidden;
 text-overflow:ellipsis;
 white-space:nowrap
 }
+/* Zeigt einen Hinweistext statt echter Daten an (z.B. "Vorname eingeben",
+   solange nichts gespeichert ist) - bewusst heller/dünner als normaler
+   Feldinhalt, damit klar erkennbar bleibt, dass es sich NICHT um einen
+   tatsächlich eingetragenen Wert handelt. */
+.field-view span.placeholder-text{color:var(--text-disabled);font-weight:500}
 .field-edit-btn{
 border:0;
 background:none;
@@ -2540,6 +2546,11 @@ margin-top:6px
 .field-edit-row-inline{display:flex;gap:8px}
 .field-edit-row-inline .profile-input:first-child{flex:0 0 35%}
 .field-edit-row-inline .profile-input:last-child{flex:1}
+/* Vorname/Nachname (anders als PLZ/Ort) sind ähnlich lang - eigener
+   Modifier statt die 35/65-Aufteilung oben zu ändern, die weiterhin PLZ/Ort
+   betrifft. */
+.field-edit-row-inline.even .profile-input:first-child,
+.field-edit-row-inline.even .profile-input:last-child{flex:1}
 .avatar-remove-link{
 font-size:11px;
 color:var(--text-muted);
@@ -3553,29 +3564,32 @@ Weitere Händler <svg class="icon icon-xs store-more-chevron"><use href="#i-chev
 <div class="field-block" id="nameBlock">
 <div class="field-mini-label">Name</div>
 <div class="field-view">
-<span id="profileNameFieldText">Max Mustermann</span>
+<span id="profileNameFieldText" class="placeholder-text">Name eingeben</span>
 <button class="field-edit-btn" data-edit="name" aria-label="Name bearbeiten"><svg class="icon icon-sm"><use href="#i-pencil"/></svg></button>
 </div>
-<div class="field-edit-row" id="nameEditRow" style="display:none">
-<input class="profile-input" id="profileName" type="text" value="Max Mustermann" placeholder="Dein Name">
+<div class="field-edit-row stacked" id="nameEditRow" style="display:none">
+<div class="field-edit-row-inline even">
+<input class="profile-input" id="profileFirstName" type="text" placeholder="Vorname eingeben">
+<input class="profile-input" id="profileLastName" type="text" placeholder="Nachname eingeben">
+</div>
 <button class="btn primary field-save-btn" data-save="name">Speichern</button>
 </div>
 </div>
 <div class="field-block" id="emailBlock">
 <div class="field-mini-label">E-Mail-Adresse</div>
 <div class="field-view">
-<span id="profileEmailText">max.mustermann@example.com</span>
+<span id="profileEmailText" class="placeholder-text">E-Mail-Adresse eingeben</span>
 <button class="field-edit-btn" data-edit="email" aria-label="E-Mail bearbeiten"><svg class="icon icon-sm"><use href="#i-pencil"/></svg></button>
 </div>
 <div class="field-edit-row" id="emailEditRow" style="display:none">
-<input class="profile-input" id="profileEmail" type="email" value="max.mustermann@example.com" placeholder="E-Mail-Adresse">
+<input class="profile-input" id="profileEmail" type="email" placeholder="E-Mail-Adresse eingeben">
 <button class="btn primary field-save-btn" data-save="email">Speichern</button>
 </div>
 </div>
 <div class="field-block" id="birthdateBlock">
 <div class="field-mini-label">Geburtsdatum</div>
 <div class="field-view">
-<span id="profileBirthdateText">Noch nicht angegeben</span>
+<span id="profileBirthdateText" class="placeholder-text">TT.MM.JJJJ</span>
 <button class="field-edit-btn" data-edit="birthdate" aria-label="Geburtsdatum bearbeiten"><svg class="icon icon-sm"><use href="#i-pencil"/></svg></button>
 </div>
 <div class="field-edit-row" id="birthdateEditRow" style="display:none">
@@ -6230,7 +6244,7 @@ function finalizeAccountDeletion(reason){
     /* Es gibt aktuell keinerlei Backend/Datenbank in diesem Prototyp - auch
        die Kontolöschung selbst persistiert nichts echtes (siehe Toast unten).
        localStorage ist aber bereits das etablierte Persistenzmuster der App
-       (canspot-name/-email/-avatar/... usw.), daher hier im selben Muster
+       (canspot-firstname/-lastname/-email/-avatar/... usw.), daher hier im selben Muster
        weiterverwendet statt einer neuen Struktur - rein als Demo-Beleg dafür,
        dass ein Löschgrund grundsätzlich mitgegeben werden kann. */
     try{
@@ -6262,30 +6276,57 @@ function updateAvatarInitials(name){
   document.getElementById("profileAvatar").textContent = initials;
 }
 
-const profileNameInput = document.getElementById("profileName");
+const profileFirstNameInput = document.getElementById("profileFirstName");
+const profileLastNameInput = document.getElementById("profileLastName");
 const profileEmailInput = document.getElementById("profileEmail");
 /* Der Name wird an zwei Stellen angezeigt: als reiner Anzeigetext direkt in
    "Mein Bereich" (profileNameText) und als aktueller Wert im bearbeitbaren
    Feld unter "Konto verwalten" (profileNameFieldText) - beide werden beim
-   Laden/Speichern synchron gehalten. */
+   Laden/Speichern synchron gehalten. Vorname/Nachname sind zwei getrennte
+   Eingabefelder, aber weiterhin EIN gemeinsamer Anzeigewert (wie bisher). */
 const profileNameText = document.getElementById("profileNameText");
 const profileNameFieldText = document.getElementById("profileNameFieldText");
 const profileEmailText = document.getElementById("profileEmailText");
 
-function setProfileName(val){
-  profileNameText.textContent = val;
-  profileNameFieldText.textContent = val;
+function getFullName(){
+  return [profileFirstNameInput.value.trim(), profileLastNameInput.value.trim()].filter(Boolean).join(" ");
 }
 
-const savedName = localStorage.getItem("canspot-name");
+/* Zeigt den Namen an beiden Stellen an - oder, solange nichts eingetragen
+   ist, einen dezenten Platzhaltertext statt erfundener Beispieldaten (siehe
+   Anfrage). updateAvatarInitials() bekommt bewusst den ECHTEN Namen
+   (getFullName(), ggf. leer) übergeben, nicht den ggf. als Platzhalter
+   angezeigten Text - sonst würden aus "Name eingeben" fälschlich Initialen
+   "NE" berechnet. */
+function updateNameDisplays(){
+  const full = getFullName();
+  const hasName = full.length > 0;
+  const label = hasName ? full : "Name eingeben";
+  profileNameText.textContent = label;
+  profileNameText.classList.toggle("placeholder-text", !hasName);
+  profileNameFieldText.textContent = label;
+  profileNameFieldText.classList.toggle("placeholder-text", !hasName);
+  updateAvatarInitials(full);
+}
+
+const savedFirstName = localStorage.getItem("canspot-firstname");
+const savedLastName = localStorage.getItem("canspot-lastname");
 const savedEmail = localStorage.getItem("canspot-email");
 const savedBirthdate = localStorage.getItem("canspot-birthdate");
 const savedAddress = JSON.parse(localStorage.getItem("canspot-address") || "null");
-if(savedName){ profileNameInput.value = savedName; setProfileName(savedName); }
-if(savedEmail){ profileEmailInput.value = savedEmail; profileEmailText.textContent = savedEmail; }
+if(savedFirstName) profileFirstNameInput.value = savedFirstName;
+if(savedLastName) profileLastNameInput.value = savedLastName;
+updateNameDisplays();
+if(savedEmail){
+  profileEmailInput.value = savedEmail;
+  profileEmailText.textContent = savedEmail;
+  profileEmailText.classList.remove("placeholder-text");
+}
 if(savedBirthdate){
   document.getElementById("profileBirthdate").value = savedBirthdate;
-  document.getElementById("profileBirthdateText").textContent = formatSingleDate(savedBirthdate);
+  const profileBirthdateText = document.getElementById("profileBirthdateText");
+  profileBirthdateText.textContent = formatSingleDate(savedBirthdate);
+  profileBirthdateText.classList.remove("placeholder-text");
 }
 if(savedAddress){
   document.getElementById("profileStreet").value = savedAddress.street || "";
@@ -6295,7 +6336,6 @@ if(savedAddress){
   const summary = formatAddressSummary(savedAddress);
   if(summary) document.getElementById("profileAddressText").textContent = summary;
 }
-updateAvatarInitials(profileNameText.textContent);
 
 function formatAddressSummary(a){
   return [a.street, [a.zip, a.city].filter(Boolean).join(" "), a.country].filter(Boolean).join(", ");
@@ -6306,7 +6346,7 @@ function setFieldEditing(field, editing){
   document.getElementById(`${field}EditRow`).style.display = editing ? "flex" : "none";
 }
 
-const FIELD_FOCUS_TARGET = {name:"profileName", email:"profileEmail", birthdate:"profileBirthdate", address:"profileStreet", password:"currentPassword"};
+const FIELD_FOCUS_TARGET = {name:"profileFirstName", email:"profileEmail", birthdate:"profileBirthdate", address:"profileStreet", password:"currentPassword"};
 document.querySelectorAll("[data-edit]").forEach(btn=>{
   btn.addEventListener("click", ()=>{
     const field = btn.dataset.edit;
@@ -6335,16 +6375,19 @@ document.querySelectorAll("[data-save]").forEach(btn=>{
   btn.addEventListener("click", ()=>{
     const field = btn.dataset.save;
     if(field==="name"){
-      const val = profileNameInput.value.trim();
-      if(!val) return;
-      setProfileName(val);
-      localStorage.setItem("canspot-name", val);
-      updateAvatarInitials(val);
+      const first = profileFirstNameInput.value.trim();
+      const last = profileLastNameInput.value.trim();
+      if(!first && !last) return;
+      updateNameDisplays();
+      localStorage.setItem("canspot-firstname", first);
+      localStorage.setItem("canspot-lastname", last);
       showToast("Name aktualisiert.");
     } else if(field==="birthdate"){
       const val = document.getElementById("profileBirthdate").value;
       if(!val) return;
-      document.getElementById("profileBirthdateText").textContent = formatSingleDate(val);
+      const profileBirthdateText = document.getElementById("profileBirthdateText");
+      profileBirthdateText.textContent = formatSingleDate(val);
+      profileBirthdateText.classList.remove("placeholder-text");
       localStorage.setItem("canspot-birthdate", val);
       showToast("Geburtsdatum aktualisiert.");
     } else if(field==="password"){
@@ -6386,6 +6429,7 @@ document.querySelectorAll("[data-save]").forEach(btn=>{
         return;
       }
       profileEmailText.textContent = val;
+      profileEmailText.classList.remove("placeholder-text");
       localStorage.setItem("canspot-email", val);
       showToast("E-Mail-Adresse aktualisiert.");
     }
@@ -6407,7 +6451,7 @@ function applyAvatarPhoto(dataUrl){
     avatarRemoveBtn.style.display = "block";
   } else {
     profileAvatarEl.style.backgroundImage = "";
-    updateAvatarInitials(profileNameText.textContent);
+    updateAvatarInitials(getFullName());
     avatarRemoveBtn.style.display = "none";
   }
 }
